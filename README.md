@@ -18,11 +18,24 @@ This plugin fixes that with a free, keyless backend: DuckDuckGo's HTML search en
 
 ## Features
 
-- **Zero cost** — DuckDuckGo HTML search, no API key, no registration
-- **Zero config** — install and it registers automatically
-- **Region support** — optional `kl` region parameter (e.g. `cn-zh`, `us-en`)
+- **Zero cost** — 4 free backends, no API key, no registration
+- **4 engines to choose from**: DuckDuckGo (html/lite), Bing, Mojeek
+- **Zero config** — install and all engines register automatically
+- **Switch anytime** — pick your engine via `web.searchProvider`
+- **Region support** — optional region/market parameters per engine
 - **Clean integration** — implements the official `WebSearchProvider` seam interface
-- **Composable** — coexists with other providers (exa / perplexity / deepseek-official); pick one via `web.searchProvider`
+- **Composable** — coexists with other providers (exa / perplexity / deepseek-official)
+
+## Engines
+
+| id | Engine | Notes |
+|---|---|---|
+| `ddg` | DuckDuckGo (html) | Default. Region param via `region` |
+| `ddg-lite` | DuckDuckGo (lite) | Lighter markup, region not supported |
+| `bing` | Bing | Market via `bingMarket` (default zh-CN) |
+| `mojeek` | Mojeek | Privacy-focused, English-centric |
+
+All engines are enabled by default. Disable any with `engines.<id>: false` in the plugin config.
 
 ## Install
 
@@ -44,7 +57,7 @@ Add this to your profile's `cordis.patch.yml` (e.g. `~/.dsh/profiles/web/cordis.
 ```yaml
 - id: web
   config:
-    searchProvider: ddg
+    searchProvider: ddg   # or: ddg-lite | bing | mojeek
 ```
 
 Alternatively set the environment variable `DSH_WEB_SEARCH_PROVIDER=ddg`.
@@ -65,7 +78,7 @@ Just ask the agent to search the web, e.g. *"search for the latest DeepSeek Harn
 
 | Provider | Cost | Key needed | Quality |
 |---|---|---|---|
-| `ddg` (this plugin) | Free | No | OK |
+| `ddg` / `ddg-lite` / `bing` / `mojeek` (this plugin) | Free | No | OK |
 | `exa` (official) | Paid | `EXA_API_KEY` | Good |
 | `perplexity` (official) | Paid | `PERPLEXITY_API_KEY` | Good |
 | `deepseek-official` (built-in) | Paid per token | `DEEPSEEK_API_KEY` | Best (native web search) |

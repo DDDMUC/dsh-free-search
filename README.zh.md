@@ -18,11 +18,24 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 
 ## 特性
 
-- **零成本** —— DuckDuckGo HTML 搜索，无需 key、无需注册
-- **零配置** —— 安装即自动注册
-- **区域支持** —— 可选 `kl` 区域参数（如 `cn-zh`、`us-en`）
+- **零成本** —— 4 个免费搜索源，无需 key、无需注册
+- **4 个引擎可选**：DuckDuckGo（html/lite）、Bing、Mojeek
+- **零配置** —— 安装即自动注册全部引擎
+- **随时切换** —— 通过 `web.searchProvider` 选择引擎
+- **区域支持** —— 每个引擎可配区域/市场参数
 - **干净集成** —— 实现官方 `WebSearchProvider` seam 接口
-- **可组合** —— 与其他 provider（exa / perplexity / deepseek-official）共存，用 `web.searchProvider` 切换
+- **可组合** —— 与其他 provider（exa / perplexity / deepseek-official）共存
+
+## 引擎
+
+| id | 引擎 | 说明 |
+|---|---|---|
+| `ddg` | DuckDuckGo (html) | 默认。支持 `region` 区域参数 |
+| `ddg-lite` | DuckDuckGo (lite) | 轻量页面，不支持区域 |
+| `bing` | Bing | 支持 `bingMarket`（默认 zh-CN） |
+| `mojeek` | Mojeek | 隐私友好，偏英文 |
+
+默认全部启用。在插件 config 里用 `engines.<id>: false` 可关闭任意引擎。
 
 ## 安装
 
@@ -44,7 +57,7 @@ dsh web
 ```yaml
 - id: web
   config:
-    searchProvider: ddg
+    searchProvider: ddg   # 或：ddg-lite | bing | mojeek
 ```
 
 或设置环境变量 `DSH_WEB_SEARCH_PROVIDER=ddg`。
@@ -65,7 +78,7 @@ dsh web
 
 | Provider | 费用 | 需要 key | 质量 |
 |---|---|---|---|
-| `ddg`（本插件） | 免费 | 否 | 一般 |
+| `ddg` / `ddg-lite` / `bing` / `mojeek`（本插件） | 免费 | 否 | 一般 |
 | `exa`（官方） | 付费 | `EXA_API_KEY` | 好 |
 | `perplexity`（官方） | 付费 | `PERPLEXITY_API_KEY` | 好 |
 | `deepseek-official`（内置） | 按 token 计费 | `DEEPSEEK_API_KEY` | 最好（原生搜索） |

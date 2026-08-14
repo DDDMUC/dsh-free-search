@@ -1,9 +1,16 @@
-# dsh-free-search — free web search provider (no API key needed)
-# Registers a DuckDuckGo-backed provider into ctx.web.
-# The built-in web_search tool picks it up alongside the stock providers.
-# Set web.searchProvider: ddg in settings.yaml to make it the default.
+# dsh-free-search — free web search providers (no API key needed)
+# Registers multiple providers into ctx.web:
+#   ddg (DuckDuckGo html) | ddg-lite (DuckDuckGo lite) | bing | mojeek
+# Pick one in web.searchProvider (e.g. "bing") or set DSH_WEB_SEARCH_PROVIDER.
+# All are enabled by default; disable any with engines.<id>: false.
 - insert:
-    - id: web-search-ddg
+    - id: web-search-free
       name: dsh-free-search
       config:
-        provider: ddg
+        engines:
+          ddg: true
+          ddg-lite: true
+          bing: true
+          mojeek: true
+        # region: cn-zh      # DuckDuckGo region (e.g. cn-zh, us-en, wt-wt)
+        # bingMarket: zh-CN  # Bing market (e.g. zh-CN, en-US)
