@@ -1,0 +1,33 @@
+{
+  "name": "dsh-free-search",
+  "version": "0.1.0",
+  "description": "Free web search provider for DeepSeek Harness: DuckDuckGo HTML backend, no API key required.",
+  "type": "module",
+  "main": "lib/index.js",
+  "files": [
+    "lib/index.js",
+    "cordis.patch.yml"
+  ],
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "web-search",
+    "duckduckgo",
+    "search",
+    "free"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/<your-username>/dsh-free-search.git"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "cordis.patch.yml"
+    }
+  }
+}

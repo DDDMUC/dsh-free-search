@@ -1,0 +1,9 @@
+# dsh-free-search — free web search provider (no API key needed)
+# Registers a DuckDuckGo-backed provider into ctx.web.
+# The built-in web_search tool picks it up alongside the stock providers.
+# Set web.searchProvider: ddg in settings.yaml to make it the default.
+- insert:
+    - id: web-search-ddg
+      name: dsh-free-search
+      config:
+        provider: ddg
