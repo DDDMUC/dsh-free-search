@@ -72,7 +72,20 @@ Alternatively set the environment variable `DSH_WEB_SEARCH_PROVIDER=ddg`.
 
 ## Usage
 
-Just ask the agent to search the web, e.g. *"search for the latest DeepSeek Harness news"*. The `web_search` tool routes to DuckDuckGo automatically.
+Just ask the agent to search the web, e.g. *"search for the latest DeepSeek Harness news"*. The `web_search` tool routes to the configured engine automatically.
+
+## Engine switcher tool (local UI)
+
+Don't want to edit YAML by hand? The `tools/` directory ships a tiny local switcher:
+
+- **`tools/启动搜索引擎切换器.cmd`** (Windows) — double-click to start a local Node server (`http://127.0.0.1:4789`) and open the picker page in your browser.
+- **`tools/switch-engine.html`** — the picker UI: shows the current engine, lets you pick a new one, and writes the config with one click.
+- **`tools/server.mjs`** — the local server that reads/writes `~/.dsh/profiles/web/cordis.patch.yml`.
+- **`tools/switch-engine.ps1`** — headless PowerShell alternative: `powershell -File tools/switch-engine.ps1 -Engine bing`.
+
+After switching, restart `dsh web` for the change to take effect.
+
+> Note: dsh rc.6 does not expose third-party plugin config forms in its web Settings page (the settings allowlist is hard-coded), so this tool works around that with a local loopback server instead.
 
 ## Compare with other providers
 

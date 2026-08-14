@@ -72,7 +72,20 @@ dsh web
 
 ## 使用
 
-直接让 agent 搜索即可，例如："帮我搜索 DeepSeek Harness 的最新消息"。`web_search` 工具会自动走 DuckDuckGo。
+直接让 agent 搜索即可，例如："帮我搜索 DeepSeek Harness 的最新消息"。`web_search` 工具会自动走你配置的搜索引擎。
+
+## 引擎切换工具（本地 UI）
+
+不想手改 YAML？`tools/` 目录附带了一个本地切换小工具：
+
+- **`tools/启动搜索引擎切换器.cmd`**（Windows）——双击启动本地 Node 服务（`http://127.0.0.1:4789`）并自动打开浏览器选择页面。
+- **`tools/switch-engine.html`** —— 选择页面：显示当前引擎，点选新引擎，一键写入配置。
+- **`tools/server.mjs`** —— 本地服务，负责读写 `~/.dsh/profiles/web/cordis.patch.yml`。
+- **`tools/switch-engine.ps1`** —— 无界面命令行版：`powershell -File tools/switch-engine.ps1 -Engine bing`。
+
+切换后重启 `dsh web` 生效。
+
+> 注意：dsh rc.6 的网页设置页不提供第三方插件配置表单（设置白名单写死在官方代码里），所以用这个本地工具绕开限制，效果一致还更直观。
 
 ## 与其他 provider 对比
 
