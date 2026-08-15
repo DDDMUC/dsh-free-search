@@ -33,13 +33,18 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 |---|---|---|---|
 | `ddg` | DuckDuckGo HTML | 免费 | 偶发限流（反爬），解封自动恢复 |
 | `ddg-lite` | DuckDuckGo Lite | 免费 | 轻量版，同上 |
-| `bing` | Bing | 免费 | **最稳定**，中文优化（zh-CN） |
+| `bing` | Bing | 免费 | **默认引擎**，最稳定，中文优化（zh-CN） |
 | `searxng` | SearXNG 元搜索 | 免费 | 多实例自动切换，支持自定义实例 |
 | `exa` | Exa | 付费 | 需 `EXA_API_KEY` |
 | `perplexity` | Perplexity | 付费 | 需 `PERPLEXITY_API_KEY` |
 | `deepseek-official` | DeepSeek 官方 | 付费 | 需 `DEEPSEEK_API_KEY` |
 
-免费引擎失败会自动回退到其他免费引擎；付费引擎缺 key 或 key 无效时报清晰错误，不会静默切换。
+- **默认引擎为 `bing`**（免费且最稳定），安装后开箱即用。
+- 免费引擎失败会自动回退到其他免费引擎；付费引擎缺 key 或 key 无效时报清晰错误，不会静默切换。
+- **设置页有官网链接**：免费引擎显示"访问官网 →"，付费引擎显示"获取 API Key →"（新标签页打开）：
+  - Exa：<https://dashboard.exa.ai/api-keys>
+  - Perplexity：<https://www.perplexity.ai/settings/api>
+  - DeepSeek：<https://platform.deepseek.com/api_keys>
 
 ## 安装
 

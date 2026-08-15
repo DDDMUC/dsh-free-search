@@ -13,5 +13,5 @@
     - id: web-search-free
       name: dsh-free-search
       config:
-        provider: ddg
+        provider: bing
         bingMarket: zh-CN

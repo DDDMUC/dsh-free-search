@@ -33,13 +33,19 @@ This plugin provides multiple free engines with automatic failover, fully indepe
 |---|---|---|---|
 | `ddg` | DuckDuckGo HTML | Free | Occasionally rate-limited (anti-bot), recovers automatically |
 | `ddg-lite` | DuckDuckGo Lite | Free | Lightweight variant, same caveat |
-| `bing` | Bing | Free | **Most stable**, zh-CN optimized |
+| `bing` | Bing | Free | **Default engine**, most stable, zh-CN optimized |
 | `searxng` | SearXNG meta-search | Free | Multi-instance failover, custom instances supported |
 | `exa` | Exa | Paid | Requires `EXA_API_KEY` |
 | `perplexity` | Perplexity | Paid | Requires `PERPLEXITY_API_KEY` |
 | `deepseek-official` | DeepSeek Official | Paid | Requires `DEEPSEEK_API_KEY` |
 
 Free engines auto-fallback to another free engine on failure. Paid engines fail with a clear error when their key is missing or invalid — never a silent switch.
+
+- **Default engine is `bing`** (free and most stable), works out of the box after install.
+- **Settings page has official links**: free engines show "访问官网 →", paid engines show "获取 API Key →" (opens in a new tab):
+  - Exa: <https://dashboard.exa.ai/api-keys>
+  - Perplexity: <https://www.perplexity.ai/settings/api>
+  - DeepSeek: <https://platform.deepseek.com/api_keys>
 
 ## Install
 
