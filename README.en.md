@@ -90,6 +90,19 @@ Search engine test:
 - exa: FAIL - EXA_API_KEY not configured
 ```
 
+## Local engine switcher (tools/)
+
+Prefer a local tool over the web UI? The `tools/` directory ships a zero-dependency switcher:
+
+- **`启动搜索引擎切换器.cmd`** (Windows) — double-click to start a local Node server (`http://127.0.0.1:4789`) and open the picker page in your browser
+- **`switch-engine.html`** — the picker UI: shows the current engine, one-click switch
+- **`server.mjs`** — local server that reads/writes `~/.dsh/profiles/web/cordis.patch.yml`
+- **`switch-engine.ps1`** — headless CLI: `powershell -File tools/switch-engine.ps1 -Engine bing`
+
+Restart `dsh web` after switching.
+
+> Note: dsh rc.6 does not expose third-party plugin config forms in its official Settings page (the allowlist is hard-coded). This plugin's web settings card mounts on dsh-web-ui's settings page (`web-ui.plugin.item` slot); without dsh-web-ui, use this local tool instead.
+
 ## Proxy note
 
 DuckDuckGo and some engines may be blocked and need a proxy. Node.js `fetch` does not use the system proxy by default — set these environment variables for the dsh process (Node 24+):

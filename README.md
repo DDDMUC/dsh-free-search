@@ -90,6 +90,19 @@ Search engine test:
 - exa: FAIL - EXA_API_KEY not configured
 ```
 
+## 本地引擎切换工具（tools/）
+
+不想用网页设置页？`tools/` 目录附带了一个本地切换小工具（零依赖）：
+
+- **`启动搜索引擎切换器.cmd`**（Windows）——双击启动本地 Node 服务（`http://127.0.0.1:4789`）并自动打开浏览器选择页面
+- **`switch-engine.html`** —— 选择页面：显示当前引擎，点选新引擎，一键写入配置
+- **`server.mjs`** —— 本地服务，负责读写 `~/.dsh/profiles/web/cordis.patch.yml`
+- **`switch-engine.ps1`** —— 无界面命令行版：`powershell -File tools/switch-engine.ps1 -Engine bing`
+
+切换后重启 `dsh web` 生效。
+
+> 注意：dsh rc.6 的官方设置页不提供第三方插件配置表单（设置白名单写死在官方代码里）。本插件的网页配置卡片挂载在 dsh-web-ui 的设置页（`web-ui.plugin.item` 插槽），未安装 dsh-web-ui 时可用此本地工具代替。
+
 ## 代理说明（国内用户）
 
 DuckDuckGo 等引擎可能需要代理才能访问，而 Node.js 的 `fetch` 默认不走系统代理。需要给 dsh 进程设置（Node 24+）：
