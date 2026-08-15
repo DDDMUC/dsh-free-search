@@ -132,6 +132,24 @@ Restart `dsh web` after switching.
 
 > The settings card mounts on the official `settings.plugin.item` slot (built into dsh); config reads/writes go through the plugin's own bridge. **No dsh-web-ui dependency — the plugin works standalone.**
 
+## Competitor radar (tools/)
+
+Keep an eye on search-related competitors: `tools/competitor-radar.mjs` monitors:
+
+- **10 known competitors** for updates (shows recent commits on change)
+- **New search plugins** in the awesome-dsh-plugin list
+- **New projects** under the GitHub dsh-plugin topic (last 7 days)
+- Suggests **feature directions worth watching** (cache / platform search / keyless etc.)
+
+Usage:
+
+```sh
+node tools/competitor-radar.mjs        # incremental (changes only)
+node tools/competitor-radar.mjs --full # full scan
+```
+
+Set `GH_TOKEN` (GitHub token) for higher API rate limits.
+
 ## Proxy note
 
 DuckDuckGo and some engines may be blocked and need a proxy. Node.js `fetch` does not use the system proxy by default — set these environment variables for the dsh process (Node 24+):

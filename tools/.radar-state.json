@@ -1,0 +1,75 @@
+{
+  "known": {
+    "anweat/dsh-web-search-pro": {
+      "pushed": "2026-08-14",
+      "stars": 8
+    },
+    "anysearch-team/anysearch-dsh": {
+      "pushed": "2026-08-15",
+      "stars": 41
+    },
+    "cinob/dsh-web-search-multi": {
+      "pushed": "2026-08-15",
+      "stars": 0
+    },
+    "SZMY-haruhi/dsh-web-search-Tavily": {
+      "pushed": "2026-08-15",
+      "stars": 3
+    },
+    "TonyDua/dsh-web-search-exa": {
+      "pushed": "2026-08-14",
+      "stars": 5
+    },
+    "us/dsh-crw": {
+      "pushed": "2026-08-14",
+      "stars": 2
+    },
+    "MCapricorns/dsh-web-querit": {
+      "pushed": "2026-08-15",
+      "stars": 0
+    },
+    "1624318455/dsh-plugin-tavily": {
+      "pushed": "2026-08-15",
+      "stars": 0
+    },
+    "tonyd2wild/DeepSeek-Harness-Web-Tools": {
+      "pushed": "2026-08-13",
+      "stars": 12
+    },
+    "RealAlexandreAI/dsh-all-search": {
+      "pushed": "2026-08-13",
+      "stars": 1
+    }
+  },
+  "awesome": [
+    "fengMax1997/dsh-line-select",
+    "Ghost011118/dsh-balance-meter",
+    "ZichengGurrr/dsh-window/tree/main/plugin",
+    "Wongzexu/dsh-git-status",
+    "YZz-S/dsh-token-cost-meter",
+    "PerryLink/dsh-composer-history",
+    "zer0zio-stack/dsh-opencode-go-quota",
+    "NOirBRight/dsh-llm-ollama",
+    "Jesse-njx/dsh-memory",
+    "STARDUSTLC666/dsh-rss",
+    "bpc-oss/chrome-faithful",
+    "SPYQWER1/dsh-codex-tools",
+    "zp-home/dsh-recommend",
+    "zimai233/dsh-exam-countdown",
+    "zimai233/dsh-image-search",
+    "liustack/modsearch",
+    "taxueseek/argo",
+    "shinjiyu/dsh-plugin-search",
+    "superagents-lab/dsh-s1",
+    "MicroHEROX/dsh-exa-mcp",
+    "moguiyu/dsh-tavily/tree/main/packages/dsh-tool-tavily-search",
+    "wade20250715/dsh-pubmed",
+    "godchen520/dsh-web-remote",
+    "omdsh-dev/dsh-deep-research",
+    "wz-heng/dsh-feishu-bridge",
+    "labmimors/dsh-mcp-lens",
+    "tianyaZTY/dsh-hot-plugin-host",
+    "MicroMilo/upstream-radar",
+    "stakeswky/awesome-dsh"
+  ]
+}
