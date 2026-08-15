@@ -25,6 +25,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 - **自动回退** —— 免费引擎失败/限流时自动切换到下一个可用引擎
 - **系统提示词注入** —— agent 知道当前用哪个引擎、哪些需要 key
 - **免费标注** —— 设置页中免费引擎带绿色 `FREE` 徽章，付费引擎带橙色 `API KEY` 徽章
+- **网页抓取（web_fetch）** —— 让 agent 抓取网页内容（官方 `dsh-web-fetch-http` provider，纯 JS，零额外依赖）
 - **干净集成** —— 实现官方 `WebSearchProvider` seam 接口，与官方插件共存
 
 ## 引擎列表
@@ -94,6 +95,14 @@ Search engine test:
 - bing: OK (2 results, e.g. "DeepSeek Harness developer preview...")
 - exa: FAIL - EXA_API_KEY not configured
 ```
+
+### 抓取网页内容（web_fetch）
+
+搜索到 URL 后，可以让 agent **读取网页全文**（如"打开第一个链接看看内容"）。`web_fetch` 工具已启用（官方 `dsh-web-fetch-http` provider）：
+
+- 自动跟随重定向、解码正文（HTML 转文本）
+- 支持超时和大小限制
+- ⚠️ 注意：`web_fetch` 无 SSRF 防护，agent 理论上可访问内网地址——按需使用
 
 ## 本地引擎切换工具（tools/）
 

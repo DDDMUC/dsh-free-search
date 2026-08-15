@@ -26,6 +26,7 @@ This plugin provides multiple free engines with automatic failover, fully indepe
 - **System prompt injection** — the agent knows the current engine and which need keys
 - **FREE / API KEY badges** — green FREE badge for free engines, orange API KEY badge for paid ones
 - **Clean integration** — implements the official `WebSearchProvider` seam, coexists with official plugins
+- **web_fetch** — agent can fetch page content (official `dsh-web-fetch-http` provider, pure JS, zero extra deps)
 
 ## Engines
 
@@ -95,6 +96,14 @@ Search engine test:
 - bing: OK (2 results, e.g. "DeepSeek Harness developer preview...")
 - exa: FAIL - EXA_API_KEY not configured
 ```
+
+### Fetch page content (web_fetch)
+
+After search, ask the agent to **read a page** (e.g. "open the first link and summarize it"). The `web_fetch` tool is enabled (official `dsh-web-fetch-http` provider):
+
+- Follows redirects, decodes body (HTML to text)
+- Timeout and size limits
+- ⚠️ Note: `web_fetch` has no SSRF protection — the agent could reach internal addresses. Use deliberately.
 
 ## Local engine switcher (tools/)
 
