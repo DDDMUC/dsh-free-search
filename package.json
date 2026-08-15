@@ -1,11 +1,17 @@
 {
   "name": "dsh-free-search",
-  "version": "0.1.0",
-  "description": "Free web search provider for DeepSeek Harness: DuckDuckGo HTML backend, no API key required.",
+  "version": "0.2.0",
+  "description": "Free web search for DeepSeek Harness: DuckDuckGo/Bing (FREE) + Exa/Perplexity/DeepSeek (API key) engines, with web settings UI and engine test tool.",
   "type": "module",
   "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
   "files": [
     "lib/index.js",
+    "lib/client.js",
     "cordis.patch.yml"
   ],
   "keywords": [
@@ -14,20 +20,34 @@
     "dsh-plugin",
     "web-search",
     "duckduckgo",
+    "bing",
+    "exa",
+    "perplexity",
     "search",
     "free"
   ],
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/<your-username>/dsh-free-search.git"
+    "url": "https://github.com/DDDMUC/dsh-free-search.git"
   },
   "engines": {
     "node": ">=20"
   },
+  "dependencies": {
+    "@deepseek-ai/dsh-settings": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-tools": "0.1.0-rc.6",
+    "@deepseek-ai/schemastery": "^3.18.1"
+  },
   "dsh": {
     "bundle": {
       "patch": "cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime"
+      ],
+      "platform": "web"
     }
   }
 }

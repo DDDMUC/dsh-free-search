@@ -1,16 +1,17 @@
 # dsh-free-search — free web search providers (no API key needed)
-# Registers multiple providers into ctx.web:
-#   ddg (DuckDuckGo html) | ddg-lite (DuckDuckGo lite) | bing | mojeek
-# Pick one in web.searchProvider (e.g. "bing") or set DSH_WEB_SEARCH_PROVIDER.
-# All are enabled by default; disable any with engines.<id>: false.
+# Registers the free-search plugin into ctx.web + a settings bridge
+# (/api/dsh-free-search-settings) that serves the "free-search" namespace.
+# The engine (ddg / ddg-lite / bing) is chosen from the web Settings page
+# (Settings > Plugins > Web UI plugins > Free Search) or settings.yaml:
+#   free-search:
+#     provider: bing
+#     region: cn-zh        # DuckDuckGo region
+#     bingMarket: zh-CN    # Bing market
+# Failed/empty engines automatically fall back to the next free engine.
+# web.searchProvider must point at this plugin's provider id (ddg).
 - insert:
     - id: web-search-free
       name: dsh-free-search
       config:
-        engines:
-          ddg: true
-          ddg-lite: true
-          bing: true
-          mojeek: true
-        # region: cn-zh      # DuckDuckGo region (e.g. cn-zh, us-en, wt-wt)
-        # bingMarket: zh-CN  # Bing market (e.g. zh-CN, en-US)
+        provider: ddg
+        bingMarket: zh-CN
