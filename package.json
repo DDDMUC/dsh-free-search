@@ -1,7 +1,7 @@
 {
   "name": "dsh-free-search",
-  "version": "0.3.0",
-  "description": "Free web search for DeepSeek Harness: 7 engines + platform search (GitHub/V2EX/Bilibili) + web_fetch, with web settings UI and engine test tool.",
+  "version": "0.4.0",
+  "description": "Free web search for DeepSeek Harness: 8 engines (Bing/DuckDuckGo/AnySearch/SearXNG/Exa keyless) + platform search + web_fetch, with web settings UI.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {

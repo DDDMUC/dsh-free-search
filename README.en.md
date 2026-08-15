@@ -36,8 +36,9 @@ This plugin provides multiple free engines with automatic failover, fully indepe
 | `ddg` | DuckDuckGo HTML | Free | Occasionally rate-limited (anti-bot), recovers automatically |
 | `ddg-lite` | DuckDuckGo Lite | Free | Lightweight variant, same caveat |
 | `bing` | Bing | Free | **Default engine**, most stable, zh-CN optimized |
+| `anysearch` | AnySearch AI | Free | AI search, no key (anonymous quota) |
 | `searxng` | SearXNG meta-search | Free | Multi-instance failover, custom instances supported |
-| `exa` | Exa | Paid | Requires `EXA_API_KEY` |
+| `exa` | Exa | Free | **Works keyless** (anonymous MCP), add key for higher limits |
 | `perplexity` | Perplexity | Paid | Requires `PERPLEXITY_API_KEY` |
 | `deepseek-official` | DeepSeek Official | Paid | Requires `DEEPSEEK_API_KEY` |
 

@@ -36,8 +36,9 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 | `ddg` | DuckDuckGo HTML | 免费 | 偶发限流（反爬），解封自动恢复 |
 | `ddg-lite` | DuckDuckGo Lite | 免费 | 轻量版，同上 |
 | `bing` | Bing | 免费 | **默认引擎**，最稳定，中文优化（zh-CN） |
+| `anysearch` | AnySearch AI | 免费 | AI 搜索，无 key（匿名额度） |
 | `searxng` | SearXNG 元搜索 | 免费 | 多实例自动切换，支持自定义实例 |
-| `exa` | Exa | 付费 | 需 `EXA_API_KEY` |
+| `exa` | Exa | 免费 | **无 key 也可用**（MCP 匿名），配 key 提升额度 |
 | `perplexity` | Perplexity | 付费 | 需 `PERPLEXITY_API_KEY` |
 | `deepseek-official` | DeepSeek 官方 | 付费 | 需 `DEEPSEEK_API_KEY` |
 
