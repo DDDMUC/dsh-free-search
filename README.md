@@ -1,106 +1,112 @@
 # dsh-free-search
 
-**Free web search provider for DeepSeek Harness — no API key, no cost.**
+**DeepSeek Harness 免费搜索插件 —— 无需 API key，零成本，多引擎可切换。**
 
-A plugin that adds a DuckDuckGo-backed search provider to DeepSeek Harness (dsh), registered into the `ctx.web` seam. The built-in `web_search` tool picks it up automatically. Zero configuration, zero cost, zero keys.
+一个给 DeepSeek Harness (dsh) 添加多引擎搜索 provider 的插件，注册进 `ctx.web` seam。内置 `web_search` 工具自动选用，支持网页设置页切换引擎、配置 API key、一键测试所有引擎。
 
-English | [中文](./README.zh.md)
+[English](./README.en.md) | 中文
 
-## Why
+## 为什么需要它
 
-dsh ships a DeepSeek-official search provider by default, which requires a valid `DEEPSEEK_API_KEY`. If you:
-- don't have (or don't want) a DeepSeek official API key,
-- already use a gateway like opencode-go (which does not expose a `web_search` tool),
+dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`）。如果你：
+- 没有（或不想用）DeepSeek 官方 key，
+- 用的是 opencode-go 这类网关（其 OpenAI 兼容端点不支持 `web_search` 工具），
 
-...then the built-in search always fails and the agent tells you "I can't access the internet."
+……那么内置搜索必然失败，agent 会告诉你"无法联网"。
 
-This plugin fixes that with a free, keyless backend: DuckDuckGo's HTML search endpoint.
+这个插件提供多个免费引擎 + 自动回退，彻底摆脱 DeepSeek 官方 key 的依赖。
 
-## Features
+## 特性
 
-- **Zero cost** — 4 free backends, no API key, no registration
-- **4 engines to choose from**: DuckDuckGo (html/lite), Bing, Mojeek
-- **Zero config** — install and all engines register automatically
-- **Switch anytime** — pick your engine via `web.searchProvider`
-- **Region support** — optional region/market parameters per engine
-- **Clean integration** — implements the official `WebSearchProvider` seam interface
-- **Composable** — coexists with other providers (exa / perplexity / deepseek-official)
+- **零成本** —— 多个免费引擎，无需 key、无需注册
+- **多引擎可选**：DuckDuckGo（html/lite）、Bing、SearXNG（元搜索，支持自定义实例）、Exa、Perplexity、DeepSeek 官方
+- **网页设置页** —— 引擎切换 + API key 配置（UI 中 key 脱敏显示"已配置"）
+- **引擎测试工具** —— `free_search_test`，让 agent 一键测试所有引擎可用性
+- **自动回退** —— 免费引擎失败/限流时自动切换到下一个可用引擎
+- **系统提示词注入** —— agent 知道当前用哪个引擎、哪些需要 key
+- **免费标注** —— 设置页中免费引擎带绿色 `FREE` 徽章，付费引擎带橙色 `API KEY` 徽章
+- **干净集成** —— 实现官方 `WebSearchProvider` seam 接口，与官方插件共存
 
-## Engines
+## 引擎列表
 
-| id | Engine | Notes |
-|---|---|---|
-| `ddg` | DuckDuckGo (html) | Default. Region param via `region` |
-| `ddg-lite` | DuckDuckGo (lite) | Lighter markup, region not supported |
-| `bing` | Bing | Market via `bingMarket` (default zh-CN) |
-| `mojeek` | Mojeek | Privacy-focused, English-centric |
+| id | 引擎 | 费用 | 说明 |
+|---|---|---|---|
+| `ddg` | DuckDuckGo HTML | 免费 | 偶发限流（反爬），解封自动恢复 |
+| `ddg-lite` | DuckDuckGo Lite | 免费 | 轻量版，同上 |
+| `bing` | Bing | 免费 | **最稳定**，中文优化（zh-CN） |
+| `searxng` | SearXNG 元搜索 | 免费 | 多实例自动切换，支持自定义实例 |
+| `exa` | Exa | 付费 | 需 `EXA_API_KEY` |
+| `perplexity` | Perplexity | 付费 | 需 `PERPLEXITY_API_KEY` |
+| `deepseek-official` | DeepSeek 官方 | 付费 | 需 `DEEPSEEK_API_KEY` |
 
-All engines are enabled by default. Disable any with `engines.<id>: false` in the plugin config.
+免费引擎失败会自动回退到其他免费引擎；付费引擎缺 key 或 key 无效时报清晰错误，不会静默切换。
 
-## Install
+## 安装
 
 ```sh
-git clone https://github.com/<your-username>/dsh-free-search.git
+git clone https://github.com/DDDMUC/dsh-free-search.git
 dsh plugin --profile web add /path/to/dsh-free-search
 ```
 
-Then restart:
+然后重启：
 
 ```sh
 dsh web
 ```
 
-## Make it the default provider
+## 使用
 
-Add this to your profile's `cordis.patch.yml` (e.g. `~/.dsh/profiles/web/cordis.patch.yml`):
+### 网页设置（推荐）
+
+安装后，打开 **设置 → 插件 → Web UI 插件 → Free Search**（需要已安装 [dsh-web-ui](https://github.com/zhu1090093659/dsh-web-ui)）：
+
+- **Search engine**：下拉框切换引擎，保存即生效
+- **API keys**：为 Exa / Perplexity / DeepSeek 填写 key（密码框，保存后只显示"已配置"）
+
+### 命令行 / 配置文件
+
+配置存在 `~/.dsh/settings.yaml`：
 
 ```yaml
-- id: web
-  config:
-    searchProvider: ddg   # or: ddg-lite | bing | mojeek
+free-search:
+  provider: bing              # ddg / ddg-lite / bing / searxng / exa / perplexity / deepseek-official
+  bingMarket: zh-CN           # Bing 市场
+  region: cn-zh               # DuckDuckGo 区域（可选）
+  searxngInstances:           # 自定义 SearXNG 实例（可选）
+    - https://your-instance.example
+  exaApiKey: ...              # 或通过设置页填写
+  perplexityApiKey: ...
+  deepseekApiKey: ...
 ```
 
-Alternatively set the environment variable `DSH_WEB_SEARCH_PROVIDER=ddg`.
+### 让 agent 测试所有引擎
 
-> **Note for users behind the GFW / a proxy**: DuckDuckGo is blocked in mainland China. Node.js `fetch` does not use the system proxy by default — set these environment variables for the dsh process (Node 24+):
->
-> ```sh
-> export NODE_USE_ENV_PROXY=1
-> export HTTPS_PROXY=http://127.0.0.1:7897   # your proxy
-> export HTTP_PROXY=http://127.0.0.1:7897
-> ```
+对 agent 说"测试一下所有搜索引擎"，它会调用 `free_search_test` 工具，逐个测试并报告：
 
-## Usage
+```
+Search engine test:
+- ddg: FAIL - DuckDuckGo is rate-limited right now (anti-bot challenge, usually temporary) - Bing works
+- bing: OK (2 results, e.g. "DeepSeek Harness developer preview...")
+- exa: FAIL - EXA_API_KEY not configured
+```
 
-Just ask the agent to search the web, e.g. *"search for the latest DeepSeek Harness news"*. The `web_search` tool routes to the configured engine automatically.
+## 代理说明（国内用户）
 
-## Engine switcher tool (local UI)
+DuckDuckGo 等引擎可能需要代理才能访问，而 Node.js 的 `fetch` 默认不走系统代理。需要给 dsh 进程设置（Node 24+）：
 
-Don't want to edit YAML by hand? The `tools/` directory ships a tiny local switcher:
+```sh
+export NODE_USE_ENV_PROXY=1
+export HTTPS_PROXY=http://127.0.0.1:7897   # 你的代理地址
+export HTTP_PROXY=http://127.0.0.1:7897
+```
 
-- **`tools/启动搜索引擎切换器.cmd`** (Windows) — double-click to start a local Node server (`http://127.0.0.1:4789`) and open the picker page in your browser.
-- **`tools/switch-engine.html`** — the picker UI: shows the current engine, lets you pick a new one, and writes the config with one click.
-- **`tools/server.mjs`** — the local server that reads/writes `~/.dsh/profiles/web/cordis.patch.yml`.
-- **`tools/switch-engine.ps1`** — headless PowerShell alternative: `powershell -File tools/switch-engine.ps1 -Engine bing`.
+Windows 用户：桌面快捷方式已内置此配置（`set NODE_USE_ENV_PROXY=1&& set HTTPS_PROXY=...`）。
 
-After switching, restart `dsh web` for the change to take effect.
+## 工作原理
 
-> Note: dsh rc.6 does not expose third-party plugin config forms in its web Settings page (the settings allowlist is hard-coded), so this tool works around that with a local loopback server instead.
-
-## Compare with other providers
-
-| Provider | Cost | Key needed | Quality |
-|---|---|---|---|
-| `ddg` / `ddg-lite` / `bing` / `mojeek` (this plugin) | Free | No | OK |
-| `exa` (official) | Paid | `EXA_API_KEY` | Good |
-| `perplexity` (official) | Paid | `PERPLEXITY_API_KEY` | Good |
-| `deepseek-official` (built-in) | Paid per token | `DEEPSEEK_API_KEY` | Best (native web search) |
-
-Switch anytime by changing `web.searchProvider` — no reinstall needed.
-
-## How it works
-
-`lib/index.js` implements the `WebSearchProvider` interface (`id` / `available()` / `search()`), calls `https://html.duckduckgo.com/html/?q=...`, parses the result blocks, and returns normalized sources (`url`, `title`, `snippet`, `publishedAt`). The `cordis.patch.yml` inserts a loader entry so dsh mounts it into the `ctx.web` seam.
+- `lib/index.js`：host 端。实现 `WebSearchProvider`（`id` / `available()` / `search()`），多引擎路由 + 自动回退；注册 `free-search` settings namespace；提供 `/api/dsh-free-search-settings` 读写桥；注册 `free_search_test` 工具；注入引擎清单到系统提示词。
+- `lib/client.js`：浏览器端。React 配置卡片（引擎选择 + key 输入），挂载到 `web-ui.plugin.item` 插槽（dsh-web-ui 的设置页）。
+- `cordis.patch.yml`：插件 loader 配置。
 
 ## License
 
