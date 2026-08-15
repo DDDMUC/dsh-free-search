@@ -58,7 +58,7 @@ dsh web
 
 ### Web settings (recommended)
 
-After install, open **Settings → Plugins → Web UI plugins → Free Search** (requires [dsh-web-ui](https://github.com/zhu1090093659/dsh-web-ui)):
+After install, open **Settings → Plugins → Configurable** tab → **Free Search** card (official settings page, no dsh-web-ui needed):
 
 - **Search engine**: dropdown to switch engines, save to apply
 - **API keys**: fill keys for Exa / Perplexity / DeepSeek (password inputs; after save the UI only shows "configured")
@@ -101,7 +101,7 @@ Prefer a local tool over the web UI? The `tools/` directory ships a zero-depende
 
 Restart `dsh web` after switching.
 
-> Note: dsh rc.6 does not expose third-party plugin config forms in its official Settings page (the allowlist is hard-coded). This plugin's web settings card mounts on dsh-web-ui's settings page (`web-ui.plugin.item` slot); without dsh-web-ui, use this local tool instead.
+> The settings card mounts on the official `settings.plugin.item` slot (built into dsh); config reads/writes go through the plugin's own bridge. **No dsh-web-ui dependency — the plugin works standalone.**
 
 ## Proxy note
 
@@ -116,7 +116,7 @@ export HTTP_PROXY=http://127.0.0.1:7897
 ## How it works
 
 - `lib/index.js`: host side. Implements `WebSearchProvider` (`id` / `available()` / `search()`), multi-engine routing + auto-failover; registers the `free-search` settings namespace; serves the `/api/dsh-free-search-settings` read/write bridge; registers the `free_search_test` tool; injects the engine list into the system prompt.
-- `lib/client.js`: browser side. React settings card (engine select + key inputs), mounted on the `web-ui.plugin.item` slot (dsh-web-ui's settings page).
+- `lib/client.js`: browser side. React settings card (engine select + key inputs), mounted on the official `settings.plugin.item` slot (Settings → Plugins → Configurable), no dsh-web-ui dependency.
 - `cordis.patch.yml`: plugin loader config.
 
 ## License

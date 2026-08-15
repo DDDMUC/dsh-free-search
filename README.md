@@ -58,7 +58,7 @@ dsh web
 
 ### 网页设置（推荐）
 
-安装后，打开 **设置 → 插件 → Web UI 插件 → Free Search**（需要已安装 [dsh-web-ui](https://github.com/zhu1090093659/dsh-web-ui)）：
+安装后，打开 **设置 → 插件 → 可配置** 标签页 → **Free Search** 卡片（官方设置页，无需 dsh-web-ui）：
 
 - **Search engine**：下拉框切换引擎，保存即生效
 - **API keys**：为 Exa / Perplexity / DeepSeek 填写 key（密码框，保存后只显示"已配置"）
@@ -101,7 +101,7 @@ Search engine test:
 
 切换后重启 `dsh web` 生效。
 
-> 注意：dsh rc.6 的官方设置页不提供第三方插件配置表单（设置白名单写死在官方代码里）。本插件的网页配置卡片挂载在 dsh-web-ui 的设置页（`web-ui.plugin.item` 插槽），未安装 dsh-web-ui 时可用此本地工具代替。
+> 配置卡片挂在官方设置页的 `settings.plugin.item` 插槽（dsh 自带），配置读写走插件自建 bridge，**不依赖 dsh-web-ui**，插件可独立使用。
 
 ## 代理说明（国内用户）
 
@@ -118,7 +118,7 @@ Windows 用户：桌面快捷方式已内置此配置（`set NODE_USE_ENV_PROXY=
 ## 工作原理
 
 - `lib/index.js`：host 端。实现 `WebSearchProvider`（`id` / `available()` / `search()`），多引擎路由 + 自动回退；注册 `free-search` settings namespace；提供 `/api/dsh-free-search-settings` 读写桥；注册 `free_search_test` 工具；注入引擎清单到系统提示词。
-- `lib/client.js`：浏览器端。React 配置卡片（引擎选择 + key 输入），挂载到 `web-ui.plugin.item` 插槽（dsh-web-ui 的设置页）。
+- `lib/client.js`：浏览器端。React 配置卡片（引擎选择 + key 输入），挂载到官方设置页的 `settings.plugin.item` 插槽（设置 → 插件 → 可配置），不依赖 dsh-web-ui。
 - `cordis.patch.yml`：插件 loader 配置。
 
 ## License
