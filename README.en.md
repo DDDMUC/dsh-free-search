@@ -50,6 +50,12 @@ Free engines auto-fallback to another free engine on failure. Paid engines fail 
   - Perplexity: <https://www.perplexity.ai/settings/api>
   - DeepSeek: <https://platform.deepseek.com/api_keys>
 
+### Why is AnySearch free?
+
+AnySearch (anysearch.com) is an AI search gateway that offers **anonymous public search quota** — its `v1/search` REST endpoint can be called directly without registration or an API key. The quota is rate-limited (fine for everyday use), but as one of several free engines with mutual failover, the experience stays reliable.
+
+Exa works the same way: its public MCP endpoint (`mcp.exa.ai/mcp`) supports anonymous calls, so it works without a key; setting `EXA_API_KEY` unlocks higher limits.
+
 ## Install
 
 ```sh

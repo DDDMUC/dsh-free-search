@@ -49,6 +49,12 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
   - Perplexity：<https://www.perplexity.ai/settings/api>
   - DeepSeek：<https://platform.deepseek.com/api_keys>
 
+### 为什么 AnySearch 免费？
+
+AnySearch（anysearch.com）是一个 AI 搜索网关，提供**匿名的公共搜索额度**——通过其 `v1/search` REST 接口可以直接调用，无需注册或 API key。额度有限流（适合日常搜索），但作为免费引擎之一，与其他免费引擎互相回退，体验稳定。
+
+Exa 同理：其公开 MCP 端点（`mcp.exa.ai/mcp`）支持匿名调用，因此不配置 key 也能用；配置 `EXA_API_KEY` 后可获得更高额度。
+
 ## 安装
 
 ```sh
