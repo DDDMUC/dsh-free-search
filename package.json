@@ -1,7 +1,7 @@
 {
   "name": "dsh-free-search",
-  "version": "0.2.0",
-  "description": "Free web search for DeepSeek Harness: DuckDuckGo/Bing (FREE) + Exa/Perplexity/DeepSeek (API key) engines, with web settings UI and engine test tool.",
+  "version": "0.3.0",
+  "description": "Free web search for DeepSeek Harness: 7 engines + platform search (GitHub/V2EX/Bilibili) + web_fetch, with web settings UI and engine test tool.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -27,6 +27,9 @@
     "free"
   ],
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/DDDMUC/dsh-free-search.git"

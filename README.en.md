@@ -27,6 +27,7 @@ This plugin provides multiple free engines with automatic failover, fully indepe
 - **FREE / API KEY badges** — green FREE badge for free engines, orange API KEY badge for paid ones
 - **Clean integration** — implements the official `WebSearchProvider` seam, coexists with official plugins
 - **web_fetch** — agent can fetch page content (official `dsh-web-fetch-http` provider, pure JS, zero extra deps)
+- **platform_search** — search GitHub / V2EX / Bilibili (public APIs, zero deps)
 
 ## Engines
 
@@ -104,6 +105,18 @@ After search, ask the agent to **read a page** (e.g. "open the first link and su
 - Follows redirects, decodes body (HTML to text)
 - Timeout and size limits
 - ⚠️ Note: `web_fetch` has no SSRF protection — the agent could reach internal addresses. Use deliberately.
+
+### Platform search (platform_search)
+
+Ask the agent to search a specific platform, e.g. "search GitHub for deepseek harness", "find Bilibili videos about this", "V2EX threads about dsh". The `platform_search` tool supports:
+
+| Platform | Purpose |
+|---|---|
+| `github` | GitHub repository search (public API, free, no key) |
+| `v2ex` | V2EX hot/relevant topics |
+| `bilibili` | Bilibili video/content search (public endpoint) |
+
+All use public APIs with zero external dependencies — works out of the box.
 
 ## Local engine switcher (tools/)
 
