@@ -131,24 +131,6 @@ Search engine test:
 
 > 配置卡片挂在官方设置页的 `settings.plugin.item` 插槽（dsh 自带），配置读写走插件自建 bridge，**不依赖 dsh-web-ui**，插件可独立使用。
 
-## 竞品雷达（tools/）
-
-盯着搜索类竞品抄？`tools/competitor-radar.mjs` 自动监控：
-
-- **10 个已知竞品**的更新（有更新时显示最近提交）
-- **awesome-dsh-plugin 列表**新增的搜索类插件
-- **GitHub dsh-plugin topic** 近 7 天新项目
-- 自动提示**值得关注的功能方向**（缓存/平台搜索/keyless 等）
-
-用法：
-
-```sh
-node tools/competitor-radar.mjs        # 增量扫描（只报变化）
-node tools/competitor-radar.mjs --full # 完整扫描
-```
-
-Windows 也可双击 **`竞品雷达.cmd`**。需要 `GH_TOKEN` 环境变量（GitHub token）获得更高 API 额度。
-
 ## 代理说明（国内用户）
 
 DuckDuckGo 等引擎可能需要代理才能访问，而 Node.js 的 `fetch` 默认不走系统代理。需要给 dsh 进程设置（Node 24+）：
