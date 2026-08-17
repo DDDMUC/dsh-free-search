@@ -5,7 +5,7 @@
 [English](./README.en.md) | 中文
 
 <p align="center">
-  <a href="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-free1.png">
+<a href="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-free1.png" target="_blank">
     <img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-free1.png" alt="免费引擎设置 (Bing)" width="620" />
   </a>
   <br>
