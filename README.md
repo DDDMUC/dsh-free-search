@@ -4,13 +4,13 @@
 
 [English](./README.en.md) | 中文
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-free1.png" width="100%" alt="免费引擎设置 (Bing)" />
-</p>
-
-<p align="center">
+<div align="center">
+  <a href="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-free1.png">
+    <img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-free1.png" alt="免费引擎设置 (Bing)" width="620" />
+  </a>
+  <br>
   <sub>▲ 免费引擎（以Bing为例）</sub>
-</p>
+</div>
 
 ## 为什么需要它
 
@@ -87,11 +87,24 @@ dsh web
 - **Search engine**：下拉框切换引擎，保存即生效
 - **API keys**：为 Exa / Perplexity / DeepSeek 填写 key（密码框，保存后只显示"已配置"）
 
-![免费引擎（以Bing为例）](https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-free.png)
-<p align="center"><sub>▲ 切换为免费引擎（显示绿色 FREE 徽章与官网链接）</sub></p>
-
-![付费/API Key 引擎](https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-apikey.png)
-<p align="center"><sub>▲ 切换为付费/API Key 引擎（显示橙色 API KEY 徽章与获取 Key 链接）</sub></p>
+<table align="center" style="border: none; border-collapse: collapse;">
+  <tr style="border: none;">
+    <td align="center" width="50%" style="border: none; padding: 6px;">
+      <a href="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-free.png">
+        <img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-free.png" alt="免费引擎设置" width="100%" />
+      </a>
+      <br>
+      <sub>▲ <b>免费引擎</b>（显示绿色 FREE 徽章与官网链接）</sub>
+    </td>
+    <td align="center" width="50%" style="border: none; padding: 6px;">
+      <a href="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-apikey.png">
+        <img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-apikey.png" alt="付费引擎设置" width="100%" />
+      </a>
+      <br>
+      <sub>▲ <b>付费/API Key 引擎</b>（显示橙色 API KEY 徽章与获取链接）</sub>
+    </td>
+  </tr>
+</table>
 
 
 ### 命令行 / 配置文件
