@@ -1,22 +1,20 @@
 # dsh-free-search
 
-**DeepSeek Harness 免费搜索插件 —— 无需 API key，零成本，多引擎可切换。**
-
-<div align="center">
-  <img src="./assets/settings-free1.png" alt="免费引擎设置 (Bing)" width="600" />
-  <br>
-  <sub>▲ 免费引擎设置界面（以 Bing 为例）</sub>
-  <br><br>
-  <details>
-    <summary>🔍 <b>展开查看 100% 原始大图</b></summary>
-    <br>
-    <img src="./assets/settings-free1.png" alt="设置详情完整大图" width="100%" />
-  </details>
-</div>
-
-一个给 DeepSeek Harness (dsh) 添加多引擎搜索 provider 的插件，注册进 `ctx.web` seam。内置 `web_search` 工具自动选用，支持网页设置页切换引擎、配置 API key、一键测试所有引擎。
+**DeepSeek Harness 免费搜索插件 —— 无需 API key，零成本，多引擎可切换。** 一个给 DeepSeek Harness (dsh) 添加多引擎搜索 provider 的插件，注册进 `ctx.web` seam。内置 `web_search` 工具自动选用，支持网页设置页切换引擎、配置 API key、一键测试所有引擎。
 
 [English](./README.en.md) | 中文
+
+<div align="center">
+  <details>
+    <summary style="list-style: none; cursor: zoom-in;">
+      <img src="./assets/settings-free1.png" alt="免费引擎设置 (Bing)" width="620" />
+    </summary>
+    <br>
+    <img src="./assets/settings-free1.png" alt="免费引擎设置 (Bing)" width="100%" />
+  </details>
+  <br>
+  <sub>▲ 免费引擎（以Bing为例）</sub>
+</div>
 
 ## 为什么需要它
 
