@@ -5,7 +5,7 @@
 [English](./README.en.md) | 中文
 
 <div align="center">
-  <a href="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-free1.png" target="_blank">
+  <a href="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-free1.png" target="_blank" rel="noopener noreferrer">
     <img src="./assets/settings-free1.png" alt="免费引擎设置 (Bing)" width="620" />
   </a>
   <br>
@@ -87,34 +87,24 @@ dsh web
 - **Search engine**：下拉框切换引擎，保存即生效
 - **API keys**：为 Exa / Perplexity / DeepSeek 填写 key（密码框，保存后只显示"已配置"）
 
-<table align="center" width="100%">
-  <tr>
-    <td align="center" width="50%" valign="top">
-      <img src="./assets/settings-free.png" alt="免费引擎设置" width="100%" />
+<table align="center" style="border: none; border-collapse: collapse;">
+  <tr style="border: none;">
+    <td align="center" width="50%" style="border: none; padding: 6px;">
+      <a href="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-free.png" target="_blank" rel="noopener noreferrer">
+        <img src="./assets/settings-free.png" alt="免费引擎设置" width="100%" />
+      </a>
       <br>
       <sub>▲ <b>免费引擎</b>（显示绿色 FREE 徽章与官网链接）</sub>
     </td>
-    <td align="center" width="50%" valign="top">
-      <img src="./assets/settings-apikey.png" alt="付费引擎设置" width="100%" />
+    <td align="center" width="50%" style="border: none; padding: 6px;">
+      <a href="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-apikey.png" target="_blank" rel="noopener noreferrer">
+        <img src="./assets/settings-apikey.png" alt="付费引擎设置" width="100%" />
+      </a>
       <br>
-      <sub>▲ <b>付费/Key 引擎</b>（显示橙色 API KEY 徽章与获取链接）</sub>
+      <sub>▲ <b>付费/API Key 引擎</b>（显示橙色 API KEY 徽章与获取链接）</sub>
     </td>
   </tr>
 </table>
-
-<div align="center">
-  <details>
-    <summary>🔍 <b>展开查看两张界面的 100% 原始大图</b></summary>
-    <br>
-    <p align="center">
-      <b>▼ 免费引擎设置详情：</b><br>
-      <img src="./assets/settings-free.png" alt="免费引擎大图" width="100%" />
-      <br><br>
-      <b>▼ 付费引擎设置详情：</b><br>
-      <img src="./assets/settings-apikey.png" alt="付费引擎大图" width="100%" />
-    </p>
-  </details>
-</div>
 
 
 ### 命令行 / 配置文件
