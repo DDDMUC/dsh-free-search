@@ -76,10 +76,17 @@ dsh web
 
 ### 网页设置（推荐）
 
-安装后，打开 **设置 → 插件 → 可配置** 标签页 → **Free Search** 卡片（官方设置页，无需 dsh-web-ui）：
+安装后，打开 **设置 → 插件 → 可配置** 标签页 → **Free Search** 卡片（官方设置页）：
 
 - **Search engine**：下拉框切换引擎，保存即生效
 - **API keys**：为 Exa / Perplexity / DeepSeek 填写 key（密码框，保存后只显示"已配置"）
+
+<p align="center">
+  <img src="./assets/settings-free.png" width="48%" alt="免费引擎设置 (Bing)" />
+  <img src="./assets/settings-apikey.png" width="48%" alt="付费引擎设置 (DeepSeek)" />
+</p>
+<p align="center"><em>（左：免费引擎带 FREE 徽章 | 右：付费引擎带 API KEY 徽章与获取链接）</em></p>
+
 
 ### 命令行 / 配置文件
 
@@ -130,7 +137,7 @@ Search engine test:
 
 ## 本地引擎切换工具（tools/）
 
-不想用网页设置页？`tools/` 目录附带了一个本地切换小工具（零依赖）：
+`tools/` 目录附带了一个本地切换小工具（零依赖）：
 
 - **`启动搜索引擎切换器.cmd`**（Windows）——双击启动本地 Node 服务（`http://127.0.0.1:4789`）并自动打开浏览器选择页面
 - **`switch-engine.html`** —— 选择页面：显示当前引擎，点选新引擎，一键写入配置
