@@ -5,13 +5,9 @@
 [English](./README.en.md) | 中文
 
 <div align="center">
-  <details>
-    <summary style="list-style: none; cursor: zoom-in;">
-      <img src="./assets/settings-free1.png" alt="免费引擎设置 (Bing)" width="620" />
-    </summary>
-    <br>
-    <img src="./assets/settings-free1.png" alt="免费引擎设置 (Bing)" width="100%" />
-  </details>
+  <a href="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-free1.png" target="_blank">
+    <img src="./assets/settings-free1.png" alt="免费引擎设置 (Bing)" width="620" />
+  </a>
   <br>
   <sub>▲ 免费引擎（以Bing为例）</sub>
 </div>
