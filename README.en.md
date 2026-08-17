@@ -86,6 +86,7 @@ After installation, navigate to **Settings → Plugins → Configurable** tab �
 
 - **Search engine**: Select an engine from the dropdown; changes take effect immediately upon saving.
 - **API keys**: Enter keys for Exa / Perplexity / DeepSeek (password fields; displayed as "configured" once saved).
+- **Use Bing default**: stage a switch back to the stable free Bing engine; `Discard` only cancels unsaved edits.
 
 <table align="center" style="border: none; border-collapse: collapse;">
   <tr style="border: none;">
