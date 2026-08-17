@@ -49,7 +49,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 | `deepseek-official` | DeepSeek 官方 | 付费 | 需 `DEEPSEEK_API_KEY` |
 
 - **默认引擎为 `bing`**（免费且最稳定），安装后开箱即用。
-- 免费引擎失败会自动回退到其他免费引擎；付费引擎缺 key 或 key 无效时报清晰错误，不会静默切换。
+- **自动回退**：任何引擎失败（免费引擎限流/反爬，付费引擎缺 key/无效/网络错误）都会自动回退到可用的免费引擎（Bing/AnySearch 等），并在结果中附带回退提示——搜索不会因引擎问题直接失败。
 - **设置页有官网链接**：免费引擎显示"访问官网 →"，付费引擎显示"获取 API Key →"（新标签页打开）：
   - Exa：<https://dashboard.exa.ai/api-keys>
   - Perplexity：<https://www.perplexity.ai/settings/api>
@@ -87,6 +87,7 @@ dsh web
 - **Search engine**：下拉框切换引擎，保存即生效
 - **API keys**：为 Exa / Perplexity / DeepSeek 填写 key（密码框，保存后只显示"已配置"）
 - **Use Bing default**：把当前搜索引擎切回稳定的免费 Bing；`Discard` 只撤销尚未保存的编辑
+- **Platform search**：勾选启用 GitHub / V2EX / Bilibili 平台搜索（`platform_search` 工具按此过滤）
 
 <table align="center" style="border: none; border-collapse: collapse;">
   <tr style="border: none;">
