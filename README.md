@@ -4,13 +4,13 @@
 
 [English](./README.en.md) | 中文
 
-<p align="center">
-<a href="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-free1.png" target="_blank">
-    <img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-free1.png" alt="免费引擎设置 (Bing)" width="620" />
-  </a>
-  <br>
-  <sub>▲ 免费引擎（以Bing为例）</sub>
-</p>
+<div align="center">
+
+![免费引擎设置 (Bing)](https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-free1.png)
+
+<sub>▲ 免费引擎（以Bing为例）</sub>
+
+</div>
 
 ## 为什么需要它
 
