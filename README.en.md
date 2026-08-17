@@ -1,62 +1,67 @@
 # dsh-free-search
 
-**Free web search provider for DeepSeek Harness — no API key required, multi-engine, zero cost.**
+**Free web search plugin for DeepSeek Harness — no API key required, zero cost, multi-engine switcher.** A plugin that adds multi-engine search providers to DeepSeek Harness (dsh), registered into the `ctx.web` seam. The built-in `web_search` tool picks it up automatically. Supports switching engines via the web settings UI, configuring API keys, and one-click testing of all search engines.
 
-A plugin that adds multi-engine search providers to DeepSeek Harness (dsh), registered into the `ctx.web` seam. The built-in `web_search` tool picks it up automatically. Includes a web settings page for engine switching and API key configuration, plus an engine test tool.
+English | [中文](./README.md)
 
-[中文](./README.md) | English
+<div align="center">
+  <a href="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-free1.png">
+    <img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-free1.png" alt="Free Engine Settings (Bing)" width="820" />
+  </a>
+  <br>
+  <sub>▲ Free engine (using Bing as an example)</sub>
+</div>
 
-## Why
+## Why You Need It
 
-dsh ships a DeepSeek-official search provider by default, which requires a valid `DEEPSEEK_API_KEY`. If you:
-- don't have (or don't want) a DeepSeek official API key,
-- already use a gateway like opencode-go (which does not expose a `web_search` tool),
+dsh's default search provider relies on the official DeepSeek API key (`DEEPSEEK_API_KEY`). If you:
+- Do not have (or prefer not to use) an official DeepSeek key,
+- Use a gateway like opencode-go (whose OpenAI-compatible endpoint does not support the `web_search` tool),
 
-...then the built-in search always fails and the agent tells you "I can't access the internet."
+...then the built-in search will inevitably fail, and the agent will tell you "I cannot access the internet."
 
-This plugin provides multiple free engines with automatic failover, fully independent of the DeepSeek official key.
+This plugin provides multiple free search engines with automatic fallback, completely freeing you from relying on DeepSeek's official key.
 
 ## Features
 
-- **Zero cost** — multiple free engines, no key, no registration
-- **Multi-engine**: DuckDuckGo (html/lite), Bing, SearXNG (meta-search, custom instances), Exa, Perplexity, DeepSeek Official
-- **Web settings UI** — engine switching + API key configuration (keys are redacted in the UI, shown as "configured")
-- **Engine test tool** — `free_search_test`, lets the agent verify every engine in one call
-- **Auto-failover** — free engines fall back to the next available one on failure/rate-limit
-- **System prompt injection** — the agent knows the current engine and which need keys
-- **FREE / API KEY badges** — green FREE badge for free engines, orange API KEY badge for paid ones
-- **Clean integration** — implements the official `WebSearchProvider` seam, coexists with official plugins
-- **web_fetch** — agent can fetch page content (official `dsh-web-fetch-http` provider, pure JS, zero extra deps)
-- **platform_search** — search GitHub / V2EX / Bilibili (public APIs, zero deps)
+- **Zero Cost** — Multiple free engines with no API key or registration required
+- **Multi-Engine Support** — DuckDuckGo (HTML / Lite), Bing, AnySearch AI, SearXNG (meta-search with custom instances), Exa, Perplexity, and DeepSeek Official
+- **Web Settings UI** — Engine switching and API key configuration (API keys are masked in the UI and displayed as "configured")
+- **Engine Testing Tool** — `free_search_test`, allowing the agent to test the availability of all engines in a single call
+- **Automatic Fallback** — Automatically falls back to the next available free engine if one fails or gets rate-limited
+- **System Prompt Injection** — The agent is aware of the currently active engine and which engines require API keys
+- **Visual Badges** — Free engines feature a green `FREE` badge, while paid engines show an orange `API KEY` badge in the settings UI
+- **Webpage Fetching (`web_fetch`)** — Allows the agent to read full webpage contents (official `dsh-web-fetch-http` provider, pure JS, zero extra dependencies)
+- **Platform Search (`platform_search`)** — Search GitHub / V2EX / Bilibili (public APIs, zero extra dependencies)
+- **Clean Integration** — Implements the official `WebSearchProvider` seam interface, coexisting seamlessly with official plugins
 
-## Engines
+## Supported Engines
 
-| id | Engine | Cost | Notes |
+| id | Engine | Cost | Description |
 |---|---|---|---|
-| `ddg` | DuckDuckGo HTML | Free | Occasionally rate-limited (anti-bot), recovers automatically |
-| `ddg-lite` | DuckDuckGo Lite | Free | Lightweight variant, same caveat |
-| `bing` | Bing | Free | **Default engine**, most stable, zh-CN optimized |
-| `anysearch` | AnySearch AI | Free | AI search, no key (anonymous quota) |
-| `searxng` | SearXNG meta-search | Free | Multi-instance failover, custom instances supported |
-| `exa` | Exa | Free | **Works keyless** (anonymous MCP), add key for higher limits |
+| `ddg` | DuckDuckGo HTML | Free | Occasional rate limits (anti-bot challenges); recovers automatically |
+| `ddg-lite` | DuckDuckGo Lite | Free | Lightweight version; same rate-limit behavior as above |
+| `bing` | Bing | Free | **Default engine**, most stable, optimized for Chinese (`zh-CN`) |
+| `anysearch` | AnySearch AI | Free | AI search, no key needed (anonymous quota) |
+| `searxng` | SearXNG Meta Search | Free | Multi-instance automatic failover; supports custom instances |
+| `exa` | Exa | Free | **Usable without a key** (anonymous MCP); configure a key for higher quota |
 | `perplexity` | Perplexity | Paid | Requires `PERPLEXITY_API_KEY` |
 | `deepseek-official` | DeepSeek Official | Paid | Requires `DEEPSEEK_API_KEY` |
 
-Free engines auto-fallback to another free engine on failure. Paid engines fail with a clear error when their key is missing or invalid — never a silent switch.
-
-- **Default engine is `bing`** (free and most stable), works out of the box after install.
-- **Settings page has official links**: free engines show "访问官网 →", paid engines show "获取 API Key →" (opens in a new tab):
+- **Default engine is `bing`** (free and most stable), ready to use out of the box after installation.
+- Free engines automatically fall back to other free engines upon failure. Paid engines report clear error messages when keys are missing or invalid, avoiding silent fallbacks.
+- **Official Links in Settings**: Free engines display "Visit Website →", while paid engines display "Get API Key →" (opens in a new tab):
   - Exa: <https://dashboard.exa.ai/api-keys>
   - Perplexity: <https://www.perplexity.ai/settings/api>
   - DeepSeek: <https://platform.deepseek.com/api_keys>
 
 ### Why is AnySearch free?
 
-AnySearch (anysearch.com) is an AI search gateway that offers **anonymous public search quota** — its `v1/search` REST endpoint can be called directly without registration or an API key. The quota is rate-limited (fine for everyday use), but as one of several free engines with mutual failover, the experience stays reliable.
+AnySearch (anysearch.com) is an AI search gateway that provides **anonymous public search quota** — it can be called directly via its `v1/search` REST endpoint without registration or an API key. Quotas are rate-limited (suitable for daily queries), but as one of the free engines with mutual fallback, it offers a reliable experience.
 
-Exa works the same way: its public MCP endpoint (`mcp.exa.ai/mcp`) supports anonymous calls, so it works without a key; setting `EXA_API_KEY` unlocks higher limits.
+The same applies to Exa: its public MCP endpoint (`mcp.exa.ai/mcp`) supports anonymous requests, allowing it to work without an API key. Configuring `EXA_API_KEY` grants a higher usage quota.
 
-## Install
+## Installation
 
 ```sh
 git clone https://github.com/DDDMUC/dsh-free-search.git
@@ -69,38 +74,57 @@ Then restart:
 dsh web
 ```
 
-### Dependency note
+### Dependency Note
 
-`@deepseek-ai/dsh-settings` and `@deepseek-ai/dsh-tools` are intentional `peerDependencies`: the DSH runtime must use one installation-tree instance. Install this plugin through `dsh plugin --profile <profile> add ...`; do not copy DSH core packages into a profile-local `node_modules`, because duplicate copies can split the tool scheduler and break every tool call.
+This plugin intentionally specifies `@deepseek-ai/dsh-settings` and `@deepseek-ai/dsh-tools` as `peerDependencies`: the DSH runtime must use a single instance from the installation tree. Always install the plugin using `dsh plugin --profile <profile> add ...`. Do **not** copy DSH core packages into a profile-local `node_modules`, as duplicate copies can break the tool scheduler.
 
 ## Usage
 
-### Web settings (recommended)
+### Web Settings (Recommended)
 
-After install, open **Settings → Plugins → Configurable** tab → **Free Search** card (official settings page, no dsh-web-ui needed):
+After installation, navigate to **Settings → Plugins → Configurable** tab → **Free Search** card (the official settings page):
 
-- **Search engine**: dropdown to switch engines, save to apply
-- **API keys**: fill keys for Exa / Perplexity / DeepSeek (password inputs; after save the UI only shows "configured")
+- **Search engine**: Select an engine from the dropdown; changes take effect immediately upon saving.
+- **API keys**: Enter keys for Exa / Perplexity / DeepSeek (password fields; displayed as "configured" once saved).
 
-### Config file
+<table align="center" style="border: none; border-collapse: collapse;">
+  <tr style="border: none;">
+    <td align="center" width="50%" style="border: none; padding: 6px;">
+      <a href="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-free.png">
+        <img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-free.png" alt="Free Engine Settings" width="100%" />
+      </a>
+      <br>
+      <sub>▲ <b>Free Engine</b> (shows green FREE badge and official website link)</sub>
+    </td>
+    <td align="center" width="50%" style="border: none; padding: 6px;">
+      <a href="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-apikey.png">
+        <img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/settings-apikey.png" alt="Paid/API Key Engine Settings" width="100%" />
+      </a>
+      <br>
+      <sub>▲ <b>Paid / API Key Engine</b> (shows orange API KEY badge and link to get an API key)</sub>
+    </td>
+  </tr>
+</table>
 
-Configuration lives in `~/.dsh/settings.yaml`:
+### Configuration File / CLI
+
+Configuration is stored in `~/.dsh/settings.yaml`:
 
 ```yaml
 free-search:
   provider: bing              # ddg / ddg-lite / bing / searxng / exa / perplexity / deepseek-official
   bingMarket: zh-CN           # Bing market
   region: cn-zh               # DuckDuckGo region (optional)
-  searxngInstances:           # custom SearXNG instances (optional)
+  searxngInstances:           # Custom SearXNG instances (optional)
     - https://your-instance.example
-  exaApiKey: ...              # or configure via the settings page
+  exaApiKey: ...              # Or configure via the web settings UI
   perplexityApiKey: ...
   deepseekApiKey: ...
 ```
 
-### Have the agent test all engines
+### Asking the Agent to Test All Engines
 
-Ask the agent to "test all search engines" — it calls the `free_search_test` tool and reports:
+Tell the agent *"Test all search engines"*, and it will call the `free_search_test` tool to check each engine sequentially and report back:
 
 ```
 Search engine test:
@@ -109,54 +133,56 @@ Search engine test:
 - exa: FAIL - EXA_API_KEY not configured
 ```
 
-### Fetch page content (web_fetch)
+### Fetch Webpage Content (`web_fetch`)
 
-After search, ask the agent to **read a page** (e.g. "open the first link and summarize it"). The `web_fetch` tool is enabled (official `dsh-web-fetch-http` provider):
+After searching, the agent can **read full webpage content** (e.g., *"Open the first link and summarize it"*). The `web_fetch` tool is enabled by default (official `dsh-web-fetch-http` provider):
 
-- Follows redirects, decodes body (HTML to text)
-- Timeout and size limits
-- ⚠️ Note: `web_fetch` has no SSRF protection — the agent could reach internal addresses. Use deliberately.
+- Automatically follows redirects and decodes HTML to plain text.
+- Supports timeout and response size limits.
+- ⚠️ Note: `web_fetch` does not have SSRF protection; the agent could theoretically access internal network addresses. Use as needed.
 
-### Platform search (platform_search)
+### Platform Search (`platform_search`)
 
-Ask the agent to search a specific platform, e.g. "search GitHub for deepseek harness", "find Bilibili videos about this", "V2EX threads about dsh". The `platform_search` tool supports:
+Ask the agent to search specific platforms (e.g., *"Search GitHub for deepseek harness"*, *"Find related videos on Bilibili"*, or *"Discussions about dsh on V2EX"*). The `platform_search` tool supports:
 
 | Platform | Purpose |
 |---|---|
-| `github` | GitHub repository search (public API, free, no key) |
-| `v2ex` | V2EX hot/relevant topics |
-| `bilibili` | Bilibili video/content search (public endpoint) |
+| `github` | GitHub repository search (public API, free, no key required) |
+| `v2ex` | V2EX hot / relevant topics |
+| `bilibili` | Bilibili video / content search (public API) |
 
-All use public APIs with zero external dependencies — works out of the box.
+All platform searches rely on public endpoints with zero external dependencies and work out of the box.
 
-## Local engine switcher (tools/)
+## Local Engine Switcher (`tools/`)
 
-Prefer a local tool over the web UI? The `tools/` directory ships a zero-dependency switcher:
+The `tools/` directory includes a lightweight, zero-dependency switcher:
 
-- **`启动搜索引擎切换器.cmd`** (Windows) — double-click to start a local Node server (`http://127.0.0.1:4789`) and open the picker page in your browser
-- **`switch-engine.html`** — the picker UI: shows the current engine, one-click switch
-- **`server.mjs`** — local server that reads/writes `~/.dsh/profiles/web/cordis.patch.yml`
-- **`switch-engine.ps1`** — headless CLI: `powershell -File tools/switch-engine.ps1 -Engine bing`
+- **`启动搜索引擎切换器.cmd`** (Windows) — Double-click to launch a local Node server (`http://127.0.0.1:4789`) and automatically open the engine selector page in your browser.
+- **`switch-engine.html`** — The selector UI: displays current engine status and allows one-click switching.
+- **`server.mjs`** — The local backend service responsible for reading/writing `~/.dsh/profiles/web/cordis.patch.yml`.
+- **`switch-engine.ps1`** — Headless PowerShell script: `powershell -File tools/switch-engine.ps1 -Engine bing`.
 
-Restart `dsh web` after switching.
+Restart `dsh web` after switching to apply changes.
 
-> The settings card mounts on the official `settings.plugin.item` slot (built into dsh); config reads/writes go through the plugin's own bridge. **No dsh-web-ui dependency — the plugin works standalone.**
+> The settings card mounts into the official `settings.plugin.item` slot (built into DSH), and configuration reads/writes go through the plugin's own bridge. **No `dsh-web-ui` dependency — the plugin can be used standalone.**
 
-## Proxy note
+## Proxy Note (for Users in Mainland China)
 
-DuckDuckGo and some engines may be blocked and need a proxy. Node.js `fetch` does not use the system proxy by default — set these environment variables for the dsh process (Node 24+):
+Engines like DuckDuckGo may require a proxy. Since Node.js `fetch` does not use the system proxy by default, set the following environment variables for the dsh process (Node 24+):
 
 ```sh
 export NODE_USE_ENV_PROXY=1
-export HTTPS_PROXY=http://127.0.0.1:7897   # your proxy
+export HTTPS_PROXY=http://127.0.0.1:7897   # Your proxy address
 export HTTP_PROXY=http://127.0.0.1:7897
 ```
 
-## How it works
+Windows users: The desktop shortcut already includes this configuration (`set NODE_USE_ENV_PROXY=1&& set HTTPS_PROXY=...`).
 
-- `lib/index.js`: host side. Implements `WebSearchProvider` (`id` / `available()` / `search()`), multi-engine routing + auto-failover; registers the `free-search` settings namespace; serves the `/api/dsh-free-search-settings` read/write bridge; registers the `free_search_test` tool; injects the engine list into the system prompt.
-- `lib/client.js`: browser side. React settings card (engine select + key inputs), mounted on the official `settings.plugin.item` slot (Settings → Plugins → Configurable), no dsh-web-ui dependency.
-- `cordis.patch.yml`: plugin loader config.
+## How It Works
+
+- `lib/index.js`: Host side. Implements `WebSearchProvider` (`id` / `available()` / `search()`), multi-engine routing + auto-fallback; registers the `free-search` settings namespace; provides the `/api/dsh-free-search-settings` read/write bridge; registers the `free_search_test` tool; injects the engine list into system prompts.
+- `lib/client.js`: Browser side. React configuration card (engine select + key inputs), mounted into the official `settings.plugin.item` slot (Settings → Plugins → Configurable), without requiring `dsh-web-ui`.
+- `cordis.patch.yml`: Plugin loader configuration.
 
 ## License
 
