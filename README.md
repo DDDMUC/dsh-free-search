@@ -2,6 +2,9 @@
 
 **DeepSeek Harness 免费搜索插件 —— 无需 API key，零成本，多引擎可切换。**
 
+![免费引擎设置 (Bing)](./assets/settings-free.png)
+*▲ 免费引擎（以Bing为例）*
+
 一个给 DeepSeek Harness (dsh) 添加多引擎搜索 provider 的插件，注册进 `ctx.web` seam。内置 `web_search` 工具自动选用，支持网页设置页切换引擎、配置 API key、一键测试所有引擎。
 
 [English](./README.en.md) | 中文
@@ -81,11 +84,11 @@ dsh web
 - **Search engine**：下拉框切换引擎，保存即生效
 - **API keys**：为 Exa / Perplexity / DeepSeek 填写 key（密码框，保存后只显示"已配置"）
 
-<p align="center">
-  <img src="./assets/settings-free.png" width="48%" alt="免费引擎设置 (Bing)" />
-  <img src="./assets/settings-apikey.png" width="48%" alt="付费引擎设置 (DeepSeek)" />
-</p>
-<p align="center"><em>（左：免费引擎带 FREE 徽章 | 右：付费引擎带 API KEY 徽章与获取链接）</em></p>
+![免费引擎设置 (Bing)](./assets/settings-free.png)
+*▲ 切换为免费引擎（显示绿色 FREE 徽章与官网链接）*
+
+![付费引擎设置 (DeepSeek)](./assets/settings-apikey.png)
+*▲ 切换为付费/API Key 引擎（显示橙色 API KEY 徽章与获取 Key 链接）*
 
 
 ### 命令行 / 配置文件
