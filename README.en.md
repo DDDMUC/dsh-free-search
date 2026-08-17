@@ -49,7 +49,7 @@ This plugin provides multiple free search engines with automatic fallback, compl
 | `deepseek-official` | DeepSeek Official | Paid | Requires `DEEPSEEK_API_KEY` |
 
 - **Default engine is `bing`** (free and most stable), ready to use out of the box after installation.
-- Free engines automatically fall back to other free engines upon failure. Paid engines report clear error messages when keys are missing or invalid, avoiding silent fallbacks.
+- **Auto-failover**: any engine failure (rate-limited free engine, or missing/invalid paid key, network error) automatically falls back to a working free engine (Bing/AnySearch etc.) with a note attached to the results — a search never fails outright because of engine issues.
 - **Official Links in Settings**: Free engines display "Visit Website →", while paid engines display "Get API Key →" (opens in a new tab):
   - Exa: <https://dashboard.exa.ai/api-keys>
   - Perplexity: <https://www.perplexity.ai/settings/api>
@@ -86,7 +86,8 @@ After installation, navigate to **Settings → Plugins → Configurable** tab �
 
 - **Search engine**: Select an engine from the dropdown; changes take effect immediately upon saving.
 - **API keys**: Enter keys for Exa / Perplexity / DeepSeek (password fields; displayed as "configured" once saved).
-- **Use Bing default**: stage a switch back to the stable free Bing engine; `Discard` only cancels unsaved edits.
+- **Use Bing default**: stage a switch back to the stable free Bing engine; `Discard` only cancels unsaved edits
+- **Platform search**: check GitHub / V2EX / Bilibili to enable them for the `platform_search` tool (disabled platforms are skipped).
 
 <table align="center" style="border: none; border-collapse: collapse;">
   <tr style="border: none;">
