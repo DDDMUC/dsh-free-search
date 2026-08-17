@@ -68,6 +68,10 @@ dsh plugin --profile web add /path/to/dsh-free-search
 dsh web
 ```
 
+### 依赖说明
+
+插件对 `@deepseek-ai/dsh-settings` 和 `@deepseek-ai/dsh-tools` 使用 `peerDependencies`，这是刻意的：DSH 运行时必须使用安装树中的唯一实例。请通过 `dsh plugin --profile <profile> add ...` 安装插件，不要把 DSH 核心包复制进 profile 的本地 `node_modules`；重复副本会导致工具调度器失效。
+
 ## 使用
 
 ### 网页设置（推荐）

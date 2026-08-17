@@ -69,6 +69,10 @@ Then restart:
 dsh web
 ```
 
+### Dependency note
+
+`@deepseek-ai/dsh-settings` and `@deepseek-ai/dsh-tools` are intentional `peerDependencies`: the DSH runtime must use one installation-tree instance. Install this plugin through `dsh plugin --profile <profile> add ...`; do not copy DSH core packages into a profile-local `node_modules`, because duplicate copies can split the tool scheduler and break every tool call.
+
 ## Usage
 
 ### Web settings (recommended)
