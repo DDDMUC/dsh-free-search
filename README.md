@@ -3,9 +3,15 @@
 **DeepSeek Harness 免费搜索插件 —— 无需 API key，零成本，多引擎可切换。**
 
 <div align="center">
-  <img src="./assets/settings-free1.png" alt="免费引擎设置 (Bing)" width="620" />
+  <img src="./assets/settings-free1.png" alt="免费引擎设置 (Bing)" width="600" />
   <br>
   <sub>▲ 免费引擎设置界面（以 Bing 为例）</sub>
+  <br><br>
+  <details>
+    <summary>🔍 <b>展开查看 100% 原始大图</b></summary>
+    <br>
+    <img src="./assets/settings-free1.png" alt="设置详情完整大图" width="100%" />
+  </details>
 </div>
 
 一个给 DeepSeek Harness (dsh) 添加多引擎搜索 provider 的插件，注册进 `ctx.web` seam。内置 `web_search` 工具自动选用，支持网页设置页切换引擎、配置 API key、一键测试所有引擎。
@@ -87,20 +93,34 @@ dsh web
 - **Search engine**：下拉框切换引擎，保存即生效
 - **API keys**：为 Exa / Perplexity / DeepSeek 填写 key（密码框，保存后只显示"已配置"）
 
-<table align="center" style="border: none; border-collapse: collapse;">
-  <tr style="border: none;">
-    <td align="center" width="50%" style="border: none; padding: 10px;">
+<table align="center" width="100%">
+  <tr>
+    <td align="center" width="50%" valign="top">
       <img src="./assets/settings-free.png" alt="免费引擎设置" width="100%" />
       <br>
       <sub>▲ <b>免费引擎</b>（显示绿色 FREE 徽章与官网链接）</sub>
     </td>
-    <td align="center" width="50%" style="border: none; padding: 10px;">
+    <td align="center" width="50%" valign="top">
       <img src="./assets/settings-apikey.png" alt="付费引擎设置" width="100%" />
       <br>
       <sub>▲ <b>付费/Key 引擎</b>（显示橙色 API KEY 徽章与获取链接）</sub>
     </td>
   </tr>
 </table>
+
+<div align="center">
+  <details>
+    <summary>🔍 <b>展开查看两张界面的 100% 原始大图</b></summary>
+    <br>
+    <p align="center">
+      <b>▼ 免费引擎设置详情：</b><br>
+      <img src="./assets/settings-free.png" alt="免费引擎大图" width="100%" />
+      <br><br>
+      <b>▼ 付费引擎设置详情：</b><br>
+      <img src="./assets/settings-apikey.png" alt="付费引擎大图" width="100%" />
+    </p>
+  </details>
+</div>
 
 
 ### 命令行 / 配置文件
