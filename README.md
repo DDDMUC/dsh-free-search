@@ -86,6 +86,7 @@ dsh web
 
 - **Search engine**：下拉框切换引擎，保存即生效
 - **API keys**：为 Exa / Perplexity / DeepSeek 填写 key（密码框，保存后只显示"已配置"）
+- **Use Bing default**：把当前搜索引擎切回稳定的免费 Bing；`Discard` 只撤销尚未保存的编辑
 
 <table align="center" style="border: none; border-collapse: collapse;">
   <tr style="border: none;">
