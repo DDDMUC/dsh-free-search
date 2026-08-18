@@ -7,17 +7,17 @@ set "NODE_USE_ENV_PROXY=1"
 set "HTTPS_PROXY=http://127.0.0.1:7897"
 set "HTTP_PROXY=http://127.0.0.1:7897"
 
-rem 若服务已在运行，直接打开浏览器
+rem If already running, just open the browser
 netstat -an | findstr /r /c:":3080 .*LISTENING" >nul 2>&1
 if not errorlevel 1 (
     start "" "http://127.0.0.1:3080"
     exit /b 0
 )
 
-rem 延迟一点再自动打开浏览器（等服务起来）
+rem Open browser after a short delay (wait for server to start)
 start "" /b cmd /c "timeout /t 4 /nobreak >nul & start "" http://127.0.0.1:3080"
 
-rem 前台运行 dsh web（关掉此窗口即停止服务）
+rem Run dsh web in foreground (close this window to stop)
 dsh web
 
 endlocal

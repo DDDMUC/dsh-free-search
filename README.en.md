@@ -28,7 +28,7 @@ This plugin provides multiple free search engines with automatic fallback, compl
 - **Multi-Engine Support** — DuckDuckGo (HTML / Lite), Bing, AnySearch AI, SearXNG (meta-search with custom instances), Exa, Perplexity, and DeepSeek Official
 - **Web Settings UI** — Engine switching and API key configuration (API keys are masked in the UI and displayed as "configured")
 - **Engine Testing Tool** — `free_search_test`, allowing the agent to test the availability of all engines in a single call
-- **Automatic Fallback** — Automatically falls back to the next available free engine if one fails or gets rate-limited
+- **Unified Engine Fallback** — Any engine failure (paid or free, missing key, 401, rate limit, network error) automatically tries the next engine: other paid engines with configured keys first, then free engines. Search never fails outright.
 - **System Prompt Injection** — The agent is aware of the currently active engine and which engines require API keys
 - **Visual Badges** — Free engines feature a green `FREE` badge, while paid engines show an orange `API KEY` badge in the settings UI
 - **Webpage Fetching (`web_fetch`)** — Allows the agent to read full webpage contents (official `dsh-web-fetch-http` provider, pure JS, zero extra dependencies)
@@ -49,7 +49,7 @@ This plugin provides multiple free search engines with automatic fallback, compl
 | `deepseek-official` | DeepSeek Official | Paid | Requires `DEEPSEEK_API_KEY` |
 
 - **Default engine is `bing`** (free and most stable), ready to use out of the box after installation.
-- **Auto-failover**: any engine failure (rate-limited free engine, or missing/invalid paid key, network error) automatically falls back to a working free engine (Bing/AnySearch etc.) with a note attached to the results — a search never fails outright because of engine issues.
+- **Auto-failover**: any engine failure (rate-limited free engine, or missing/invalid paid key, network error) automatically tries the next engine — other paid engines with configured keys first, then free engines (Bing/AnySearch etc.) — with a note attached to the results. Search never fails outright because of engine issues.
 - **Official Links in Settings**: Free engines display "Visit Website →", while paid engines display "Get API Key →" (opens in a new tab):
   - Exa: <https://dashboard.exa.ai/api-keys>
   - Perplexity: <https://www.perplexity.ai/settings/api>
@@ -182,7 +182,7 @@ Windows users: The desktop shortcut already includes this configuration (`set NO
 
 ## How It Works
 
-- `lib/index.js`: Host side. Implements `WebSearchProvider` (`id` / `available()` / `search()`), multi-engine routing + auto-fallback; registers the `free-search` settings namespace; provides the `/api/dsh-free-search-settings` read/write bridge; registers the `free_search_test` tool; injects the engine list into system prompts.
+- `lib/index.js`: Host side. Implements `WebSearchProvider` (`id` / `available()` / `search()`), unified engine routing + auto-fallback (paid engines first, free as fallback); registers the `free-search` settings namespace; provides the `/api/dsh-free-search-settings` read/write bridge + `raw-search` debug endpoint; registers the `free_search_test` and `platform_search` tools; dynamically injects the engine list into system prompts (auto-refreshes on settings change).
 - `lib/client.js`: Browser side. React configuration card (engine select + key inputs), mounted into the official `settings.plugin.item` slot (Settings → Plugins → Configurable), without requiring `dsh-web-ui`.
 - `cordis.patch.yml`: Plugin loader configuration.
 
