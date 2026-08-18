@@ -1,6 +1,6 @@
 {
   "name": "dsh-free-search",
-  "version": "0.4.5",
+  "version": "0.4.6",
   "description": "Free web search for DeepSeek Harness: 8 engines (Bing/DuckDuckGo/AnySearch/SearXNG/Exa keyless) + platform search + web_fetch, with web settings UI.",
   "type": "module",
   "main": "lib/index.js",
@@ -41,12 +41,12 @@
     "@deepseek-ai/schemastery": "^3.18.1"
   },
   "peerDependencies": {
-    "@deepseek-ai/dsh-settings": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-tools": "^0.1.0-rc.6"
+    "@deepseek-ai/dsh-settings": ">=0.1.0-rc.6",
+    "@deepseek-ai/dsh-tools": ">=0.1.0-rc.6"
   },
   "devDependencies": {
-    "@deepseek-ai/dsh-settings": "0.1.0-rc.6",
-    "@deepseek-ai/dsh-tools": "0.1.0-rc.6"
+    "@deepseek-ai/dsh-settings": "0.1.0-rc.7",
+    "@deepseek-ai/dsh-tools": "0.1.0-rc.7"
   },
   "dsh": {
     "bundle": {

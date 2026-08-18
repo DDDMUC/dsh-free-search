@@ -28,7 +28,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 - **多引擎可选**：DuckDuckGo（html/lite）、Bing、SearXNG（元搜索，支持自定义实例）、Exa、Perplexity、DeepSeek 官方
 - **网页设置页** —— 引擎切换 + API key 配置（UI 中 key 脱敏显示"已配置"）
 - **引擎测试工具** —— `free_search_test`，让 agent 一键测试所有引擎可用性
-- **自动回退** —— 免费引擎失败/限流时自动切换到下一个可用引擎
+- **统一引擎回退** —— 任何引擎失败（付费/免费，缺 key/401/限流/网络）自动轮流尝试下一个引擎：先试其他已配 key 的付费引擎，再试免费引擎，搜索永不直接失败
 - **系统提示词注入** —— agent 知道当前用哪个引擎、哪些需要 key
 - **免费标注** —— 设置页中免费引擎带绿色 `FREE` 徽章，付费引擎带橙色 `API KEY` 徽章
 - **网页抓取（web_fetch）** —— 让 agent 抓取网页内容（官方 `dsh-web-fetch-http` provider，纯 JS，零额外依赖）
@@ -49,7 +49,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 | `deepseek-official` | DeepSeek 官方 | 付费 | 需 `DEEPSEEK_API_KEY` |
 
 - **默认引擎为 `bing`**（免费且最稳定），安装后开箱即用。
-- **自动回退**：任何引擎失败（免费引擎限流/反爬，付费引擎缺 key/无效/网络错误）都会自动回退到可用的免费引擎（Bing/AnySearch 等），并在结果中附带回退提示——搜索不会因引擎问题直接失败。
+- **自动回退**：任何引擎失败（免费限流/反爬，付费缺 key/无效/网络错误）都会自动轮流尝试下一个引擎——先试其他已配 key 的付费引擎，再试免费引擎（Bing/AnySearch 等），并在结果中附带回退提示——搜索不会因引擎问题直接失败。
 - **设置页有官网链接**：免费引擎显示"访问官网 →"，付费引擎显示"获取 API Key →"（新标签页打开）：
   - Exa：<https://dashboard.exa.ai/api-keys>
   - Perplexity：<https://www.perplexity.ai/settings/api>
@@ -183,7 +183,7 @@ Windows 用户：桌面快捷方式已内置此配置（`set NODE_USE_ENV_PROXY=
 
 ## 工作原理
 
-- `lib/index.js`：host 端。实现 `WebSearchProvider`（`id` / `available()` / `search()`），多引擎路由 + 自动回退；注册 `free-search` settings namespace；提供 `/api/dsh-free-search-settings` 读写桥；注册 `free_search_test` 工具；注入引擎清单到系统提示词。
+- `lib/index.js`：host 端。实现 `WebSearchProvider`（`id` / `available()` / `search()`），统一引擎路由 + 自动回退（付费引擎优先，免费兜底）；注册 `free-search` settings namespace；提供 `/api/dsh-free-search-settings` 读写桥 + `raw-search` 调试接口；注册 `free_search_test` 和 `platform_search` 工具；动态注入引擎清单到系统提示词（设置变更时自动刷新）。
 - `lib/client.js`：浏览器端。React 配置卡片（引擎选择 + key 输入），挂载到官方设置页的 `settings.plugin.item` 插槽（设置 → 插件 → 可配置），不依赖 dsh-web-ui。
 - `cordis.patch.yml`：插件 loader 配置。
 
