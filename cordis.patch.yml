@@ -15,3 +15,7 @@
       config:
         provider: bing
         bingMarket: zh-CN
+# 自动接管默认搜索：让 harness 的 web_search 直接用本插件的 provider（内部含全部引擎）
+- id: web
+  config:
+    searchProvider: ddg
