@@ -36,11 +36,11 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 - **统一引擎回退** —— 任何引擎失败（付费/免费，缺 key/401/限流/网络）自动轮流尝试下一个引擎：首选引擎 → 其他引擎（exa/tavily/keenable 无 key 也会尝试，因为它们自带 keyless 免费额度）→ 剩余免费引擎，搜索永不直接失败；结果顶部注明实际生效的引擎（如 `Note: perplexity unavailable or failed, using exa.`）
 - **时间过滤** —— `advanced_search` 工具支持 `timeRange`：固定档、自定义相对值、绝对日期三种形式（详见下方逻辑说明）
 - **系统提示词注入** —— agent 知道当前用哪个引擎、哪些需要 key
-- **版本号 + 检查更新** —— 设置卡片显示当前版本（v0.4.11），"检查更新"按钮直连 npm registry 对比最新版，有新版本时提示并可一键跳转
+- **版本号 + 检查更新** —— 设置卡片显示当前版本（v0.4.12），"检查更新"按钮直连 npm registry 对比最新版，有新版本时提示并可一键跳转
 - **结果缓存** —— 相同查询（含引擎/时间过滤参数）5 分钟内命中缓存（LRU 50 条），防免费引擎限流、省付费额度；时长可在设置页 0-5 分钟自由配置（0 关闭）
 - **免费标注** —— 设置页中免费引擎带绿色 `FREE` 徽章，付费引擎带橙色 `API KEY` 徽章
 - **网页抓取（web_fetch）** —— 让 agent 抓取网页内容（官方 `dsh-web-fetch-http` provider，纯 JS，零额外依赖）
-- **平台搜索（platform_search）** —— 搜 GitHub / V2EX / B站（公开 API，零依赖）
+- **平台搜索（platform_search）** —— 搜 GitHub / V2EX / B站 / Reddit / Hacker News / Stack Overflow / 维基百科 / npm（公开 API，零依赖）
 - **干净集成** —— 实现官方 `WebSearchProvider` seam 接口，与官方插件共存
 
 ### 引擎列表
@@ -205,8 +205,13 @@ Search engine test:
 | `github` | GitHub 仓库搜索（API，免费无 key） |
 | `v2ex` | V2EX 热门/相关主题 |
 | `bilibili` | B站视频/内容搜索（公开接口） |
+| `reddit` | Reddit 帖子/讨论搜索（公开 JSON API；部分网络环境可能被 Reddit 反爬拦截） |
+| `hn` | Hacker News 技术社区讨论（Algolia 官方 API） |
+| `stackoverflow` | Stack Overflow 技术问答（Stack Exchange 官方公开 API） |
+| `wikipedia` | 维基百科词条（中文环境用 zh.wikipedia.org，`lang: en` 时切换 en.wikipedia.org） |
+| `npm` | npm 包搜索（registry 官方 API） |
 
-全部走公开 API，零外部依赖，开箱即用。
+全部走公开 API，零外部依赖、无需任何 key，开箱即用。
 
 ### 本地引擎切换工具（tools/）
 
@@ -271,11 +276,11 @@ This plugin provides multiple free search engines with automatic fallback, compl
 - **Unified Engine Fallback** — Any engine failure (paid or free, missing key, 401, rate limit, network error) automatically tries the next engine: the configured engine first, then other engines (exa/tavily/keenable are tried even without a key because they have built-in keyless quota), then the remaining free engines (Bing/AnySearch etc.) — with a note attached to the results naming the engine that actually served them (e.g. `Note: perplexity unavailable or failed, using exa.`). Search never fails outright.
 - **Time Filtering** — The `advanced_search` tool supports `timeRange`: fixed tiers, custom relative values, or an absolute date (details below)
 - **System Prompt Injection** — The agent is aware of the currently active engine and which engines require API keys
-- **Version + Update Check** — The settings card shows the current version (v0.4.11), and a "Check update" button queries the npm registry to compare against the latest release, prompting a one-click jump when a newer version exists
+- **Version + Update Check** — The settings card shows the current version (v0.4.12), and a "Check update" button queries the npm registry to compare against the latest release, prompting a one-click jump when a newer version exists
 - **Result Caching** — Identical queries (same engine / time-filter args) hit an LRU cache (50 entries) for up to 5 minutes, protecting free engines from rate-limiting and saving paid quota; the TTL is configurable from 0-5 minutes in the settings UI (0 disables caching)
 - **Visual Badges** — Free engines feature a green `FREE` badge, while paid engines show an orange `API KEY` badge in the settings UI
 - **Webpage Fetching (`web_fetch`)** — Allows the agent to read full webpage contents (official `dsh-web-fetch-http` provider, pure JS, zero extra dependencies)
-- **Platform Search (`platform_search`)** — Search GitHub / V2EX / Bilibili (public APIs, zero extra dependencies)
+- **Platform Search (`platform_search`)** — Search GitHub / V2EX / Bilibili / Reddit / Hacker News / Stack Overflow / Wikipedia / npm (public APIs, zero extra dependencies)
 - **Clean Integration** — Implements the official `WebSearchProvider` seam interface, coexisting seamlessly with official plugins
 
 ### Supported Engines
@@ -336,7 +341,7 @@ After installation, navigate to **Settings → Plugins → Configurable** tab �
 - **API keys**: Enter keys for Exa / Tavily / Keenable / Perplexity / DeepSeek (password fields; displayed as "configured" once saved).
 - **Test engine**: Tests the selected engine directly (no fallback chain; paid engines without a key report an explicit error).
 - **Use Bing default**: stage a switch back to the stable free Bing engine; `Discard` only cancels unsaved edits
-- **Platform search**: check GitHub / V2EX / Bilibili to enable them for the `platform_search` tool (disabled platforms are skipped).
+- **Platform search**: check platforms (GitHub / V2EX / Bilibili / Reddit / HN / Stack Overflow / Wikipedia / npm) to enable them for the `platform_search` tool (disabled platforms are skipped).
 - **EN / 中文**: toggle the interface language (default Chinese).
 
 <table align="center" style="border: none; border-collapse: collapse;">
@@ -440,8 +445,13 @@ Ask the agent to search specific platforms (e.g., *"Search GitHub for deepseek h
 | `github` | GitHub repository search (public API, free, no key required) |
 | `v2ex` | V2EX hot / relevant topics |
 | `bilibili` | Bilibili video / content search (public API) |
+| `reddit` | Reddit posts / discussions (public JSON API; may be blocked by Reddit anti-bot in some network environments) |
+| `hn` | Hacker News tech community discussions (official Algolia API) |
+| `stackoverflow` | Stack Overflow Q&A (official public Stack Exchange API) |
+| `wikipedia` | Wikipedia articles (zh.wikipedia.org for Chinese; switches to en.wikipedia.org when `lang: en`) |
+| `npm` | npm package search (registry official API) |
 
-All platform searches rely on public endpoints with zero external dependencies and work out of the box.
+All platform searches rely on public endpoints with zero external dependencies and no API keys — they work out of the box.
 
 ### Local Engine Switcher (`tools/`)
 
