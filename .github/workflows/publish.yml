@@ -1,17 +1,22 @@
-# @darlingc/dsh-freesearch — CI/CD 自动发布到 npm (纯 Trusted Publishing / OIDC)
+# @darlingc/dsh-freesearch — CI 自动提交到 npm 暂存队列（Staged Publishing）
 # 触发：push 到 v* tag（例如 v0.5.0）或手动 workflow_dispatch。
-# release job 仅在 publish job 成功后创建 GitHub Release（自动 changelog）。
+# 流程：CI 用 `npm stage publish` 把本版本提交到 npm “Staged Packages” 暂存队列
+#       （此步骤不会触发账号 2FA，也不需要 OTP）。
+#       之后由维护者在 npmjs.com 网页对暂存包人工 Approve / Promote（提示词用户
+#       是设备认证，能通过该 2FA），Promote 后才真正对外可安装。
 #
-# npm 侧一次性授权（管理员做一次，仅网页操作，无需在本仓库存任何 npm token secret）：
-#   npmjs.com → Access Tokens → Generate New Token → 类型选 Publish
-#   → 选 Trusted Publishing 项，授权 GitHub：
-#        repo = DarlingC/dsh-freesearch
-#        workflow 文件 = .github/workflows/publish.yml（必须与仓库内文件名完全一致，否则发布 404）
-#   → 保存即可。之后无需在此仓库设置 NPM_TOKEN 等 secret。
-# 本 workflow 使用 npm 官方 Trusted Publishing（OIDC）：仅靠 permissions.id-token: write，
-# 发布时 npm 在工作流运行中通过 GitHub OIDC 自动换取一次性短期凭证，不依赖 2FA 手动输入、
-# 不依赖长期静态 token。
-name: publish
+# ⚠️ 依赖：
+#   1) CI 执行 `npm stage publish` 需要 npm 发布凭证。请先在本仓库配置 GitHub
+#      Actions secret 名为 `NPM_TOKEN`（npmjs.com → Access Tokens → Generate New
+#      Token → 类型选 Publish → 把生成的值作为 secret 存入本仓库）。
+#      Staged 提交本身不会触发账号 2FA/OTP；但它是认证操作，CI 无 token 会失败。
+#   2) 该包必须先已存在于 npm registry 才能被 stage（首次发布无法用 stage）：
+#      npmjs.com 上 @darlingc/dsh-freesearch 需先有一次正式发布。
+#      （首次发布可由维护者在本地/网页用设备认证完成，之后才走本 workflow。）
+#
+# 备选：若不想在 GitHub 配 NPM_TOKEN，维护者也可在本机（已设备认证）直接运行
+#       `npm stage publish`，效果等同，跳过 CI。
+name: stage-publish
 
 on:
   push:
@@ -20,16 +25,15 @@ on:
   workflow_dispatch:    # 可选：手动触发
 
 permissions:
-  contents: write       # 创建 GitHub Release
-  id-token: write       # npm Trusted Publishing (OIDC) 必需
+  contents: read        # 仅读仓库内容，无需写（不用 OIDC，也不用自动建 Release）
 
 concurrency:
-  group: npm-publish
+  group: npm-stage
   cancel-in-progress: false
 
 jobs:
-  publish:
-    name: Publish to npm
+  stage:
+    name: Stage publish to npm
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -50,32 +54,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Smoke check (avoid publishing a broken tarball)
+      - name: Smoke check (avoid staging a broken tarball)
         run: |
           node --check lib/index.js
           node --check lib/client.js
           npm pack --dry-run
 
-      - name: Publish to npm (Trusted Publishing OIDC + provenance)
-        # 纯 Trusted Publishing：不设 NODE_AUTH_TOKEN / NPM_TOKEN secret。
-        # 仅靠 workflow 的 permissions.id-token: write，npm 在运行中经 GitHub OIDC
-        # 自动换取一次性短期发布凭证（npm 网页侧已授权本 repo + 本 workflow）。
-        run: npm publish --provenance --access public
-
-  release:
-    name: Create GitHub Release
-    needs: publish      # 发布成功后才建 Release
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Create GitHub Release (auto changelog)
+      - name: Stage publish to npm (defer 2FA to web approve)
+        # 提交到 npm 暂存队列，不触发账号 2FA；之后由维护者在 npmjs.com 网页
+        # “Staged Packages” 中 Approve/Promote 才真正对外发布。
+        # 需要 NPM_TOKEN secret（认证用；staged 提交不触发交互式 2FA）。
+        run: npm stage publish
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release create "$GITHUB_REF_NAME" \
-            --generate-notes \
-            --title "@darlingc/dsh-freesearch $GITHUB_REF_NAME" \
-            --repo DarlingC/dsh-freesearch
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

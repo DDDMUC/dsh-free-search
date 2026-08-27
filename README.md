@@ -100,6 +100,16 @@ dsh web
 
 插件对 `@deepseek-ai/dsh-settings` 和 `@deepseek-ai/dsh-tools` 使用 `peerDependencies`（并已在 `peerDependenciesMeta` 标记为 optional，对齐 DSH 官方插件范式）：这两者由 **DSH 宿主运行时** 提供（`~/.dsh/profiles/node_modules/@deepseek-ai/*`），插件不携带副本。请通过 `dsh plugin --profile <profile> add ...`（registry / git 方式）安装插件，不要把 DSH 核心包复制进 profile 的本地 `node_modules`；重复副本会导致工具调度器失效。
 
+#### 发布流程（维护者，Staged Publishing）
+
+本项目用 npm **Staged Publishing** 发版，避免本地 `npm publish` 被 2FA 设备认证卡住：
+
+1. 打 tag 推送：`git tag vX.Y.Z && git push origin vX.Y.Z`。
+2. GitHub Actions（`.github/workflows/publish.yml`）会用 `npm stage publish` 把该版本提交到 npm 的 **Staged Packages** 暂存队列（此步骤**不触发**账号 2FA）。
+3. 维护者到 [npmjs.com](https://www.npmjs.com) → 头像 → **Staged Packages** → 对该版本 **Approve / Promote**（此步骤走你的设备认证即可通过）。Promote 后才真正对外可安装：`dsh plugin add @darlingc/dsh-freesearch`。
+
+> ⚠️ 依赖：CI 的 `npm stage publish` 需要 GitHub 仓库配置 `NPM_TOKEN` secret（npmjs.com → Access Tokens → Publish 类型 token）。且该包需先在 npm registry 上存在（首次发布无法 stage，需先在网页/本地完成一次正式发布）。
+
 ### 使用
 
 #### 网页设置（推荐）
