@@ -83,7 +83,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 dsh plugin --profile web add dsh-freesearch
 
 # 方式 B：git-hosted（从本仓库）
-dsh plugin --profile web add github:DarlingC/dsh-free-search-gemini
+dsh plugin --profile web add github:DarlingC/dsh-freesearch
 ```
 
 > git 方式安装时若 pnpm 需要构建脚本，会提示你把打印出的 key 加进该 profile 的 `pnpm-workspace.yaml` 的 `allowBuilds` 后再重跑。
@@ -332,7 +332,7 @@ Install from the npm registry or Git (installed as a real copy, which avoids the
 dsh plugin --profile web add dsh-freesearch
 
 # Option B: git-hosted (from this repository)
-dsh plugin --profile web add github:DarlingC/dsh-free-search-gemini
+dsh plugin --profile web add github:DarlingC/dsh-freesearch
 ```
 
 > For git installs, if pnpm needs build scripts it will ask you to add the printed key to the profile's `pnpm-workspace.yaml` `allowBuilds` and re-run.
