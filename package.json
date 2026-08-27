@@ -1,6 +1,6 @@
 {
     "name": "@darlingc/dsh-freesearch",
-    "version": "0.5.0",
+    "version": "0.5.1",
     "description": "Free web search for DeepSeek Harness: 11 engines (Bing/DuckDuckGo/AnySearch/SearXNG/Exa/Tavily/Keenable keyless + Gemini grounding) + time filtering + platform search + web_fetch, with web settings UI.",
     "type": "module",
     "main": "lib/index.js",

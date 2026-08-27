@@ -11,7 +11,7 @@
 # web.searchProvider must point at this plugin's provider id (ddg).
 - insert:
     - id: web-search-free
-      name: @darlingc/dsh-freesearch
+      name: "@darlingc/dsh-freesearch"
       config:
         provider: bing
         bingMarket: zh-CN
