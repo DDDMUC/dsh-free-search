@@ -1,4 +1,4 @@
-# dsh-freesearch — free web search providers (no API key needed)
+# @darlingc/dsh-freesearch — free web search providers (no API key needed)
 # Registers the free-search plugin into ctx.web + a settings bridge
 # (/api/dsh-free-search-settings) that serves the "free-search" namespace.
 # The engine (ddg / ddg-lite / bing) is chosen from the web Settings page
@@ -11,7 +11,7 @@
 # web.searchProvider must point at this plugin's provider id (ddg).
 - insert:
     - id: web-search-free
-      name: dsh-freesearch
+      name: @darlingc/dsh-freesearch
       config:
         provider: bing
         bingMarket: zh-CN
