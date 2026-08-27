@@ -1,4 +1,4 @@
-# dsh-free-search
+# dsh-freesearch
 
 **DeepSeek Harness 免费搜索插件 —— 无需 API key，零成本，多引擎可切换。** 一个给 DeepSeek Harness (dsh) 添加多引擎搜索 provider 的插件，注册进 `ctx.web` seam。内置 `web_search` 工具自动选用，支持网页设置页切换引擎、配置 API key、一键测试所有引擎、弹出式命令切换引擎。
 
@@ -76,12 +76,21 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 
 ### 安装
 
+推荐从 npm registry 或 git 安装（装成真实拷贝，避免本地 link 软链导致的依赖解析问题）：
+
 ```sh
-git clone https://github.com/DDDMUC/dsh-free-search.git
-dsh plugin --profile web add /path/to/dsh-free-search
+# 方式 A（推荐）：npm registry 发布版
+dsh plugin --profile web add dsh-freesearch
+
+# 方式 B：git-hosted（从本仓库）
+dsh plugin --profile web add github:DarlingC/dsh-freesearch
 ```
 
-然后重启：
+> git 方式安装时若 pnpm 需要构建脚本，会提示你把打印出的 key 加进该 profile 的 `pnpm-workspace.yaml` 的 `allowBuilds` 后再重跑。
+
+> ⚠️ 请勿用 `dsh plugin --profile web add /本地路径` 安装给他人使用：那会产生 `link:` 软链指向 profile 外的项目目录，Node 会从项目真实路径解析依赖、绕开 DSH 宿主运行时树，导致 `Cannot find package '@deepseek-ai/dsh-settings'`。本地路径仅建议开发者本机自检。
+
+安装后重启：
 
 ```sh
 dsh web
@@ -89,7 +98,7 @@ dsh web
 
 #### 依赖说明
 
-插件对 `@deepseek-ai/dsh-settings` 和 `@deepseek-ai/dsh-tools` 使用 `peerDependencies`，这是刻意的：DSH 运行时必须使用安装树中的唯一实例。请通过 `dsh plugin --profile <profile> add ...` 安装插件，不要把 DSH 核心包复制进 profile 的本地 `node_modules`；重复副本会导致工具调度器失效。
+插件对 `@deepseek-ai/dsh-settings` 和 `@deepseek-ai/dsh-tools` 使用 `peerDependencies`（并已在 `peerDependenciesMeta` 标记为 optional，对齐 DSH 官方插件范式）：这两者由 **DSH 宿主运行时** 提供（`~/.dsh/profiles/node_modules/@deepseek-ai/*`），插件不携带副本。请通过 `dsh plugin --profile <profile> add ...`（registry / git 方式）安装插件，不要把 DSH 核心包复制进 profile 的本地 `node_modules`；重复副本会导致工具调度器失效。
 
 ### 使用
 
@@ -316,10 +325,19 @@ This plugin provides multiple free search engines with automatic fallback, compl
 
 ### Installation
 
+Install from the npm registry or Git (installed as a real copy, which avoids the dependency-resolution problem caused by a local `link:` symlink):
+
 ```sh
-git clone https://github.com/DDDMUC/dsh-free-search.git
-dsh plugin --profile web add /path/to/dsh-free-search
+# Option A (recommended): published on npm registry
+dsh plugin --profile web add dsh-freesearch
+
+# Option B: git-hosted (from this repository)
+dsh plugin --profile web add github:DarlingC/dsh-freesearch
 ```
+
+> For git installs, if pnpm needs build scripts it will ask you to add the printed key to the profile's `pnpm-workspace.yaml` `allowBuilds` and re-run.
+
+> ⚠️ Do **not** use `dsh plugin --profile web add /local/path` for others to install: that creates a `link:` symlink pointing outside the profile's tree, so Node resolves dependencies from the project's real path and bypasses the DSH host runtime tree, causing `Cannot find package '@deepseek-ai/dsh-settings'`. A local path should only be used by the developer for local self-checks.
 
 Then restart:
 
@@ -329,7 +347,7 @@ dsh web
 
 #### Dependency Note
 
-This plugin intentionally specifies `@deepseek-ai/dsh-settings` and `@deepseek-ai/dsh-tools` as `peerDependencies`: the DSH runtime must use a single instance from the installation tree. Always install the plugin using `dsh plugin --profile <profile> add ...`. Do **not** copy DSH core packages into a profile-local `node_modules`, as duplicate copies can break the tool scheduler.
+This plugin intentionally specifies `@deepseek-ai/dsh-settings` and `@deepseek-ai/dsh-tools` as `peerDependencies` (marked optional via `peerDependenciesMeta`, following the official DSH plugin convention): both are provided by the **DSH host runtime** (`~/.dsh/profiles/node_modules/@deepseek-ai/*`); the plugin ships no copies. Always install the plugin using `dsh plugin --profile <profile> add ...` (registry / git). Do **not** copy DSH core packages into a profile-local `node_modules`, as duplicate copies can break the tool scheduler.
 
 ### Usage
 
