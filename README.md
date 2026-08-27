@@ -1,4 +1,4 @@
-# dsh-freesearch
+# @darlingc/dsh-freesearch
 
 **DeepSeek Harness 免费搜索插件 —— 无需 API key，零成本，多引擎可切换。** 一个给 DeepSeek Harness (dsh) 添加多引擎搜索 provider 的插件，注册进 `ctx.web` seam。内置 `web_search` 工具自动选用，支持网页设置页切换引擎、配置 API key、一键测试所有引擎、弹出式命令切换引擎。
 
@@ -80,7 +80,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 
 ```sh
 # 方式 A（推荐）：npm registry 发布版
-dsh plugin --profile web add dsh-freesearch
+dsh plugin --profile web add @darlingc/dsh-freesearch
 
 # 方式 B：git-hosted（从本仓库）
 dsh plugin --profile web add github:DarlingC/dsh-freesearch
@@ -329,7 +329,7 @@ Install from the npm registry or Git (installed as a real copy, which avoids the
 
 ```sh
 # Option A (recommended): published on npm registry
-dsh plugin --profile web add dsh-freesearch
+dsh plugin --profile web add @darlingc/dsh-freesearch
 
 # Option B: git-hosted (from this repository)
 dsh plugin --profile web add github:DarlingC/dsh-freesearch
