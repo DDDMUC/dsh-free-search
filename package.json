@@ -1,64 +1,72 @@
 {
-    "name":  "dsh-free-search",
-    "version":  "0.5.0",
-    "description":  "Free web search for DeepSeek Harness: 11 engines (Bing/DuckDuckGo/AnySearch/SearXNG/Exa/Tavily/Keenable keyless + Gemini grounding) + time filtering + platform search + web_fetch, with web settings UI.",
-    "type":  "module",
-    "main":  "lib/index.js",
-    "exports":  {
-                    ".":  "./lib/index.js",
-                    "./client":  "./lib/client.js",
-                    "./package.json":  "./package.json"
-                },
-    "files":  [
-                  "lib/index.js",
-                  "lib/client.js",
-                  "cordis.patch.yml"
-              ],
-    "keywords":  [
-                     "deepseek-harness",
-                     "dsh",
-                     "dsh-plugin",
-                     "web-search",
-                     "duckduckgo",
-                     "bing",
-                     "tavily",
-                     "exa",
-                     "keenable",
-                     "perplexity",
-                     "search",
-                     "free"
-                 ],
-    "license":  "MIT",
-    "publishConfig":  {
-                          "access":  "public"
-                      },
-    "repository":  {
-                       "type":  "git",
-                       "url":  "https://github.com/DDDMUC/dsh-free-search.git"
-                   },
-    "engines":  {
-                    "node":  "\u003e=20"
-                },
-    "dependencies":  {
-                         "@deepseek-ai/schemastery":  "^3.18.1"
-                     },
-    "peerDependencies":  {
-                             "@deepseek-ai/dsh-settings":  "\u003e=0.1.0-rc.6",
-                             "@deepseek-ai/dsh-tools":  "\u003e=0.1.0-rc.6"
-                         },
-    "devDependencies":  {
-                            "@deepseek-ai/dsh-settings":  "0.1.0-rc.7",
-                            "@deepseek-ai/dsh-tools":  "0.1.0-rc.7"
-                        },
-    "dsh":  {
-                "bundle":  {
-                               "patch":  "cordis.patch.yml"
-                           },
-                "client":  {
-                               "inject":  [
-                                              "@deepseek-ai/dsh-client-runtime"
-                                          ],
-                               "platform":  "web"
-                           }
-            }
+    "name": "dsh-freesearch",
+    "version": "0.5.0",
+    "description": "Free web search for DeepSeek Harness: 11 engines (Bing/DuckDuckGo/AnySearch/SearXNG/Exa/Tavily/Keenable keyless + Gemini grounding) + time filtering + platform search + web_fetch, with web settings UI.",
+    "type": "module",
+    "main": "lib/index.js",
+    "exports": {
+        ".": "./lib/index.js",
+        "./client": "./lib/client.js",
+        "./package.json": "./package.json"
+    },
+    "files": [
+        "lib/index.js",
+        "lib/client.js",
+        "cordis.patch.yml"
+    ],
+    "keywords": [
+        "deepseek-harness",
+        "dsh",
+        "dsh-plugin",
+        "web-search",
+        "duckduckgo",
+        "bing",
+        "tavily",
+        "exa",
+        "keenable",
+        "perplexity",
+        "search",
+        "free"
+    ],
+    "license": "MIT",
+    "publishConfig": {
+        "access": "public"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/DarlingC/dsh-free-search-gemini.git"
+    },
+    "engines": {
+        "node": ">=20"
+    },
+    "dependencies": {
+        "@deepseek-ai/schemastery": "^3.18.1"
+    },
+    "peerDependencies": {
+        "@deepseek-ai/dsh-settings": ">=0.1.0-rc.6",
+        "@deepseek-ai/dsh-tools": ">=0.1.0-rc.6"
+    },
+    "peerDependenciesMeta": {
+        "@deepseek-ai/dsh-settings": {
+            "optional": true
+        },
+        "@deepseek-ai/dsh-tools": {
+            "optional": true
+        }
+    },
+    "devDependencies": {
+        "@deepseek-ai/dsh-settings": "^0.1.0-rc.7",
+        "@deepseek-ai/dsh-tools": "0.1.0-rc.7"
+    },
+    "dsh": {
+        "bundle": {
+            "patch": "cordis.patch.yml"
+        },
+        "client": {
+            "inject": [
+                "@deepseek-ai/dsh-client-runtime"
+            ],
+            "platform": "web"
+        }
+    }
 }
