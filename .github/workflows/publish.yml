@@ -1,0 +1,81 @@
+# @darlingc/dsh-freesearch — CI/CD 自动发布到 npm (纯 Trusted Publishing / OIDC)
+# 触发：push 到 v* tag（例如 v0.5.0）或手动 workflow_dispatch。
+# release job 仅在 publish job 成功后创建 GitHub Release（自动 changelog）。
+#
+# npm 侧一次性授权（管理员做一次，仅网页操作，无需在本仓库存任何 npm token secret）：
+#   npmjs.com → Access Tokens → Generate New Token → 类型选 Publish
+#   → 选 Trusted Publishing 项，授权 GitHub：
+#        repo = DarlingC/dsh-freesearch
+#        workflow 文件 = .github/workflows/publish.yml（必须与仓库内文件名完全一致，否则发布 404）
+#   → 保存即可。之后无需在此仓库设置 NPM_TOKEN 等 secret。
+# 本 workflow 使用 npm 官方 Trusted Publishing（OIDC）：仅靠 permissions.id-token: write，
+# 发布时 npm 在工作流运行中通过 GitHub OIDC 自动换取一次性短期凭证，不依赖 2FA 手动输入、
+# 不依赖长期静态 token。
+name: publish
+
+on:
+  push:
+    tags:
+      - 'v*'            # 例：git tag v0.5.0 && git push origin v0.5.0 触发
+  workflow_dispatch:    # 可选：手动触发
+
+permissions:
+  contents: write       # 创建 GitHub Release
+  id-token: write       # npm Trusted Publishing (OIDC) 必需
+
+concurrency:
+  group: npm-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Smoke check (avoid publishing a broken tarball)
+        run: |
+          node --check lib/index.js
+          node --check lib/client.js
+          npm pack --dry-run
+
+      - name: Publish to npm (Trusted Publishing OIDC + provenance)
+        # 纯 Trusted Publishing：不设 NODE_AUTH_TOKEN / NPM_TOKEN secret。
+        # 仅靠 workflow 的 permissions.id-token: write，npm 在运行中经 GitHub OIDC
+        # 自动换取一次性短期发布凭证（npm 网页侧已授权本 repo + 本 workflow）。
+        run: npm publish --provenance --access public
+
+  release:
+    name: Create GitHub Release
+    needs: publish      # 发布成功后才建 Release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create GitHub Release (auto changelog)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --generate-notes \
+            --title "@darlingc/dsh-freesearch $GITHUB_REF_NAME" \
+            --repo DarlingC/dsh-freesearch
