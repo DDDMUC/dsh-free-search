@@ -16,6 +16,9 @@
         provider: bing
         bingMarket: zh-CN
 # 自动接管默认搜索：让 harness 的 web_search 直接用本插件的 provider（内部含全部引擎）
+# 注意 patch 语义是"整行替换 config"（DSH 0.1.2+）：必须保留 fetchProvider，否则
+# web-fetch-http 会被另一层重新注册，与 base bundle 的注册造成 duplicate loader entry。
 - id: web
   config:
     searchProvider: ddg
+    fetchProvider: http
