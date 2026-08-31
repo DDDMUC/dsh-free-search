@@ -489,3 +489,9 @@ Windows users: The desktop shortcut already includes this configuration (`set NO
 ### License
 
 MIT
+
+## safeSearch 安全搜索过滤
+
+- 全新配置项 `safeSearch`：`off`（引擎默认，不加参数）/ `moderate` / `strict`
+- 作用于 Bing（adlt）、DuckDuckGo HTML（adlt）、DuckDuckGo Lite（adlt）
+- 默认 `off`：不额外过滤，保持引擎自身默认行为；需要时在「设置 > 插件 > Free Search」切换
