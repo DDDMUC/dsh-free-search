@@ -43,6 +43,8 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 - **平台搜索（platform_search）** —— 搜 GitHub / V2EX / B站 / Reddit / Hacker News / Stack Overflow / 维基百科 / npm（公开 API，零依赖）
 - **干净集成** —— 实现官方 `WebSearchProvider` seam 接口，与官方插件共存
 
+如果这个插件帮到了你，欢迎给仓库点个 ⭐（[GitHub](https://github.com/DDDMUC/dsh-free-search)）——星标是开发者继续维护的最大动力，感谢支持！
+
 ### 引擎列表
 
 | id | 引擎 | 费用 | 说明 |
@@ -86,6 +88,16 @@ dsh plugin --profile web add /path/to/dsh-free-search
 ```sh
 dsh web
 ```
+
+#### 姊妹插件：dsh-preset-workbench（预设工作台）
+
+同作者的**姊妹插件**：在设置页里可视化创建/编辑 Agent 预设——分段提示词、15 项能力开关、内置「鲸鱼娘 / 梁神模式」模板，不用手写 YAML。两者搭配：**free-search 解决"AI 联网搜索"、preset-workbench 解决"AI 人设能力编排"**，都是纯免费、开箱即用。
+
+- 仓库：<https://github.com/DDDMUC/dsh-preset-workbench>
+- 安装：`dsh plugin --profile web add github:DDDMUC/dsh-preset-workbench`
+- 用法：设置 → 预设工作台
+
+如果你觉得 preset-workbench 也有用，同样欢迎给它的仓库点个 ⭐。🙏
 
 #### 依赖说明
 
@@ -284,6 +296,8 @@ This plugin provides multiple free search engines with automatic fallback, compl
 - **Platform Search (`platform_search`)** — Search GitHub / V2EX / Bilibili / Reddit / Hacker News / Stack Overflow / Wikipedia / npm (public APIs, zero extra dependencies)
 - **Clean Integration** — Implements the official `WebSearchProvider` seam interface, coexisting seamlessly with official plugins
 
+If this plugin has been helpful, a ⭐ on [GitHub](https://github.com/DDDMUC/dsh-free-search) would mean a lot — it's the biggest motivation for the developer to keep maintaining it. Thank you!
+
 ### Supported Engines
 
 | id | Engine | Cost | Description |
@@ -327,6 +341,16 @@ Then restart:
 ```sh
 dsh web
 ```
+
+#### Sister Plugin: dsh-preset-workbench
+
+A **sister plugin** by the same author: a **visual workbench for creating/editing agent presets** right inside Settings — sectioned prompts, 15 capability toggles, and built-in "Whale Girl / Liangshen Mode" templates, no YAML needed. Pair them up: **free-search gives your AI web search, preset-workbench shapes its persona & capabilities** — both free and zero-config.
+
+- Repo: <https://github.com/DDDMUC/dsh-preset-workbench>
+- Install: `dsh plugin --profile web add github:DDDMUC/dsh-preset-workbench`
+- Usage: Settings → Preset Workbench
+
+If preset-workbench is useful to you too, a ⭐ on its repo is always welcome. 🙏
 
 #### Dependency Note
 

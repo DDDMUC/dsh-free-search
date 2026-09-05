@@ -62,6 +62,20 @@
     },
     "engines": {
       "dsh": ">=0.1.1-rc.1"
+    },
+    "compatibility": {
+      "dshReleases": {
+        "rc.7": "unknown",
+        "rc.8": "unknown",
+        "0.1.1-rc.1": "compatible",
+        "0.1.1-rc.2": "compatible",
+        "0.1.2-alpha.1": "unknown",
+        "0.1.2-alpha.2": "compatible",
+        "0.1.2-alpha.3": "compatible",
+        "0.1.2-alpha.4": "compatible",
+        "0.1.2-alpha.5": "unknown",
+        "0.1.2-rc.1": "compatible"
+      }
     }
   }
 }
