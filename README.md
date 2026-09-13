@@ -29,7 +29,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 ### 特性
 
 - **零成本** —— 多个免费引擎，无需 key、无需注册
-- **多引擎可选**：DuckDuckGo（html/lite）、Bing、SearXNG（元搜索，支持自定义实例）、AnySearch、Exa、Tavily、Keenable、Firecrawl、Perplexity、DeepSeek 官方
+- **多引擎可选**：DuckDuckGo（html/lite）、Bing、SearXNG（元搜索，支持自定义实例）、AnySearch、Exa、Tavily、Keenable、Firecrawl、Parallel、Perplexity、DeepSeek 官方
 - **网页设置页** —— 引擎切换 + API key 配置（UI 中 key 脱敏显示"已配置"）+ 中英文切换
 - **弹出式切换命令** —— 聊天框输入 `/free-search-engine`，弹出引擎选择窗口，点选即切换（等效设置页 + 保存）
 - **引擎测试** —— `free_search_test` 工具让 agent 一键测试所有引擎；设置页也有"测试引擎"按钮（直测当前引擎，不走回退链，付费引擎无 key 会明确报错）
@@ -58,6 +58,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 | `tavily` | Tavily | 免费 | **无 key 也可用**（keyless 匿名），配 key 提升额度 |
 | `keenable` | Keenable | 免费 | **无 key 也可用**（MCP 匿名），配 key 提升额度 |
 | `firecrawl` | Firecrawl | 免费 | **无 key 也可用**（官方免 key 匿名额度），配 key 提升限额 |
+| `parallel` | Parallel | 付费 | 需 `PARALLEL_API_KEY`（platform.parallel.ai 有免费额度） |
 | `perplexity` | Perplexity | 付费 | 需 `PERPLEXITY_API_KEY` |
 | `deepseek-official` | DeepSeek 官方 | 付费 | 需 `DEEPSEEK_API_KEY` |
 
@@ -67,6 +68,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
   - Exa：<https://dashboard.exa.ai/api-keys>
   - Tavily：<https://app.tavily.com/home>
   - Keenable：<https://keenable.ai/login>
+  - Parallel：<https://platform.parallel.ai>
   - Perplexity：<https://www.perplexity.ai/settings/api>
   - DeepSeek：<https://platform.deepseek.com/api_keys>
 
@@ -112,7 +114,7 @@ dsh web
 安装后，打开 **设置 → 插件 → 可配置** 标签页 → **Free Search** 卡片（官方设置页）：
 
 - **Search engine**：下拉框切换引擎，保存即生效
-- **API keys**：为 Exa / Tavily / Keenable / Firecrawl / Perplexity / DeepSeek 填写 key（密码框，保存后只显示"已配置"）
+- **API keys**：为 Exa / Tavily / Keenable / Firecrawl / Parallel / Perplexity / DeepSeek 填写 key（密码框，保存后只显示"已配置"）
   - **推荐**：付费引擎 key 建议写入 harness 凭据中心 `~/.dsh/.credentials.yaml`（如 `DEEPSEEK_API_KEY: sk-...`，与官方 LLM provider 一致，一处管理所有 key）。插件读取优先级：凭据中心 > 设置页 > 环境变量，设置页填的 key 仅作为遗留兼容。
 - **Test engine**：直测当前引擎可用性（不走回退链，付费引擎无 key 会明确报错）
 - **Use Bing default**：把当前搜索引擎切回稳定的免费 Bing；`Discard` 只撤销尚未保存的编辑
@@ -150,7 +152,7 @@ dsh web
 
 ```yaml
 free-search:
-  provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / perplexity / deepseek-official
+  provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / parallel / perplexity / deepseek-official
   lang: zh                    # 设置页界面语言（zh / en）
   bingMarket: zh-CN           # Bing 市场
   region: cn-zh               # DuckDuckGo 区域（可选）
@@ -160,6 +162,7 @@ free-search:
   tavilyApiKey: ...           # 或通过设置页填写
   keenableApiKey: ...         # 或通过设置页填写
   firecrawlApiKey: ...        # 或通过设置页填写
+  parallelApiKey: ...         # 或通过设置页填写
   perplexityApiKey: ...
   deepseekApiKey: ...
 ```
@@ -195,13 +198,14 @@ Search engine test:
 | Keenable | `published_after` | ✅ 精确 | 相对值原样传（`12h/3d/2mo/1y`），绝对日期原样传 |
 | Tavily | `time_range` | ⚠️ 近似 | 只认固定档，自定义天数自动映射到最近似档位 |
 | Firecrawl | `tbs` | ⚠️ 近似 | 固定档映射到 `qdr:d/w/m/y`；绝对日期用 `cdr:1,cd_min:M/D/YYYY`（精确） |
+| Parallel | `source_policy.after_date` | ✅ 精确 | 自定义天数转成 ISO 日期（N 天前），绝对日期原样传入 |
 | SearXNG | `time_range` | ⚠️ 近似 | 同上 |
 | DuckDuckGo / Lite | `df` | ⚠️ 近似 | 同上 |
 | Bing / AnySearch | — | ❌ 忽略 | 无对应参数 |
 
 **"最近似档位"映射规则**：`≤2 天 → day`，`≤14 天 → week`，`≤90 天 → month`，否则 `year`。例如 `3d` 在 Tavily 上按 `day` 处理，`2mo` 按 `month` 处理。
 
-**引擎链优先级**：当带 timeRange 搜索时，支持时间过滤的引擎（tavily / exa / keenable / firecrawl / searxng / ddg / ddg-lite）会排到引擎链前面，确保过滤真正生效——即使首选引擎是 bing（不支持过滤），也会先尝试支持过滤的引擎。
+**引擎链优先级**：当带 timeRange 搜索时，支持时间过滤的引擎（tavily / exa / keenable / firecrawl / parallel / searxng / ddg / ddg-lite）会排到引擎链前面，确保过滤真正生效——即使首选引擎是 bing（不支持过滤），也会先尝试支持过滤的引擎。
 
 示例对话：*"帮我搜最近 3 天关于 DSH 的新闻"* → agent 调用 `advanced_search`，`timeRange: "3d"`。
 
@@ -286,7 +290,7 @@ This plugin provides multiple free search engines with automatic fallback, compl
 ### Features
 
 - **Zero Cost** — Multiple free engines with no API key or registration required
-- **Multi-Engine Support** — DuckDuckGo (HTML / Lite), Bing, AnySearch AI, SearXNG (meta-search with custom instances), Exa, Tavily, Keenable, Firecrawl, Perplexity, and DeepSeek Official
+- **Multi-Engine Support** — DuckDuckGo (HTML / Lite), Bing, AnySearch AI, SearXNG (meta-search with custom instances), Exa, Tavily, Keenable, Firecrawl, Parallel, Perplexity, and DeepSeek Official
 - **Web Settings UI** — Engine switching, API key configuration (keys masked as "configured" in the UI), and a Chinese/English toggle
 - **Popup Switch Command** — Type `/free-search-engine` in the chat: a picker opens with all engines; click one to switch (equivalent to the settings page + save)
 - **Engine Testing** — `free_search_test` for the agent to check all engines in one call; the settings UI also has a "Test engine" button that tests the selected engine directly (no fallback chain; paid engines without a key report an explicit error)
@@ -315,6 +319,7 @@ If this plugin has been helpful, a ⭐ on [GitHub](https://github.com/DDDMUC/dsh
 | `tavily` | Tavily | Free | **Usable without a key** (keyless anonymous); configure a key for higher quota |
 | `keenable` | Keenable | Free | **Usable without a key** (anonymous MCP); configure a key for higher quota |
 | `firecrawl` | Firecrawl | Free | **Usable without a key** (official keyless anonymous quota); configure a key for higher limits |
+| `parallel` | Parallel | Paid | Requires `PARALLEL_API_KEY` (free tier available at platform.parallel.ai) |
 | `perplexity` | Perplexity | Paid | Requires `PERPLEXITY_API_KEY` |
 | `deepseek-official` | DeepSeek Official | Paid | Requires `DEEPSEEK_API_KEY` |
 
@@ -324,6 +329,7 @@ If this plugin has been helpful, a ⭐ on [GitHub](https://github.com/DDDMUC/dsh
   - Exa: <https://dashboard.exa.ai/api-keys>
   - Tavily: <https://app.tavily.com/home>
   - Keenable: <https://keenable.ai/login>
+  - Parallel: <https://platform.parallel.ai>
   - Perplexity: <https://www.perplexity.ai/settings/api>
   - DeepSeek: <https://platform.deepseek.com/api_keys>
 
@@ -369,7 +375,7 @@ This plugin intentionally specifies `@deepseek-ai/dsh-settings` and `@deepseek-a
 After installation, navigate to **Settings → Plugins → Configurable** tab → **Free Search** card (the official settings page):
 
 - **Search engine**: Select an engine from the dropdown; changes take effect immediately upon saving.
-- **API keys**: Enter keys for Exa / Tavily / Keenable / Firecrawl / Perplexity / DeepSeek (password fields; displayed as "configured" once saved).
+- **API keys**: Enter keys for Exa / Tavily / Keenable / Firecrawl / Parallel / Perplexity / DeepSeek (password fields; displayed as "configured" once saved).
   - **Recommended**: store paid-engine keys in the harness credential center `~/.dsh/.credentials.yaml` (e.g. `DEEPSEEK_API_KEY: sk-...`, same as the official LLM providers — one place for all keys). Resolution order: credentials center > settings page > environment variable; the settings-page fields remain for backward compatibility.
 - **Test engine**: Tests the selected engine directly (no fallback chain; paid engines without a key report an explicit error).
 - **Use Bing default**: stage a switch back to the stable free Bing engine; `Discard` only cancels unsaved edits
@@ -407,7 +413,7 @@ Configuration is stored in `~/.dsh/settings.yaml`:
 
 ```yaml
 free-search:
-  provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / perplexity / deepseek-official
+  provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / parallel / perplexity / deepseek-official
   lang: zh                    # settings UI language (zh / en)
   bingMarket: zh-CN           # Bing market
   region: cn-zh               # DuckDuckGo region (optional)
@@ -417,6 +423,7 @@ free-search:
   tavilyApiKey: ...           # Or configure via the web settings UI
   keenableApiKey: ...         # Or configure via the web settings UI
   firecrawlApiKey: ...        # Or configure via the web settings UI
+  parallelApiKey: ...         # Or configure via the web settings UI
   perplexityApiKey: ...
   deepseekApiKey: ...
 ```
@@ -452,13 +459,14 @@ Ask the agent for *"news from the last week"*, *"releases this month"*, *"update
 | Keenable | `published_after` | ✅ precise | relative values (`12h/3d/2mo/1y`) and absolute dates pass through |
 | Tavily | `time_range` | ⚠️ approximate | only fixed tiers; custom days map to the nearest tier |
 | Firecrawl | `tbs` | ⚠️ approximate | fixed tiers map to `qdr:d/w/m/y`; absolute dates use `cdr:1,cd_min:M/D/YYYY` (precise) |
+| Parallel | `source_policy.after_date` | ✅ precise | custom days become an ISO date (N days ago); absolute dates pass through |
 | SearXNG | `time_range` | ⚠️ approximate | same as above |
 | DuckDuckGo / Lite | `df` | ⚠️ approximate | same as above |
 | Bing / AnySearch | — | ❌ ignored | no corresponding parameter |
 
 **Nearest-tier mapping rule**: `≤2 days → day`, `≤14 days → week`, `≤90 days → month`, otherwise `year`. For example, `3d` becomes `day` on Tavily, and `2mo` becomes `month`.
 
-**Engine-chain priority**: when a `timeRange` is present, engines that support time filtering (tavily / exa / keenable / firecrawl / searxng / ddg / ddg-lite) are moved to the front of the fallback chain, so the filter actually takes effect — even if the preferred engine is bing (which does not support filtering), a filtering-capable engine is tried first.
+**Engine-chain priority**: when a `timeRange` is present, engines that support time filtering (tavily / exa / keenable / firecrawl / parallel / searxng / ddg / ddg-lite) are moved to the front of the fallback chain, so the filter actually takes effect — even if the preferred engine is bing (which does not support filtering), a filtering-capable engine is tried first.
 
 Example: *"Find DSH news from the last 3 days"* → agent calls `advanced_search` with `timeRange: "3d"`.
 
