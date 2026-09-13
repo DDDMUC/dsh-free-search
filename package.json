@@ -1,6 +1,6 @@
 {
   "name": "dsh-free-search",
-  "version": "0.4.27",
+  "version": "0.4.28",
   "description": "Free web search for DeepSeek Harness: 12 engines (Bing/DuckDuckGo/AnySearch/SearXNG/Exa/Tavily/Keenable/Firecrawl keyless; Parallel/Perplexity/DeepSeek with key) + time filtering + platform search + web_fetch, with web settings UI.",
   "type": "module",
   "main": "lib/index.js",
