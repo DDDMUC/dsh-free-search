@@ -1,7 +1,7 @@
 {
   "name": "dsh-free-search",
   "version": "0.4.25",
-  "description": "Free web search for DeepSeek Harness: 10 engines (Bing/DuckDuckGo/AnySearch/SearXNG/Exa/Tavily/Keenable keyless) + time filtering + platform search + web_fetch, with web settings UI.",
+  "description": "Free web search for DeepSeek Harness: 11 engines (Bing/DuckDuckGo/AnySearch/SearXNG/Exa/Tavily/Keenable/Firecrawl keyless) + time filtering + platform search + web_fetch, with web settings UI.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -24,6 +24,7 @@
     "tavily",
     "exa",
     "keenable",
+    "firecrawl",
     "perplexity",
     "search",
     "free"
