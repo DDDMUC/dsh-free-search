@@ -60,6 +60,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 | `firecrawl` | Firecrawl | 免费 | **无 key 也可用**（官方免 key 匿名额度），配 key 提升限额 |
 | `parallel` | Parallel | 付费 | 需 `PARALLEL_API_KEY`（platform.parallel.ai 有免费额度） |
 | `perplexity` | Perplexity | 付费 | 需 `PERPLEXITY_API_KEY` |
+| `serpbase` | SerpBase | 付费 | 需 `SERPBASE_API_KEY`（serpbase.dev，注册送 100 次免费额度） |
 | `deepseek-official` | DeepSeek 官方 | 付费 | 需 `DEEPSEEK_API_KEY` |
 
 - **默认引擎为 `bing`**（免费且最稳定），安装后开箱即用。
@@ -70,6 +71,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
   - Keenable：<https://keenable.ai/login>
   - Parallel：<https://platform.parallel.ai>
   - Perplexity：<https://www.perplexity.ai/settings/api>
+  - SerpBase：<https://serpbase.dev>
   - DeepSeek：<https://platform.deepseek.com/api_keys>
 
 #### 为什么免费引擎不需要 key？
@@ -152,7 +154,7 @@ dsh web
 
 ```yaml
 free-search:
-  provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / parallel / perplexity / deepseek-official
+  provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / parallel / perplexity / serpbase / deepseek-official
   lang: zh                    # 设置页界面语言（zh / en）
   bingMarket: zh-CN           # Bing 市场
   region: cn-zh               # DuckDuckGo 区域（可选）
@@ -164,6 +166,7 @@ free-search:
   firecrawlApiKey: ...        # 或通过设置页填写
   parallelApiKey: ...         # 或通过设置页填写
   perplexityApiKey: ...
+  serpbaseApiKey: ...         # 或通过设置页填写
   deepseekApiKey: ...
 ```
 
@@ -321,6 +324,7 @@ If this plugin has been helpful, a ⭐ on [GitHub](https://github.com/DDDMUC/dsh
 | `firecrawl` | Firecrawl | Free | **Usable without a key** (official keyless anonymous quota); configure a key for higher limits |
 | `parallel` | Parallel | Paid | Requires `PARALLEL_API_KEY` (free tier available at platform.parallel.ai) |
 | `perplexity` | Perplexity | Paid | Requires `PERPLEXITY_API_KEY` |
+| `serpbase` | SerpBase | Paid | Requires `SERPBASE_API_KEY` (serpbase.dev, 100 free queries on signup) |
 | `deepseek-official` | DeepSeek Official | Paid | Requires `DEEPSEEK_API_KEY` |
 
 - **Default engine is `bing`** (free and most stable), ready to use out of the box after installation.
@@ -331,6 +335,7 @@ If this plugin has been helpful, a ⭐ on [GitHub](https://github.com/DDDMUC/dsh
   - Keenable: <https://keenable.ai/login>
   - Parallel: <https://platform.parallel.ai>
   - Perplexity: <https://www.perplexity.ai/settings/api>
+  - SerpBase: <https://serpbase.dev>
   - DeepSeek: <https://platform.deepseek.com/api_keys>
 
 #### Why are some engines free?
@@ -413,7 +418,7 @@ Configuration is stored in `~/.dsh/settings.yaml`:
 
 ```yaml
 free-search:
-  provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / parallel / perplexity / deepseek-official
+  provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / parallel / perplexity / serpbase / deepseek-official
   lang: zh                    # settings UI language (zh / en)
   bingMarket: zh-CN           # Bing market
   region: cn-zh               # DuckDuckGo region (optional)
@@ -425,6 +430,7 @@ free-search:
   firecrawlApiKey: ...        # Or configure via the web settings UI
   parallelApiKey: ...         # Or configure via the web settings UI
   perplexityApiKey: ...
+  serpbaseApiKey: ...         # Or configure via the web settings UI
   deepseekApiKey: ...
 ```
 
