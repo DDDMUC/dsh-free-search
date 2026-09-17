@@ -33,7 +33,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 - **网页设置页** —— 引擎切换 + API key 配置（UI 中 key 脱敏显示"已配置"）+ 中英文切换；DSH 0.1.6-alpha.2+ 入口在左侧「插件」页的组件行配置，旧版在「设置 → 插件 → 可配置」
 - **弹出式切换命令** —— 聊天框输入 `/free-search-engine`，弹出引擎选择窗口，点选即切换（等效设置页 + 保存）
 - **引擎测试** —— `free_search_test` 工具让 agent 一键测试所有引擎；设置页也有"测试引擎"按钮（直测当前引擎，不走回退链，付费引擎无 key 会明确报错）
-- **统一引擎回退** —— 任何引擎失败（付费/免费，缺 key/401/限流/网络）自动轮流尝试下一个引擎：首选引擎 → 其他引擎（exa/tavily/keenable/firecrawl 无 key 也会尝试，因为它们自带 keyless 免费额度）→ 剩余免费引擎，搜索永不直接失败；结果顶部注明实际生效的引擎（如 `Note: perplexity unavailable or failed, using exa.`）
+- **统一引擎回退** —— 任何引擎失败（付费/免费，缺 key/401/限流/网络）自动轮流尝试下一个引擎：首选引擎 → 其他引擎（exa/tavily/keenable/firecrawl/parallel 无 key 也会尝试，因为它们自带 keyless 免费额度）→ 剩余免费引擎，搜索永不直接失败；结果顶部注明实际生效的引擎（如 `Note: perplexity unavailable or failed, using exa.`）
 - **时间过滤** —— `advanced_search` 工具支持 `timeRange`：固定档、自定义相对值、绝对日期三种形式（详见下方逻辑说明）
 - **系统提示词注入** —— agent 知道当前用哪个引擎、哪些需要 key
 - **版本号 + 检查更新** —— 设置卡片显示当前版本（v0.4.17），"检查更新"按钮直连 npm registry 对比最新版，有新版本时提示并可一键跳转
@@ -58,7 +58,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 | `tavily` | Tavily | 免费 | **无 key 也可用**（keyless 匿名），配 key 提升额度 |
 | `keenable` | Keenable | 免费 | **无 key 也可用**（MCP 匿名），配 key 提升额度 |
 | `firecrawl` | Firecrawl | 免费 | **无 key 也可用**（官方免 key 匿名额度），配 key 提升限额 |
-| `parallel` | Parallel | 付费 | 需 `PARALLEL_API_KEY`（platform.parallel.ai 有免费额度） |
+| `parallel` | Parallel | 免费 | **无 key 也可用**（官方 MCP 匿名额度），配 key 提升额度并支持精确时间过滤 |
 | `perplexity` | Perplexity | 付费 | 需 `PERPLEXITY_API_KEY` |
 | `serpbase` | SerpBase | 付费 | 需 `SERPBASE_API_KEY`（serpbase.dev，注册送 100 次免费额度） |
 | `deepseek-official` | DeepSeek 官方 | 付费 | 需 `DEEPSEEK_API_KEY` |
@@ -121,7 +121,7 @@ dsh web
 配置页提供：
 
 - **Search engine**：下拉框切换引擎，保存即生效
-- **API keys**：为 Exa / Tavily / Keenable / Firecrawl / Parallel / Perplexity / DeepSeek 填写 key（密码框，保存后只显示"已配置"）
+- **API keys**：为 Exa / Tavily / Keenable / Firecrawl / Parallel / Perplexity / DeepSeek 填写 key（密码框，保存后只显示"已配置"；Exa / Tavily / Keenable / Firecrawl / Parallel 不填也可免 key 使用）
   - **推荐**：付费引擎 key 建议写入 harness 凭据中心 `~/.dsh/.credentials.yaml`（如 `DEEPSEEK_API_KEY: sk-...`，与官方 LLM provider 一致，一处管理所有 key）。插件读取优先级：凭据中心 > 设置页 > 环境变量，设置页填的 key 仅作为遗留兼容。
 - **Test engine**：直测当前引擎可用性（不走回退链，付费引擎无 key 会明确报错）
 - **Use Bing default**：把当前搜索引擎切回稳定的免费 Bing；`Discard` 只撤销尚未保存的编辑
@@ -206,7 +206,7 @@ Search engine test:
 | Keenable | `published_after` | ✅ 精确 | 相对值原样传（`12h/3d/2mo/1y`），绝对日期原样传 |
 | Tavily | `time_range` | ⚠️ 近似 | 只认固定档，自定义天数自动映射到最近似档位 |
 | Firecrawl | `tbs` | ⚠️ 近似 | 固定档映射到 `qdr:d/w/m/y`；绝对日期用 `cdr:1,cd_min:M/D/YYYY`（精确） |
-| Parallel | `source_policy.after_date` | ✅ 精确 | 自定义天数转成 ISO 日期（N 天前），绝对日期原样传入 |
+| Parallel | `source_policy.after_date`（有 key 时精确）；无 key 走 MCP，无日期参数，改为把窗口写进 objective 作为新鲜度提示（软过滤） | ✅ 精确 / ⚠️ 软过滤 | 自定义天数转成 ISO 日期（N 天前），绝对日期原样传入 |
 | SearXNG | `time_range` | ⚠️ 近似 | 同上 |
 | DuckDuckGo / Lite | `df` | ⚠️ 近似 | 同上 |
 | Bing / AnySearch | — | ❌ 忽略 | 无对应参数 |
@@ -302,7 +302,7 @@ This plugin provides multiple free search engines with automatic fallback, compl
 - **Web Settings UI** — Engine switching, API key configuration (keys masked as "configured" in the UI), and a Chinese/English toggle; on DSH 0.1.6-alpha.2+ the entry is the component-row config on the sidebar Plugins page, on older versions Settings → Plugins → Configurable
 - **Popup Switch Command** — Type `/free-search-engine` in the chat: a picker opens with all engines; click one to switch (equivalent to the settings page + save)
 - **Engine Testing** — `free_search_test` for the agent to check all engines in one call; the settings UI also has a "Test engine" button that tests the selected engine directly (no fallback chain; paid engines without a key report an explicit error)
-- **Unified Engine Fallback** — Any engine failure (paid or free, missing key, 401, rate limit, network error) automatically tries the next engine: the configured engine first, then other engines (exa/tavily/keenable/firecrawl are tried even without a key because they have built-in keyless quota), then the remaining free engines (Bing/AnySearch etc.) — with a note attached to the results naming the engine that actually served them (e.g. `Note: perplexity unavailable or failed, using exa.`). Search never fails outright.
+- **Unified Engine Fallback** — Any engine failure (paid or free, missing key, 401, rate limit, network error) automatically tries the next engine: the configured engine first, then other engines (exa/tavily/keenable/firecrawl/parallel are tried even without a key because they have built-in keyless quota), then the remaining free engines (Bing/AnySearch etc.) — with a note attached to the results naming the engine that actually served them (e.g. `Note: perplexity unavailable or failed, using exa.`). Search never fails outright.
 - **Time Filtering** — The `advanced_search` tool supports `timeRange`: fixed tiers, custom relative values, or an absolute date (details below)
 - **System Prompt Injection** — The agent is aware of the currently active engine and which engines require API keys
 - **Version + Update Check** — The settings card shows the current version (v0.4.17), and a "Check update" button queries the npm registry to compare against the latest release, prompting a one-click jump when a newer version exists
@@ -327,13 +327,13 @@ If this plugin has been helpful, a ⭐ on [GitHub](https://github.com/DDDMUC/dsh
 | `tavily` | Tavily | Free | **Usable without a key** (keyless anonymous); configure a key for higher quota |
 | `keenable` | Keenable | Free | **Usable without a key** (anonymous MCP); configure a key for higher quota |
 | `firecrawl` | Firecrawl | Free | **Usable without a key** (official keyless anonymous quota); configure a key for higher limits |
-| `parallel` | Parallel | Paid | Requires `PARALLEL_API_KEY` (free tier available at platform.parallel.ai) |
+| `parallel` | Parallel | Free | **Works without a key** (official MCP anonymous quota); a key raises limits and enables precise time filtering |
 | `perplexity` | Perplexity | Paid | Requires `PERPLEXITY_API_KEY` |
 | `serpbase` | SerpBase | Paid | Requires `SERPBASE_API_KEY` (serpbase.dev, 100 free queries on signup) |
 | `deepseek-official` | DeepSeek Official | Paid | Requires `DEEPSEEK_API_KEY` |
 
 - **Default engine is `bing`** (free and most stable), ready to use out of the box after installation.
-- **Auto-failover**: any engine failure (rate-limited free engine, or missing/invalid paid key, network error) automatically tries the next engine — the configured engine first, then other engines (exa/tavily/keenable/firecrawl are tried even without a key because they have built-in keyless quota), then the remaining free engines (Bing/AnySearch etc.) — with a note attached to the results naming the engine that actually served them (e.g. `Note: perplexity unavailable or failed, using exa.`). Search never fails outright because of engine issues.
+- **Auto-failover**: any engine failure (rate-limited free engine, or missing/invalid paid key, network error) automatically tries the next engine — the configured engine first, then other engines (exa/tavily/keenable/firecrawl/parallel are tried even without a key because they have built-in keyless quota), then the remaining free engines (Bing/AnySearch etc.) — with a note attached to the results naming the engine that actually served them (e.g. `Note: perplexity unavailable or failed, using exa.`). Search never fails outright because of engine issues.
 - **Official Links in Settings**: Free engines display "Visit Website →", while paid engines display "Get API Key →" (opens in a new tab):
   - Exa: <https://dashboard.exa.ai/api-keys>
   - Tavily: <https://app.tavily.com/home>
@@ -390,7 +390,7 @@ After installation, open the config page according to your DSH version:
 The config page provides:
 
 - **Search engine**: Select an engine from the dropdown; changes take effect immediately upon saving.
-- **API keys**: Enter keys for Exa / Tavily / Keenable / Firecrawl / Parallel / Perplexity / DeepSeek (password fields; displayed as "configured" once saved).
+- **API keys**: Enter keys for Exa / Tavily / Keenable / Firecrawl / Parallel / Perplexity / DeepSeek (password fields; displayed as "configured" once saved; Exa / Tavily / Keenable / Firecrawl / Parallel work without a key too).
   - **Recommended**: store paid-engine keys in the harness credential center `~/.dsh/.credentials.yaml` (e.g. `DEEPSEEK_API_KEY: sk-...`, same as the official LLM providers — one place for all keys). Resolution order: credentials center > settings page > environment variable; the settings-page fields remain for backward compatibility.
 - **Test engine**: Tests the selected engine directly (no fallback chain; paid engines without a key report an explicit error).
 - **Use Bing default**: stage a switch back to the stable free Bing engine; `Discard` only cancels unsaved edits
@@ -475,7 +475,7 @@ Ask the agent for *"news from the last week"*, *"releases this month"*, *"update
 | Keenable | `published_after` | ✅ precise | relative values (`12h/3d/2mo/1y`) and absolute dates pass through |
 | Tavily | `time_range` | ⚠️ approximate | only fixed tiers; custom days map to the nearest tier |
 | Firecrawl | `tbs` | ⚠️ approximate | fixed tiers map to `qdr:d/w/m/y`; absolute dates use `cdr:1,cd_min:M/D/YYYY` (precise) |
-| Parallel | `source_policy.after_date` | ✅ precise | custom days become an ISO date (N days ago); absolute dates pass through |
+| Parallel | `source_policy.after_date` with a key (precise); without a key the MCP path has no date parameter, so the window is written into the objective as a freshness hint (soft filter) | ✅ precise / ⚠️ soft | custom days become an ISO date (N days ago); absolute dates pass through |
 | SearXNG | `time_range` | ⚠️ approximate | same as above |
 | DuckDuckGo / Lite | `df` | ⚠️ approximate | same as above |
 | Bing / AnySearch | — | ❌ ignored | no corresponding parameter |
