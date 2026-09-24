@@ -30,7 +30,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 
 - **零成本** —— 多个免费引擎，无需 key、无需注册
 - **多引擎可选**：DuckDuckGo（html/lite）、Bing、SearXNG（元搜索，支持自定义实例）、AnySearch、Exa、Tavily、Keenable、Firecrawl、Parallel、Perplexity、SerpBase、DeepSeek 官方
-- **网页设置页** —— 引擎切换 + API key 配置（UI 中 key 脱敏显示"已配置"）+ 中英文切换；DSH 0.1.6-alpha.2+ 入口在左侧「插件」页的组件行配置，旧版在「设置 → 插件 → 可配置」
+- **网页设置页** —— 引擎切换 + API key 配置（UI 中 key 脱敏显示"已配置"）+ 中英文切换；入口在左侧「插件」页的组件行配置（`plugins.row.config`，DSH 0.1.7-rc.1+）
 - **弹出式切换命令** —— 聊天框输入 `/free-search-engine`，弹出引擎选择窗口，点选即切换（等效设置页 + 保存）
 - **引擎测试** —— `free_search_test` 工具让 agent 一键测试所有引擎；设置页也有"测试引擎"按钮（直测当前引擎，不走回退链，付费引擎无 key 会明确报错）
 - **统一引擎回退** —— 任何引擎失败（付费/免费，缺 key/401/限流/网络）自动轮流尝试下一个引擎：首选引擎 → 其他引擎（exa/tavily/keenable/firecrawl/parallel 无 key 也会尝试，因为它们自带 keyless 免费额度）→ 剩余免费引擎，搜索永不直接失败；结果顶部注明实际生效的引擎（如 `Note: perplexity unavailable or failed, using exa.`）
@@ -114,10 +114,9 @@ dsh web
 
 #### 网页设置（推荐）
 
-安装后按 DSH 版本打开配置页：
+安装后打开配置页（DSH 0.1.7-rc.1+）：
 
-- **DSH 0.1.6-alpha.2 及以上**：左侧 **插件** 页 → **已安装** 分组 → `free-search` → 点击组件行 `web-search-free`（行内"配置"入口）
-- **DSH 0.1.5 及更早**：**设置 → 插件 → 可配置** 标签页 → **Free Search** 卡片
+- 左侧 **插件** 页 → **已安装** 分组 → `free-search` → 点击组件行 `web-search-free`（行内"配置"入口）
 
 配置页提供：
 
@@ -156,24 +155,24 @@ dsh web
 
 #### 配置文件
 
-配置存在 `~/.dsh/settings.yaml`：
+DSH 0.1.7-rc.1 起，配置跟随 profile 的插件条目保存：设置页与 `/free-search-engine` 都会写入当前 profile 的 `cordis.patch.yml` 中 `web-search-free`（`dsh-free-search`）条目的 `config`。旧版 `~/.dsh/settings.yaml` 的 `free-search:` 段只会在启动时自动导入一次，随后原文件被重命名为 `settings.yaml.imported`。
 
 ```yaml
-free-search:
-  provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / parallel / perplexity / serpbase / deepseek-official
-  lang: zh                    # 设置页界面语言（zh / en）
-  bingMarket: zh-CN           # Bing 市场
-  region: cn-zh               # DuckDuckGo 区域（可选）
-  searxngInstances:           # 自定义 SearXNG 实例（可选）
-    - https://your-instance.example
-  exaApiKey: ...              # 或通过设置页填写
-  tavilyApiKey: ...           # 或通过设置页填写
-  keenableApiKey: ...         # 或通过设置页填写
-  firecrawlApiKey: ...        # 或通过设置页填写
-  parallelApiKey: ...         # 或通过设置页填写
-  perplexityApiKey: ...
-  serpbaseApiKey: ...         # 或通过设置页填写
-  deepseekApiKey: ...
+# profiles/<profile>/cordis.patch.yml 中该条目的 config：
+provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / parallel / perplexity / serpbase / deepseek-official
+lang: zh                    # 设置页界面语言（zh / en）
+bingMarket: zh-CN           # Bing 市场
+region: cn-zh               # DuckDuckGo 区域（可选）
+searxngInstances:           # 自定义 SearXNG 实例（可选）
+  - https://your-instance.example
+exaApiKey: ...              # 或通过设置页填写
+tavilyApiKey: ...           # 或通过设置页填写
+keenableApiKey: ...         # 或通过设置页填写
+firecrawlApiKey: ...        # 或通过设置页填写
+parallelApiKey: ...         # 或通过设置页填写
+perplexityApiKey: ...
+serpbaseApiKey: ...         # 或通过设置页填写
+deepseekApiKey: ...
 ```
 
 #### 让 agent 测试所有引擎
@@ -254,7 +253,7 @@ Search engine test:
 
 切换后重启 `dsh web` 生效。
 
-> 配置卡片挂在官方设置页的 `settings.plugin.item` 插槽（dsh 自带），配置读写走插件自建 bridge，**不依赖 dsh-web-ui**，插件可独立使用。
+> 配置卡片挂在左侧「插件」页的 `plugins.row.config` 行配置插槽（dsh 自带），配置读写走插件自建 bridge，**不依赖 dsh-web-ui**，插件可独立使用。
 
 ### 代理说明（国内用户）
 
@@ -270,8 +269,8 @@ Windows 用户：桌面快捷方式已内置此配置（`set NODE_USE_ENV_PROXY=
 
 ### 工作原理
 
-- `lib/index.js`：host 端。实现 `WebSearchProvider`（`id` / `available()` / `search()`），统一引擎路由 + 自动回退（付费引擎优先，免费兜底）；解析 `timeRange`（固定档/相对值/绝对日期）并透传给各引擎；注册 `free-search` settings namespace；提供 `/api/dsh-free-search-settings` 读写桥 + `raw-search` 调试接口；注册 `free_search_test`、`platform_search`、`advanced_search` 工具；动态注入引擎清单到系统提示词（设置变更时自动刷新）。
-- `lib/client.js`：浏览器端。React 配置卡片（引擎选择 + key 输入 + 连通测试 + 中英切换），挂载到官方设置页的 `settings.plugin.item` 插槽；注册 `/free-search-engine` 弹出式切换命令（`commandUi` popupSelect，与 `/model` 同机制）。
+- `lib/index.js`：host 端。实现 `WebSearchProvider`（`id` / `available()` / `search()`），统一引擎路由 + 自动回退（付费引擎优先，免费兜底）；解析 `timeRange`（固定档/相对值/绝对日期）并透传给各引擎；在 `web-search-free` 条目上声明可编辑配置（`.volatile()`）并自带设置页（`plugins.row.config`）；提供 `/api/dsh-free-search-settings` 读写桥 + `raw-search` 调试接口；注册 `free_search_test`、`platform_search`、`advanced_search` 工具；动态注入引擎清单到系统提示词（设置变更时自动刷新）。
+- `lib/client.js`：浏览器端。React 配置卡片（引擎选择 + key 输入 + 连通测试 + 中英切换），挂载到左侧「插件」页的 `plugins.row.config` 行配置插槽；注册 `/free-search-engine` 弹出式切换命令（`commandUi` popupSelect，与 `/model` 同机制）。
 - `cordis.patch.yml`：插件 loader 配置。
 
 ---
@@ -300,7 +299,7 @@ This plugin provides multiple free search engines with automatic fallback, compl
 
 - **Zero Cost** — Multiple free engines with no API key or registration required
 - **Multi-Engine Support** — DuckDuckGo (HTML / Lite), Bing, AnySearch AI, SearXNG (meta-search with custom instances), Exa, Tavily, Keenable, Firecrawl, Parallel, Perplexity, SerpBase, and DeepSeek Official
-- **Web Settings UI** — Engine switching, API key configuration (keys masked as "configured" in the UI), and a Chinese/English toggle; on DSH 0.1.6-alpha.2+ the entry is the component-row config on the sidebar Plugins page, on older versions Settings → Plugins → Configurable
+- **Web Settings UI** — Engine switching, API key configuration (keys masked as "configured" in the UI), and a Chinese/English toggle; the entry is the component-row config (`plugins.row.config`) on the sidebar Plugins page (DSH 0.1.7-rc.1+)
 - **Popup Switch Command** — Type `/free-search-engine` in the chat: a picker opens with all engines; click one to switch (equivalent to the settings page + save)
 - **Engine Testing** — `free_search_test` for the agent to check all engines in one call; the settings UI also has a "Test engine" button that tests the selected engine directly (no fallback chain; paid engines without a key report an explicit error)
 - **Unified Engine Fallback** — Any engine failure (paid or free, missing key, 401, rate limit, network error) automatically tries the next engine: the configured engine first, then other engines (exa/tavily/keenable/firecrawl/parallel are tried even without a key because they have built-in keyless quota), then the remaining free engines (Bing/AnySearch etc.) — with a note attached to the results naming the engine that actually served them (e.g. `Note: perplexity unavailable or failed, using exa.`). Search never fails outright.
@@ -384,10 +383,9 @@ This plugin intentionally specifies `@deepseek-ai/dsh-settings` and `@deepseek-a
 
 #### Web Settings (Recommended)
 
-After installation, open the config page according to your DSH version:
+After installation, open the config page (DSH 0.1.7-rc.1+):
 
-- **DSH 0.1.6-alpha.2 and later**: sidebar **Plugins** page → **Installed** group → `free-search` → click the `web-search-free` component row (the row's "configure" entry)
-- **DSH 0.1.5 and earlier**: **Settings → Plugins → Configurable** tab → **Free Search** card
+- Sidebar **Plugins** page → **Installed** group → `free-search` → click the `web-search-free` component row (the row's "configure" entry)
 
 The config page provides:
 
@@ -426,24 +424,24 @@ The command only changes the preferred engine; search still goes through `web_se
 
 #### Configuration File
 
-Configuration is stored in `~/.dsh/settings.yaml`:
+Since DSH 0.1.7-rc.1 the configuration is stored with the profile's plugin entry: the settings page and `/free-search-engine` both write the `config` of the `web-search-free` (`dsh-free-search`) entry in the active profile's `cordis.patch.yml`. The old `free-search:` section of `~/.dsh/settings.yaml` is imported once at startup; the file is then renamed to `settings.yaml.imported`.
 
 ```yaml
-free-search:
-  provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / parallel / perplexity / serpbase / deepseek-official
-  lang: zh                    # settings UI language (zh / en)
-  bingMarket: zh-CN           # Bing market
-  region: cn-zh               # DuckDuckGo region (optional)
-  searxngInstances:           # Custom SearXNG instances (optional)
-    - https://your-instance.example
-  exaApiKey: ...              # Or configure via the web settings UI
-  tavilyApiKey: ...           # Or configure via the web settings UI
-  keenableApiKey: ...         # Or configure via the web settings UI
-  firecrawlApiKey: ...        # Or configure via the web settings UI
-  parallelApiKey: ...         # Or configure via the web settings UI
-  perplexityApiKey: ...
-  serpbaseApiKey: ...         # Or configure via the web settings UI
-  deepseekApiKey: ...
+# config of that entry in profiles/<profile>/cordis.patch.yml:
+provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / parallel / perplexity / serpbase / deepseek-official
+lang: zh                    # settings UI language (zh / en)
+bingMarket: zh-CN           # Bing market
+region: cn-zh               # DuckDuckGo region (optional)
+searxngInstances:           # Custom SearXNG instances (optional)
+  - https://your-instance.example
+exaApiKey: ...              # Or configure via the web settings UI
+tavilyApiKey: ...           # Or configure via the web settings UI
+keenableApiKey: ...         # Or configure via the web settings UI
+firecrawlApiKey: ...        # Or configure via the web settings UI
+parallelApiKey: ...         # Or configure via the web settings UI
+perplexityApiKey: ...
+serpbaseApiKey: ...         # Or configure via the web settings UI
+deepseekApiKey: ...
 ```
 
 #### Asking the Agent to Test All Engines
@@ -524,7 +522,7 @@ The `tools/` directory includes a lightweight, zero-dependency switcher:
 
 Restart `dsh web` after switching to apply changes.
 
-> The settings card mounts into the official `settings.plugin.item` slot (built into DSH), and configuration reads/writes go through the plugin's own bridge. **No `dsh-web-ui` dependency — the plugin can be used standalone.**
+> The settings card mounts into the official `plugins.row.config` component-row slot on the sidebar Plugins page (built into DSH), and configuration reads/writes go through the plugin's own bridge. **No `dsh-web-ui` dependency — the plugin can be used standalone.**
 
 ### Proxy Note (for Users in Mainland China)
 
@@ -540,8 +538,8 @@ Windows users: The desktop shortcut already includes this configuration (`set NO
 
 ### How It Works
 
-- `lib/index.js`: Host side. Implements `WebSearchProvider` (`id` / `available()` / `search()`), unified engine routing + auto-fallback (paid engines first, free as fallback); parses `timeRange` (fixed tiers / relative values / absolute dates) and forwards it to each engine; registers the `free-search` settings namespace; provides the `/api/dsh-free-search-settings` read/write bridge + `raw-search` debug endpoint; registers the `free_search_test`, `platform_search`, and `advanced_search` tools; dynamically injects the engine list into system prompts (auto-refreshes on settings change).
-- `lib/client.js`: Browser side. React configuration card (engine select, key inputs, connectivity test, and Chinese/English toggle), mounted into the official `settings.plugin.item` slot; registers the `/free-search-engine` popup switch command (`commandUi` popupSelect, the same mechanism as `/model`).
+- `lib/index.js`: Host side. Implements `WebSearchProvider` (`id` / `available()` / `search()`), unified engine routing + auto-fallback (paid engines first, free as fallback); parses `timeRange` (fixed tiers / relative values / absolute dates) and forwards it to each engine; declares its editable config as volatile fields on the `web-search-free` composition entry and ships its own settings page (`plugins.row.config`); provides the `/api/dsh-free-search-settings` read/write bridge + `raw-search` debug endpoint; registers the `free_search_test`, `platform_search`, and `advanced_search` tools; dynamically injects the engine list into system prompts (auto-refreshes on settings change).
+- `lib/client.js`: Browser side. React configuration card (engine select, key inputs, connectivity test, and Chinese/English toggle), mounted into the official `plugins.row.config` component-row slot on the sidebar Plugins page; registers the `/free-search-engine` popup switch command (`commandUi` popupSelect, the same mechanism as `/model`).
 - `cordis.patch.yml`: Plugin loader configuration.
 
 ### License
