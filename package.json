@@ -1,6 +1,6 @@
 {
   "name": "dsh-free-search",
-  "version": "0.5.0",
+  "version": "0.5.5",
   "description": "Free web search for DeepSeek Harness: 17 engines (Bing/DuckDuckGo/AnySearch/SearXNG/Exa/Tavily/Keenable/Firecrawl/Parallel keyless; Perplexity/SerpBase/DeepSeek/You.com/Baidu/Kimi/Aliyun with key) + auto smart routing + multi_search cross-source tool + time filtering + platform search + web_fetch, with web settings UI.",
   "type": "module",
   "main": "lib/index.js",
@@ -54,11 +54,11 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
-    "@deepseek-ai/dsh-client-ui-commands": "^0.1.7-rc.1 || 0.2.0-rc.1",
-    "@deepseek-ai/dsh-client-ui-plugin-manager": "^0.1.7-rc.1 || 0.2.0-rc.1",
-    "@deepseek-ai/dsh-client-ui-renderer": "^0.1.7-rc.1 || 0.2.0-rc.1",
-    "@deepseek-ai/dsh-settings": "^0.1.7-rc.1 || 0.2.0-rc.1",
-    "@deepseek-ai/dsh-tools": "^0.1.7-rc.1 || 0.2.0-rc.1",
+    "@deepseek-ai/dsh-client-ui-commands": "^0.1.7-rc.1 || ^0.2.0-rc.1",
+    "@deepseek-ai/dsh-client-ui-plugin-manager": "^0.1.7-rc.1 || ^0.2.0-rc.1",
+    "@deepseek-ai/dsh-client-ui-renderer": "^0.1.7-rc.1 || ^0.2.0-rc.1",
+    "@deepseek-ai/dsh-settings": "^0.1.7-rc.1 || ^0.2.0-rc.1",
+    "@deepseek-ai/dsh-tools": "^0.1.7-rc.1 || ^0.2.0-rc.1",
     "@deepseek-ai/schemastery": "^3.18.4",
     "react": "^18.2.0"
   },
