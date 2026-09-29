@@ -1,7 +1,7 @@
 {
   "name": "dsh-free-search",
-  "version": "0.5.6",
-  "description": "Free web search for DeepSeek Harness: 17 engines (Bing/DuckDuckGo/AnySearch/SearXNG/Exa/Tavily/Keenable/Firecrawl/Parallel keyless; Perplexity/SerpBase/DeepSeek/You.com/Baidu/Kimi/Aliyun with key) + auto smart routing + multi_search cross-source tool + time filtering + platform search + web_fetch, with web settings UI.",
+  "version": "0.6.0",
+  "description": "Free web search for DeepSeek Harness: 18 engines (Bing/DuckDuckGo/AnySearch/SearXNG/Exa/Tavily/Keenable/Firecrawl/Parallel keyless; Perplexity/SerpBase/DeepSeek/You.com/Baidu/Kimi/Aliyun/Doubao with key) + auto smart routing + multi_search cross-source tool + time filtering + platform search + web_fetch, with web settings UI.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -36,7 +36,10 @@
     "aliyun",
     "youcom",
     "multi-search",
-    "auto-routing"
+    "auto-routing",
+    "doubao",
+    "volcengine",
+    "volcano"
   ],
   "license": "MIT",
   "publishConfig": {
