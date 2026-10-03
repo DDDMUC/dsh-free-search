@@ -108,28 +108,33 @@ dsh web
 
 #### 接管行为与验证
 
-插件加载后**自动接管搜索**：
+插件加载后**自动接管搜索**（运行时接管，不改配置层）：
 
-- `web.searchProvider` 未设置，或仍是 DSH 出厂默认的官方搜索 `deepseek-official` 时，自动切换为本插件；
+- `web.searchProvider` 未设置，或仍是 DSH 出厂默认的官方搜索 `deepseek-official` 时，自动切换为本插件的 provider（id 固定为 `ddg`）；
 - 如果（你或别的插件）已显式选择其他 provider，本插件不抢占，只在启动日志输出 WARN 与切换用的 YAML。
 
-正常安装（`dsh plugin add` / 插件管理器）时，插件自带的 **bundle patch**（`cordis.patch.yml`）还会在配置层显式写入 `searchProvider: ddg`；即使这层没生效（例如把插件作为普通依赖手工安装、或 profile patch 整体覆盖了 `web` 条目），上面的运行时兜底也会接管官方默认，不会再静默退回官方搜索。
+**不再往配置里写 `searchProvider: ddg`**：静态覆盖曾导致"悬空引用"——patch 是整段覆盖 config，一旦插件那一行被**停用或跳过**（比如在插件管理器里关掉），配置仍指向 `ddg` 而没有任何东西注册它，于是每次搜索都失败：
 
-需要显式声明、或从其他 provider 切过来时（`profiles/<profile>/cordis.patch.yml`）：
+```
+Error: configured web provider "ddg" is not registered
+```
+
+现在没有这层覆盖：插件被停用时 `web.searchProvider` 保持官方默认（`deepseek-official`），搜索至少还能走官方通道；插件启用时由上面的运行时接管切到 `ddg`。
+
+> 如果你曾按旧文档手动在 `profiles/<profile>/cordis.patch.yml` 里加过下面这段，而插件没有启用，就会看到上面那条错误——**删掉这段即可**（或重新启用插件）：
 
 ```yaml
-# 让 harness 的 web_search 使用本插件。
-# DSH 0.1.2+ 的 patch 是"整段覆盖 config"而不是深度合并：
-# 已有 web 条目里的字段（如 fetchProvider）必须在这里一并重述，否则会被抹掉。
+# 可选，通常不需要：只有你想强制指定时才加。
+# DSH 0.1.2+ 的 patch 是"整段覆盖 config"，必须保留 fetchProvider。
 - id: web
   config:
     searchProvider: ddg
     fetchProvider: http
 ```
 
-- `searchProvider: ddg` —— `ddg` 是**本插件注册的 provider id（固定值）**，不是"使用 DuckDuckGo 引擎"的意思；具体用哪个引擎由设置页的 `provider` 字段决定（可填 `bing`/`baidu`/`auto` 等）。
-- `fetchProvider: http` —— 官方网页抓取（web-fetch-http），请保留；漏掉会导致网页抓取失效或重复注册。
-- 想改回官方搜索：在插件管理器里停用本插件条目即可。
+- `searchProvider: ddg` —— 本插件的 **provider id（固定值）**，不是"使用 DuckDuckGo 引擎"；用哪个引擎由设置页的 `provider` 字段决定（`bing`/`baidu`/`auto`/…）。
+- `fetchProvider: http` —— 官方网页抓取（web-fetch-http），手动声明时必须保留。
+- 想改用官方搜索：在插件管理器里停用本插件条目即可，不需要改配置。
 
 #### 姊妹插件：dsh-preset-workbench（预设工作台）
 
@@ -431,28 +436,33 @@ dsh web
 
 #### Takeover behavior and verification
 
-The plugin **takes over search automatically** once loaded:
+The plugin **takes over search at runtime** once loaded (it does not touch the config layer):
 
-- When `web.searchProvider` is unset, or still the shipped default `deepseek-official`, it switches to this plugin;
+- When `web.searchProvider` is unset, or still the shipped default `deepseek-official`, it switches to this plugin's provider (id: `ddg`);
 - If you (or another plugin) explicitly selected a different provider, it does not steal it — it only logs a WARN with a copy-pasteable YAML snippet.
 
-With a normal install (`dsh plugin add` / plugin manager) the bundled **bundle patch** (`cordis.patch.yml`) additionally writes `searchProvider: ddg` into the config layer. Even if that layer does not apply (e.g. the plugin was added as a plain dependency, or a profile patch replaced the whole `web` entry), the runtime fallback above still takes over from the official default — search no longer silently falls back to the official provider.
+**It no longer writes `searchProvider: ddg` into the config layer.** A static override used to create a dangling reference: a patch replaces the whole row config, so when the plugin's row was **disabled or skipped** (e.g. switched off in the plugin manager) the config still said `ddg` while nothing registered it, and every search failed with:
 
-To declare it explicitly, or to switch over from another provider (`profiles/<profile>/cordis.patch.yml`):
+```
+Error: configured web provider "ddg" is not registered
+```
+
+Without that override, a disabled plugin leaves `web.searchProvider` at the shipped default (`deepseek-official`) so search still works through the official provider; when the plugin is enabled the runtime takeover above points it at `ddg`.
+
+> If you previously added the snippet below by hand to `profiles/<profile>/cordis.patch.yml` *and* the plugin is not enabled, you will see that error — **just remove the snippet** (or re-enable the plugin):
 
 ```yaml
-# Route the harness web_search through this plugin.
-# Since DSH 0.1.2 a patch REPLACES the whole entry config (no deep merge):
-# restate any existing web.* fields (e.g. fetchProvider) or they are dropped.
+# Optional; normally unnecessary — only to force a specific provider.
+# Since DSH 0.1.2 a patch REPLACES the whole entry config: keep fetchProvider.
 - id: web
   config:
     searchProvider: ddg
     fetchProvider: http
 ```
 
-- `searchProvider: ddg` — `ddg` is this plugin's **fixed provider id**, not "use the DuckDuckGo engine". The engine is chosen by the `provider` field in the settings page (`bing` / `baidu` / `auto` / …).
-- `fetchProvider: http` — the official web-fetch provider; keep it, or page fetching breaks or double-registers.
-- To go back to official search: disable this plugin's entry in the plugin manager.
+- `searchProvider: ddg` — this plugin's **fixed provider id**, not "use the DuckDuckGo engine"; the engine is chosen by the `provider` field in settings (`bing` / `baidu` / `auto` / …).
+- `fetchProvider: http` — the official web-fetch provider; keep it when declaring the row by hand.
+- To go back to official search: disable this plugin's entry in the plugin manager — no config edit needed.
 
 #### Sister Plugin: dsh-preset-workbench
 
