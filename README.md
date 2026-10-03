@@ -218,6 +218,8 @@ Error: configured web provider "ddg" is not registered
 
 冷却只作用于本进程（重载插件或重启即清空），且**对配置的首选引擎同样适用**：若它正在冷却，本轮会跳过并回退，结果里注明 `is cooling down`；冷却中的引擎一旦成功即自动解冻。
 
+`fallbackOn` 控制哪些失败类别**允许**触发回退：默认勾选全部六类，即当前的「搜索永不直接失败」；取消某类后，遇到该类失败会**停下并把该引擎的错误报出**，不再换引擎（例如去掉 `invalid-response`：首选引擎返回空/解析失败时直接报错，而不是静默退回低质引擎）。设为空数组 `[]` 则任何失败都立即中止。注意**缺 key、被禁用、不支持时间过滤不算失败**，无论怎样都照常换引擎。设置页有对应勾选框，也可在 config 写 `fallbackOn: [quota, auth, bot-wall, transient, invalid-response, unknown]`。
+
 #### 配置文件
 
 DSH 0.1.7-rc.1 起，配置跟随 profile 的插件条目保存：设置页与 `/free-search-engine` 都会写入当前 profile 的 `cordis.patch.yml` 中 `web-search-free`（`dsh-free-search`）条目的 `config`。
@@ -227,6 +229,7 @@ DSH 0.1.7-rc.1 起，配置跟随 profile 的插件条目保存：设置页与 `
 ```yaml
 # profiles/<profile>/cordis.patch.yml 中该条目的 config：
 provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / parallel / perplexity / serpbase / deepseek-official / you / baidu / kimi / aliyun / doubao / openai / gemini / claude / auto / multi
+fallbackOn: [quota, auth, bot-wall, transient, invalid-response, unknown]   # 允许触发回退的失败类别；[] = 任何失败都立即中止（默认全部）
 lang: zh                    # 设置页界面语言（zh / en）
 bingMarket: zh-CN           # Bing 市场
 region: cn-zh               # DuckDuckGo 区域（可选）
@@ -563,6 +566,8 @@ The `Note:` line now names the class, e.g. `Note: exa is out of quota, using dou
 
 Cooldowns are per-process (reloading the plugin or restarting clears them) and apply to the configured preferred engine too: if it is cooling down, this run skips it, fails over and says `is cooling down`. An engine that succeeds is automatically un-cooled.
 
+`fallbackOn` decides which failure classes are **allowed** to trigger a fallback: by default all six are checked, i.e. today's "search never fails outright". Unchecking a class makes such a failure **stop the search and surface that engine's error** instead of trying another engine (e.g. drop `invalid-response` and a preferred engine that returns nothing/parses badly fails loudly rather than silently handing you a lower-quality engine's results). An empty array `[]` aborts on any failure. Note that **missing keys, disabled engines and unsupported time filters are not failures** and always advance. There is a matching checkbox group in the settings page, and you can also write `fallbackOn: [quota, auth, bot-wall, transient, invalid-response, unknown]` in the config.
+
 #### Configuration File
 
 Since DSH 0.1.7-rc.1 the configuration is stored with the profile's plugin entry: the settings page and `/free-search-engine` both write the `config` of the `web-search-free` (`dsh-free-search`) entry in the active profile's `cordis.patch.yml`.
@@ -572,6 +577,7 @@ The old `free-search:` section of `~/.dsh/settings.yaml` is **not** imported by 
 ```yaml
 # config of that entry in profiles/<profile>/cordis.patch.yml:
 provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / parallel / perplexity / serpbase / deepseek-official / you / baidu / kimi / aliyun / doubao / openai / gemini / claude / auto / multi
+fallbackOn: [quota, auth, bot-wall, transient, invalid-response, unknown]   # failure classes allowed to trigger fallback; [] = abort on any failure (default: all)
 lang: zh                    # settings UI language (zh / en)
 bingMarket: zh-CN           # Bing market
 region: cn-zh               # DuckDuckGo region (optional)
