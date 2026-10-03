@@ -43,7 +43,8 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 - **结果缓存** —— 相同查询（含引擎/时间过滤参数）5 分钟内命中缓存（LRU 50 条），防免费引擎限流、省付费额度；时长可在设置页 0-5 分钟自由配置（0 关闭）
 - **免费标注** —— 设置页中免费引擎带绿色 `FREE` 徽章，付费引擎带橙色 `API KEY` 徽章
 - **网页抓取（web_fetch）** —— 让 agent 抓取网页内容（官方 `dsh-web-fetch-http` provider，纯 JS，零额外依赖）
-- **平台搜索（platform_search）** —— 搜 GitHub / V2EX / B站 / Reddit / Hacker News / Stack Overflow / 维基百科 / npm（公开 API，零依赖）
+- **平台搜索（platform_search）** —— 搜 GitHub / V2EX / B站 / Reddit / Hacker News / Stack Overflow / 维基百科 / npm / YouTube / Vimeo（公开 API 或免 key 抓取，零依赖）
+- **视频搜索（video_search）** —— 跨站找视频：Bing Videos + DuckDuckGo Videos（免 key，失败互相回退），返回视频链接、标题与来源/时长等元信息
 - **干净集成** —— 实现官方 `WebSearchProvider` seam 接口，与官方插件共存
 
 如果这个插件帮到了你，欢迎给仓库点个 ⭐（[GitHub](https://github.com/DDDMUC/dsh-free-search)）——星标是开发者继续维护的最大动力，感谢支持！
@@ -168,7 +169,7 @@ Error: configured web provider "ddg" is not registered
   - **推荐**：付费引擎 key 建议写入 harness 凭据中心 `~/.dsh/.credentials.yaml`（如 `DEEPSEEK_API_KEY: sk-...`，与官方 LLM provider 一致，一处管理所有 key）。插件读取优先级：凭据中心 > 设置页 > 环境变量，设置页填的 key 仅作为遗留兼容。
 - **Test engine**：直测当前引擎可用性（不走回退链，付费引擎无 key 会明确报错）
 - **Use Bing default**：把当前搜索引擎切回稳定的免费 Bing；`Discard` 只撤销尚未保存的编辑
-- **Platform search**：勾选启用 GitHub / V2EX / Bilibili 平台搜索（`platform_search` 工具按此过滤）
+- **Platform search**：勾选启用 GitHub / V2EX / Bilibili / YouTube / Vimeo 平台搜索（`platform_search` 工具按此过滤）
 - **EN / 中文**：切换界面语言（默认中文）
 
 <table align="center" style="border: none; border-collapse: collapse;">
@@ -318,8 +319,21 @@ Search engine test:
 | `stackoverflow` | Stack Overflow 技术问答（Stack Exchange 官方公开 API） |
 | `wikipedia` | 维基百科词条（中文环境用 zh.wikipedia.org，`lang: en` 时切换 en.wikipedia.org） |
 | `npm` | npm 包搜索（registry 官方 API） |
+| `youtube` | YouTube 视频搜索（抓 results 页 `ytInitialData`，免 key） |
+| `vimeo` | Vimeo 视频搜索（抓搜索页内嵌数据；抓不到时退回网页搜索 `site:vimeo.com`，免 key） |
 
-全部走公开 API，零外部依赖、无需任何 key，开箱即用。
+公开 API 或免 key 抓取，零外部依赖、无需任何 key。`youtube` / `vimeo` 需要先在设置页「平台搜索」里勾选启用。
+
+#### 视频搜索（video_search）
+
+让 agent 找视频："找几个关于 X 的视频"、"有没有 Y 的教学视频"。`video_search` 跨站搜索：
+
+| 源 | 说明 |
+|---|---|
+| `bing` | Bing Videos（抓 `bing.com/videos/search` 的 `vrhm` 元数据，免 key） |
+| `ddg` | DuckDuckGo Videos（vqd + `v.js`，免 key） |
+
+默认两个源都试、失败互相回退，返回 `url / title / snippet`（来源站点、时长等）。**免 key 抓取，对方改版可能失效**；要按站点搜（YouTube / Vimeo / B站）请用 `platform_search`。
 
 ### 本地引擎切换工具（tools/）
 
@@ -348,7 +362,7 @@ Windows 用户：桌面快捷方式已内置此配置（`set NODE_USE_ENV_PROXY=
 
 ### 工作原理
 
-- `lib/index.js`：host 端。实现 `WebSearchProvider`（`id` / `available()` / `search()`），统一引擎路由 + 自动回退（付费引擎优先，免费兜底）；解析 `timeRange`（固定档/相对值/绝对日期）并透传给各引擎；在 `web-search-free` 条目上声明可编辑配置（`.volatile()`）并自带设置页（`plugins.row.config`）；提供 `/api/dsh-free-search-settings` 读写桥 + `raw-search` 调试接口；注册 `free_search_test`、`platform_search`、`advanced_search` 工具；动态注入引擎清单到系统提示词（设置变更时自动刷新）。
+- `lib/index.js`：host 端。实现 `WebSearchProvider`（`id` / `available()` / `search()`），统一引擎路由 + 自动回退（付费引擎优先，免费兜底）；解析 `timeRange`（固定档/相对值/绝对日期）并透传给各引擎；在 `web-search-free` 条目上声明可编辑配置（`.volatile()`）并自带设置页（`plugins.row.config`）；提供 `/api/dsh-free-search-settings` 读写桥 + `raw-search` 调试接口；注册 `free_search_test`、`platform_search`、`video_search`、`advanced_search`、`multi_search` 工具；动态注入引擎清单到系统提示词（设置变更时自动刷新）。
 - `lib/client.js`：浏览器端。React 配置卡片（引擎选择 + key 输入 + 连通测试 + 中英切换），挂载到左侧「插件」页的 `plugins.row.config` 行配置插槽；注册 `/free-search-engine` 弹出式切换命令（`commandUi` popupSelect，与 `/model` 同机制）。
 - `cordis.patch.yml`：插件 loader 配置。
 
@@ -391,7 +405,8 @@ This plugin provides multiple free search engines with automatic fallback, compl
 - **Result Caching** — Identical queries (same engine / time-filter args) hit an LRU cache (50 entries) for up to 5 minutes, protecting free engines from rate-limiting and saving paid quota; the TTL is configurable from 0-5 minutes in the settings UI (0 disables caching)
 - **Visual Badges** — Free engines feature a green `FREE` badge, while paid engines show an orange `API KEY` badge in the settings UI
 - **Webpage Fetching (`web_fetch`)** — Allows the agent to read full webpage contents (official `dsh-web-fetch-http` provider, pure JS, zero extra dependencies)
-- **Platform Search (`platform_search`)** — Search GitHub / V2EX / Bilibili / Reddit / Hacker News / Stack Overflow / Wikipedia / npm (public APIs, zero extra dependencies)
+- **Platform Search (`platform_search`)** — Search GitHub / V2EX / Bilibili / Reddit / Hacker News / Stack Overflow / Wikipedia / npm / YouTube / Vimeo (public APIs or keyless scraping, zero extra dependencies)
+- **Video Search (`video_search`)** — Find videos across the web via Bing Videos + DuckDuckGo Videos (keyless, mutual fallback), returning video links with titles and publisher/duration metadata
 - **Clean Integration** — Implements the official `WebSearchProvider` seam interface, coexisting seamlessly with official plugins
 
 If this plugin has been helpful, a ⭐ on [GitHub](https://github.com/DDDMUC/dsh-free-search) would mean a lot — it's the biggest motivation for the developer to keep maintaining it. Thank you!
@@ -516,7 +531,7 @@ The config page provides:
   - **Recommended**: store paid-engine keys in the harness credential center `~/.dsh/.credentials.yaml` (e.g. `DEEPSEEK_API_KEY: sk-...`, same as the official LLM providers — one place for all keys). Resolution order: credentials center > settings page > environment variable; the settings-page fields remain for backward compatibility.
 - **Test engine**: Tests the selected engine directly (no fallback chain; paid engines without a key report an explicit error).
 - **Use Bing default**: stage a switch back to the stable free Bing engine; `Discard` only cancels unsaved edits
-- **Platform search**: check platforms (GitHub / V2EX / Bilibili / Reddit / HN / Stack Overflow / Wikipedia / npm) to enable them for the `platform_search` tool (disabled platforms are skipped).
+- **Platform search**: check platforms (GitHub / V2EX / Bilibili / Reddit / HN / Stack Overflow / Wikipedia / npm / YouTube / Vimeo) to enable them for the `platform_search` tool (disabled platforms are skipped).
 - **EN / 中文**: toggle the interface language (default Chinese).
 
 <table align="center" style="border: none; border-collapse: collapse;">
@@ -666,8 +681,21 @@ Ask the agent to search specific platforms (e.g., *"Search GitHub for deepseek h
 | `stackoverflow` | Stack Overflow Q&A (official public Stack Exchange API) |
 | `wikipedia` | Wikipedia articles (zh.wikipedia.org for Chinese; switches to en.wikipedia.org when `lang: en`) |
 | `npm` | npm package search (registry official API) |
+| `youtube` | YouTube video search (scrapes the results page `ytInitialData`, keyless) |
+| `vimeo` | Vimeo video search (scrapes the search page's embedded data; falls back to web search `site:vimeo.com`, keyless) |
 
-All platform searches rely on public endpoints with zero external dependencies and no API keys — they work out of the box.
+These rely on public endpoints or keyless scraping, with zero external dependencies and no API keys. `youtube` / `vimeo` must first be enabled in Settings → Platform search.
+
+#### Video Search (`video_search`)
+
+Ask the agent to find videos: *"find some videos about X"*, *"any tutorials for Y"*. `video_search` searches across the web:
+
+| Source | Notes |
+|---|---|
+| `bing` | Bing Videos (scrapes the `vrhm` metadata on `bing.com/videos/search`, keyless) |
+| `ddg` | DuckDuckGo Videos (vqd + `v.js`, keyless) |
+
+Both sources are tried by default with mutual fallback, returning `url / title / snippet` (publisher, duration, etc.). **Keyless scraping — may break if the site changes its markup**; to search a specific site (YouTube / Vimeo / Bilibili) use `platform_search`.
 
 ### Local Engine Switcher (`tools/`)
 
@@ -696,7 +724,7 @@ Windows users: The desktop shortcut already includes this configuration (`set NO
 
 ### How It Works
 
-- `lib/index.js`: Host side. Implements `WebSearchProvider` (`id` / `available()` / `search()`), unified engine routing + auto-fallback (paid engines first, free as fallback); parses `timeRange` (fixed tiers / relative values / absolute dates) and forwards it to each engine; declares its editable config as volatile fields on the `web-search-free` composition entry and ships its own settings page (`plugins.row.config`); provides the `/api/dsh-free-search-settings` read/write bridge + `raw-search` debug endpoint; registers the `free_search_test`, `platform_search`, and `advanced_search` tools; dynamically injects the engine list into system prompts (auto-refreshes on settings change).
+- `lib/index.js`: Host side. Implements `WebSearchProvider` (`id` / `available()` / `search()`), unified engine routing + auto-fallback (paid engines first, free as fallback); parses `timeRange` (fixed tiers / relative values / absolute dates) and forwards it to each engine; declares its editable config as volatile fields on the `web-search-free` composition entry and ships its own settings page (`plugins.row.config`); provides the `/api/dsh-free-search-settings` read/write bridge + `raw-search` debug endpoint; registers the `free_search_test`, `platform_search`, `video_search`, and `advanced_search` tools; dynamically injects the engine list into system prompts (auto-refreshes on settings change).
 - `lib/client.js`: Browser side. React configuration card (engine select, key inputs, connectivity test, and Chinese/English toggle), mounted into the official `plugins.row.config` component-row slot on the sidebar Plugins page; registers the `/free-search-engine` popup switch command (`commandUi` popupSelect, the same mechanism as `/model`).
 - `cordis.patch.yml`: Plugin loader configuration.
 
