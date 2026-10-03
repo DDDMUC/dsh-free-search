@@ -10,10 +10,20 @@
 # A legacy ~/.dsh/settings.yaml "free-search:" section is migrated into this
 # entry's config once at startup (see README).
 # Failed/empty engines automatically fall back to the next free engine.
-# web.searchProvider must point at this plugin's provider id (ddg); the runtime
-# also takes over when it is unset or still the shipped default
-# (deepseek-official), and only warns when another provider was chosen
-# explicitly.
+#
+# NOTE (2026-10, issue #51): this bundle does NOT touch `web.searchProvider`.
+# The plugin takes the search provider over at runtime instead — when the field
+# is unset or still the shipped default (`deepseek-official`) it points it at its
+# own provider id (`ddg`); when another provider was chosen explicitly it leaves
+# it alone and only warns.
+#
+# A static `- id: web  config: searchProvider: ddg` used to live here. It was
+# removed because it created a dangling reference: a patch replaces the whole
+# row config, so rows that came from a *disabled* or skipped plugin left
+# `searchProvider: ddg` behind while nothing registered `ddg` — every web search
+# then failed with `configured web provider "ddg" is not registered`. Leaving the
+# base default (`deepseek-official`) in place means a disabled plugin degrades to
+# the official provider instead of breaking search outright.
 - insert:
     - id: web-search-free
       name: dsh-free-search
@@ -21,10 +31,3 @@
         provider: bing
         disabledEngines: []
         bingMarket: zh-CN
-# 自动接管默认搜索：让 harness 的 web_search 直接用本插件的 provider（内部含全部引擎）
-# 注意 patch 语义是"整行替换 config"（DSH 0.1.2+）：必须保留 fetchProvider，否则
-# web-fetch-http 会被另一层重新注册，与 base bundle 的注册造成 duplicate loader entry。
-- id: web
-  config:
-    searchProvider: ddg
-    fetchProvider: http
