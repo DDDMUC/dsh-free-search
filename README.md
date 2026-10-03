@@ -29,7 +29,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 ### 特性
 
 - **零成本** —— 多个免费引擎，无需 key、无需注册
-- **多引擎可选**：DuckDuckGo（html/lite）、Bing、SearXNG（元搜索，支持自定义实例）、AnySearch、Exa、Tavily、Keenable、Firecrawl、Parallel、Perplexity、SerpBase、DeepSeek 官方、You.com、百度千帆、Kimi、阿里云百炼、火山联网搜索（豆包搜索）、OpenAI / Gemini / Claude 模型内置搜索
+- **多引擎可选**：DuckDuckGo（html/lite）、Bing、SearXNG（元搜索，支持自定义实例）、AnySearch、Exa、Tavily、Keenable、Firecrawl、Parallel、Perplexity、SerpBase、Serply、DeepSeek 官方、You.com、百度千帆、Kimi、阿里云百炼、火山联网搜索（豆包搜索）、OpenAI / Gemini / Claude 模型内置搜索
 - **网页设置页** —— 引擎切换 + API key 配置（UI 中 key 脱敏显示"已配置"）+ 中英文切换；入口在左侧「插件」页的组件行配置（`plugins.row.config`，DSH 0.1.7-rc.1+）
 - **弹出式切换命令** —— 聊天框输入 `/free-search-engine`，弹出引擎选择窗口，点选即切换（等效设置页 + 保存）
 - **引擎测试** —— `free_search_test` 工具让 agent 一键测试所有引擎；设置页也有"测试引擎"按钮（直测当前引擎，不走回退链，付费引擎无 key 会明确报错）
@@ -65,6 +65,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 | `parallel` | Parallel | 免费 | **无 key 也可用**（官方 MCP 匿名额度），配 key 提升额度并支持精确时间过滤 |
 | `perplexity` | Perplexity | 付费 | 需 `PERPLEXITY_API_KEY` |
 | `serpbase` | SerpBase | 付费 | 需 `SERPBASE_API_KEY`（serpbase.dev，注册送 100 次免费额度） |
+| `serply` | Serply | 付费 | 需 `SERPLY_API_KEY`（serply.io，新账户 30 天内 2,500 次免费额度）；Google 网页结果，按设置页语言本地化 |
 | `deepseek-official` | DeepSeek 官方 | 付费 | 需 `DEEPSEEK_API_KEY` |
 | `you` | You.com | 付费 | 需 `YOUCOM_API_KEY`（you.com/platform/api-keys，注册即送免费额度） |
 | `baidu` | 百度千帆 AI 搜索 | 额度 | 需 `BAIDU_API_KEY`（千帆 AI 搜索，每日赠 50 次，超额按量后付费）；中文全网，支持时间过滤 |
@@ -84,6 +85,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
   - Parallel：<https://platform.parallel.ai>
   - Perplexity：<https://www.perplexity.ai/settings/api>
   - SerpBase：<https://serpbase.dev>
+  - Serply：<https://serply.io>（API 文档：<https://serply.io/docs>）
   - DeepSeek：<https://platform.deepseek.com/api_keys>
   - 豆包搜索（火山联网搜索）：<https://console.volcengine.com/search-infinity/web-search>
   - You.com：<https://you.com/platform/api-keys>
@@ -164,7 +166,7 @@ Error: configured web provider "ddg" is not registered
 配置页提供：
 
 - **Search engine**：下拉框切换引擎，保存即生效
-- **API keys**：为 Exa / Tavily / Keenable / Firecrawl / Parallel / Perplexity / DeepSeek / SerpBase / You.com 填写 key（密码框，保存后只显示"已配置"；Exa / Tavily / Keenable / Firecrawl / Parallel 不填也可免 key 使用）
+- **API keys**：为 Exa / Tavily / Keenable / Firecrawl / Parallel / Perplexity / DeepSeek / SerpBase / Serply / You.com 填写 key（密码框，保存后只显示"已配置"；Exa / Tavily / Keenable / Firecrawl / Parallel 不填也可免 key 使用）
   - **推荐**：付费引擎 key 建议写入 harness 凭据中心 `~/.dsh/.credentials.yaml`（如 `DEEPSEEK_API_KEY: sk-...`，与官方 LLM provider 一致，一处管理所有 key）。插件读取优先级：凭据中心 > 设置页 > 环境变量，设置页填的 key 仅作为遗留兼容。
 - **Test engine**：直测当前引擎可用性（不走回退链，付费引擎无 key 会明确报错）
 - **Use Bing default**：把当前搜索引擎切回稳定的免费 Bing；`Discard` 只撤销尚未保存的编辑
@@ -228,7 +230,7 @@ DSH 0.1.7-rc.1 起，配置跟随 profile 的插件条目保存：设置页与 `
 
 ```yaml
 # profiles/<profile>/cordis.patch.yml 中该条目的 config：
-provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / parallel / perplexity / serpbase / deepseek-official / you / baidu / kimi / aliyun / doubao / openai / gemini / claude / auto / multi
+provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / parallel / perplexity / serpbase / serply / deepseek-official / you / baidu / kimi / aliyun / doubao / openai / gemini / claude / auto / multi
 fallbackOn: [quota, auth, bot-wall, transient, invalid-response, unknown]   # 允许触发回退的失败类别；[] = 任何失败都立即中止（默认全部）
 lang: zh                    # 设置页界面语言（zh / en）
 bingMarket: zh-CN           # Bing 市场
@@ -242,6 +244,7 @@ firecrawlApiKey: ...        # 或通过设置页填写
 parallelApiKey: ...         # 或通过设置页填写
 perplexityApiKey: ...
 serpbaseApiKey: ...         # 或通过设置页填写
+serplyApiKey: ...           # 或通过设置页填写
 deepseekApiKey: ...
 ```
 
@@ -377,7 +380,7 @@ This plugin provides multiple free search engines with automatic fallback, compl
 ### Features
 
 - **Zero Cost** — Multiple free engines with no API key or registration required
-- **Multi-Engine Support** — DuckDuckGo (HTML / Lite), Bing, AnySearch AI, SearXNG (meta-search with custom instances), Exa, Tavily, Keenable, Firecrawl, Parallel, Perplexity, SerpBase, DeepSeek Official, You.com, Baidu Qianfan, Kimi, Aliyun Bailian, Volcano Doubao, and the model-based OpenAI / Gemini / Claude searches
+- **Multi-Engine Support** — DuckDuckGo (HTML / Lite), Bing, AnySearch AI, SearXNG (meta-search with custom instances), Exa, Tavily, Keenable, Firecrawl, Parallel, Perplexity, SerpBase, Serply, DeepSeek Official, You.com, Baidu Qianfan, Kimi, Aliyun Bailian, Volcano Doubao, and the model-based OpenAI / Gemini / Claude searches
 - **Web Settings UI** — Engine switching, API key configuration (keys masked as "configured" in the UI), and a Chinese/English toggle; the entry is the component-row config (`plugins.row.config`) on the sidebar Plugins page (DSH 0.1.7-rc.1+)
 - **Popup Switch Command** — Type `/free-search-engine` in the chat: a picker opens with all engines; click one to switch (equivalent to the settings page + save)
 - **Engine Testing** — `free_search_test` for the agent to check all engines in one call; the settings UI also has a "Test engine" button that tests the selected engine directly (no fallback chain; paid engines without a key report an explicit error)
@@ -413,6 +416,7 @@ If this plugin has been helpful, a ⭐ on [GitHub](https://github.com/DDDMUC/dsh
 | `parallel` | Parallel | Free | **Works without a key** (official MCP anonymous quota); a key raises limits and enables precise time filtering |
 | `perplexity` | Perplexity | Paid | Requires `PERPLEXITY_API_KEY` |
 | `serpbase` | SerpBase | Paid | Requires `SERPBASE_API_KEY` (serpbase.dev, 100 free queries on signup) |
+| `serply` | Serply | Paid | Requires `SERPLY_API_KEY` (serply.io, 2,500 free credits for the first 30 days); Google web results localized to the settings language |
 | `deepseek-official` | DeepSeek Official | Paid | Requires `DEEPSEEK_API_KEY` |
 | `you` | You.com | Paid | Requires `YOUCOM_API_KEY` (you.com/platform/api-keys, free tier on signup) |
 | `baidu` | Baidu Qianfan AI Search | Quota | Requires `BAIDU_API_KEY` (Qianfan AI Search, 50 free calls/day then pay-as-you-go); Chinese web-wide, supports time filtering |
@@ -432,6 +436,7 @@ If this plugin has been helpful, a ⭐ on [GitHub](https://github.com/DDDMUC/dsh
   - Parallel: <https://platform.parallel.ai>
   - Perplexity: <https://www.perplexity.ai/settings/api>
   - SerpBase: <https://serpbase.dev>
+  - Serply: <https://serply.io> (API docs: <https://serply.io/docs>)
   - DeepSeek: <https://platform.deepseek.com/api_keys>
   - Doubao / Volcano Web Search: <https://console.volcengine.com/search-infinity/web-search>
   - You.com: <https://you.com/platform/api-keys>
@@ -576,7 +581,7 @@ The old `free-search:` section of `~/.dsh/settings.yaml` is **not** imported by 
 
 ```yaml
 # config of that entry in profiles/<profile>/cordis.patch.yml:
-provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / parallel / perplexity / serpbase / deepseek-official / you / baidu / kimi / aliyun / doubao / openai / gemini / claude / auto / multi
+provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / parallel / perplexity / serpbase / serply / deepseek-official / you / baidu / kimi / aliyun / doubao / openai / gemini / claude / auto / multi
 fallbackOn: [quota, auth, bot-wall, transient, invalid-response, unknown]   # failure classes allowed to trigger fallback; [] = abort on any failure (default: all)
 lang: zh                    # settings UI language (zh / en)
 bingMarket: zh-CN           # Bing market
@@ -590,6 +595,7 @@ firecrawlApiKey: ...        # Or configure via the web settings UI
 parallelApiKey: ...         # Or configure via the web settings UI
 perplexityApiKey: ...
 serpbaseApiKey: ...         # Or configure via the web settings UI
+serplyApiKey: ...           # Or configure via the web settings UI
 deepseekApiKey: ...
 ```
 
