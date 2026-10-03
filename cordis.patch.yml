@@ -4,7 +4,8 @@
 # The engine is chosen from the sidebar Plugins page -> Free Search row config
 # (plugins.row.config, DSH 0.1.7-rc.1+), from the /free-search-engine command,
 # or directly via this entry's config, e.g.:
-#   provider: bing        # engine id: ddg / bing / baidu / kimi / aliyun / doubao / auto / multi / ...
+#   provider: bing        # engine id: ddg / bing / baidu / kimi / aliyun / doubao / openai / gemini / claude / auto / multi / ...
+#   (openai/gemini/claude are model-based and bill per search; they run only when selected explicitly)
 #   region: cn-zh         # DuckDuckGo region
 #   bingMarket: zh-CN     # Bing market
 # A legacy ~/.dsh/settings.yaml "free-search:" section is migrated into this
