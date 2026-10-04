@@ -12,6 +12,9 @@
   "files": [
     "lib/index.js",
     "lib/client.js",
+    "lib/research.js",
+    "lib/cache.js",
+    "lib/vertical.js",
     "cordis.patch.yml"
   ],
   "keywords": [
