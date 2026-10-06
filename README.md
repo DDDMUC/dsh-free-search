@@ -45,6 +45,8 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 - **网页抓取（web_fetch）** —— 让 agent 抓取网页内容（官方 `dsh-web-fetch-http` provider，纯 JS，零额外依赖）
 - **平台搜索（platform_search）** —— 搜 GitHub / V2EX / B站 / Reddit / Hacker News / Stack Overflow / 维基百科 / npm / YouTube / Vimeo（公开 API 或免 key 抓取，零依赖）
 - **视频搜索（video_search）** —— 跨站找视频：Bing Videos + DuckDuckGo Videos（免 key，失败互相回退），返回视频链接、标题与来源/时长等元信息
+- **一次调用完成研究（research）** —— 多引擎并发搜索 → 候选重排 → 分层抓取正文 → 段落选窗 → 带出处的 Markdown 证据包；模型组件（重排/嵌入/决策模型）全部可选，缺失或失败时静默回退规则路径
+- **检索正文缓存（cache_search）** —— 全文检索 `research` 抓过的正文（`node:sqlite` 持久缓存，存储 7 天；`node:sqlite` 不可用时自动降级为 no-op，免 flag 需 ≥ 22.13，22.5–22.12 需 `--experimental-sqlite`）
 - **干净集成** —— 实现官方 `WebSearchProvider` seam 接口，与官方插件共存
 
 如果这个插件帮到了你，欢迎给仓库点个 ⭐（[GitHub](https://github.com/DDDMUC/dsh-free-search)）——星标是开发者继续维护的最大动力，感谢支持！
@@ -341,6 +343,35 @@ Search engine test:
 
 默认两个源都试、失败互相回退，返回 `url / title / snippet`（来源站点、时长等）。**免 key 抓取，对方改版可能失效**；要按站点搜（YouTube / Vimeo / B站）请用 `platform_search`。
 
+#### 一次调用完成研究（research）
+
+`research` 让 agent 一次调用拿到带出处的证据包：多引擎并发搜索 → 候选重排 → 分层抓取正文 → 段落选窗 → Markdown 简报。适合"需要多源核验的问题"，可替代 agent 自己串联 `web_search` + `web_fetch`。
+
+- **参数**：`question`（问题原文）、`depth`（抓取正文的篇数，1–5，默认 3；自动取整并夹到该区间）。
+- **输出**：`sources` 检索结果、`documents` 抓到的正文（每条含 `kind`、`text_origin`、`tier`、`published`、`fetched_at`、`engine_hits` 等字段）、`notes` 执行注记、`estimatedTokens` 粗估 token。
+- **共享预算**：全阶段共用 90 秒截止（`DEADLINE_MS`）与 12 次搜索调用上限（`SEARCH_REQUESTS_MAX`）；到点取消在途请求、排队任务不再启动，并返回已拿到的部分结果，在 `notes` 里记 `deadline_hit` 或 `budget_exhausted`。
+- **降级**：重排、嵌入、决策模型任一失败即静默回退规则路径，不影响返回结果；抓取失败时退化为只用检索摘要（`snippets only`）。
+- **不可信边界**：返回的简报包在 `<untrusted-web-content>` 内。
+
+无 key 时的降级行为（**基本路径仍可用，不会因缺 key 中断**）：
+
+| 未配置的 key | 影响 |
+|---|---|
+| `SILICONFLOW_RERANK_API_KEY` | 跳过候选重排与段落模型打分，改用轻筛排序；抓取前语义簇标记也跳过。`notes` 记录降级路径 |
+| `DECISION_MODEL_API_KEY` / `DECISION_MODEL_URL` | 决策模型整体关闭（`decide()` 直接返回 null），意图判定、充分性闸门、改写挑选全部走规则版。两者需**同时**配置才生效 |
+| `EXA_API_KEY` / `FIRECRAWL_API_KEY` / `CRAWL4AI_API_KEY` | 分层抓取自动跳过对应层，其余层照常 |
+
+> 决策模型端点默认**关闭**（`DECISION_MODEL_URL` 默认为空串）：不配置就不会外呼第三方端点。需要时自行指定 `DECISION_MODEL_URL`。
+
+#### 检索正文缓存（cache_search）
+
+`cache_search` 全文检索 `research` 抓过的正文，用来"回头看之前查到什么"，不必重新抓取。
+
+- **参数**：`query`（检索词）、`limit`（返回条数上限，默认 8，最大 20）。
+- **返回**：`url` / `title` / `excerpt` / `fetched_at`，同样包在 `<untrusted-web-content>` 内。
+- **存储位置与清理**：默认写入 `~/.cache/dsh-free-search/research.db`，可用环境变量 `RESEARCH_CACHE_DIR` 换成别的目录（指向备份盘、或想随项目走时用）。**清理方式**：删除该目录即可，没有后台任务残留、没有注册表项。缓存 7 天后过期，查询时惰性清理，过期行不占检索结果。
+- **`node:sqlite` 不可用时降级**：无法加载 `node:sqlite` 时缓存整体禁用（no-op）——`research` 正常运行，`cache_search` 返回空数组，插件不会因此报错。`node:sqlite` 自 v22.13.0 / v23.4.0 起免 flag；22.5–22.12 需以 `--experimental-sqlite` 启动，否则同样走 no-op。
+
 ### 本地引擎切换工具（tools/）
 
 `tools/` 目录附带了一个本地切换小工具（零依赖）：
@@ -413,6 +444,8 @@ This plugin provides multiple free search engines with automatic fallback, compl
 - **Webpage Fetching (`web_fetch`)** — Allows the agent to read full webpage contents (official `dsh-web-fetch-http` provider, pure JS, zero extra dependencies)
 - **Platform Search (`platform_search`)** — Search GitHub / V2EX / Bilibili / Reddit / Hacker News / Stack Overflow / Wikipedia / npm / YouTube / Vimeo (public APIs or keyless scraping, zero extra dependencies)
 - **Video Search (`video_search`)** — Find videos across the web via Bing Videos + DuckDuckGo Videos (keyless, mutual fallback), returning video links with titles and publisher/duration metadata
+- **One-Call Research (`research`)** — Concurrent multi-engine search → candidate rerank → tiered body fetch → window selection → an evidence pack with provenance as Markdown; every model component (rerank / embedding / decision model) is optional and silently falls back to the rule path when missing or failing
+- **Search Fetched Bodies (`cache_search`)** — Full-text search over the bodies `research` already fetched (`node:sqlite` persistent cache, 7-day retention; degrades to a no-op whenever `node:sqlite` is unavailable — unflagged from 22.13, while 22.5–22.12 needs `--experimental-sqlite`)
 - **Clean Integration** — Implements the official `WebSearchProvider` seam interface, coexisting seamlessly with official plugins
 
 If this plugin has been helpful, a ⭐ on [GitHub](https://github.com/DDDMUC/dsh-free-search) would mean a lot — it's the biggest motivation for the developer to keep maintaining it. Thank you!
@@ -708,6 +741,35 @@ Ask the agent to find videos: *"find some videos about X"*, *"any tutorials for 
 | `ddg` | DuckDuckGo Videos (vqd + `v.js`, keyless) |
 
 Both sources are tried by default with mutual fallback, returning `url / title / snippet` (publisher, duration, etc.). **Keyless scraping — may break if the site changes its markup**; to search a specific site (YouTube / Vimeo / Bilibili) use `platform_search`.
+
+#### One-Call Research (`research`)
+
+`research` gives the agent an evidence pack with provenance in a single call: concurrent multi-engine search → candidate rerank → tiered body fetch → window selection → Markdown brief. Use it when a question needs multi-source verification, instead of chaining `web_search` + `web_fetch` yourself.
+
+- **Arguments**: `question` (the question itself) and `depth` (how many bodies to fetch in full, 1–5, default 3; rounded and clamped to that range).
+- **Output**: `sources` (search hits), `documents` (fetched bodies, each with `kind`, `text_origin`, `tier`, `published`, `fetched_at`, `engine_hits` and more), `notes` (execution notes) and `estimatedTokens`.
+- **Shared budget**: every stage shares a 90-second deadline (`DEADLINE_MS`) and a cap of 12 search calls (`SEARCH_REQUESTS_MAX`). When time is up, in-flight requests are cancelled, queued work does not start, and the partial results collected so far are returned with `deadline_hit` or `budget_exhausted` recorded in `notes`.
+- **Degradation**: if rerank, embedding or the decision model fails, the chain silently falls back to the rule path and keeps going; when fetching fails it degrades to search snippets only (`snippets only`).
+- **Untrusted boundary**: the returned brief is wrapped in `<untrusted-web-content>`.
+
+Behavior without keys (**the basic path stays usable and never breaks over a missing key**):
+
+| Key not configured | Effect |
+|---|---|
+| `SILICONFLOW_RERANK_API_KEY` | Candidate rerank and window model scoring are skipped in favor of light filtering; the pre-fetch semantic cluster tagging is skipped too. The fallback path is recorded in `notes` |
+| `DECISION_MODEL_API_KEY` / `DECISION_MODEL_URL` | The decision model is fully off (`decide()` returns null immediately): intent judging, the sufficiency gate and rewrite picking all use the rule path. Both must be set for it to run |
+| `EXA_API_KEY` / `FIRECRAWL_API_KEY` / `CRAWL4AI_API_KEY` | The corresponding tier of the fetch chain is skipped; the other tiers still run |
+
+> The decision-model endpoint is **off by default** (`DECISION_MODEL_URL` defaults to an empty string): no third-party endpoint is called unless you configure one.
+
+#### Search Fetched Bodies (`cache_search`)
+
+`cache_search` full-text searches the bodies `research` already fetched, so you can look back at earlier findings without re-fetching.
+
+- **Arguments**: `query` (text to look for) and `limit` (max entries, default 8, up to 20).
+- **Returns**: `url` / `title` / `excerpt` / `fetched_at`, also wrapped in `<untrusted-web-content>`.
+- **Where it lives, and how to clear it**: defaults to `~/.cache/dsh-free-search/research.db`; set `RESEARCH_CACHE_DIR` to relocate it (a backup drive, or wherever you want it to travel with). **To clear it**: delete that directory — there is no background job and nothing left in the registry. Entries expire after 7 days and are pruned lazily on query, so stale rows never reach your results.
+- **`node:sqlite` unavailable**: when `node:sqlite` cannot be loaded, the cache is disabled entirely (no-op) — `research` still runs, `cache_search` returns an empty array, and the plugin never errors out over it. `node:sqlite` is unflagged from v22.13.0 / v23.4.0; 22.5–22.12 needs `--experimental-sqlite`, otherwise it takes the same no-op path.
 
 ### Local Engine Switcher (`tools/`)
 
