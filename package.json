@@ -16,6 +16,8 @@
     "lib/research.js",
     "lib/rerank.js",
     "lib/cache.js",
+    "lib/fetch_upstream.js",
+    "lib/vertical.js",
     "cordis.patch.yml"
   ],
   "keywords": [
