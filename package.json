@@ -13,6 +13,9 @@
     "lib/index.js",
     "lib/client.js",
     "lib/mcp_adapter.js",
+    "lib/research.js",
+    "lib/rerank.js",
+    "lib/cache.js",
     "cordis.patch.yml"
   ],
   "keywords": [
