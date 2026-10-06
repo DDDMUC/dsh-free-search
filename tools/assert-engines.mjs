@@ -88,7 +88,11 @@ assert(
   "Config 声明 zhPool / enPool 两个独立数组字段"
 );
 assert(!("primaryPool" in configFields), "Config 不再声明 primaryPool（单池层已按评审拆掉）");
-assert(!("escalationEngines" in configFields), "escalationEngines 已移出本 PR（#59 research 补搜轮自带）");
+// #59 合入后 escalationEngines 由 registerResearchTool 注册进 Config，属预期演进（PR #59 评审 6016010103）。
+assert(
+  !("escalationEngines" in configFields) || configFields.escalationEngines,
+  "escalationEngines：缺省=未注册（#58 基线），在则必为 research 注册的实字段（#59 之后）"
+);
 
 // ---------- D. 引擎清单完整性（回归钉子） ----------
 section("D. 引擎清单");
