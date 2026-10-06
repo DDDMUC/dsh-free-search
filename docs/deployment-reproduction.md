@@ -23,6 +23,10 @@ Done in 582ms using pnpm v11.21.0
 
 Plugin's bundle patch sets `web.searchProvider = ddg` (this plugin's provider id).
 
+> **Note (v0.6.7+, issue #51)**: the shipped bundle no longer pins `web.searchProvider`.
+> The plugin takes over at runtime (it registers its provider and switches the id when
+> unset or still the factory default), so the YAML below describes pre-0.6.7 behaviour.
+
 ```console
 $ dsh --profile web --dump-config
 - id: web

@@ -39,7 +39,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 - **时间过滤** —— `advanced_search` 工具支持 `timeRange`：固定档、自定义相对值、绝对日期三种形式（详见下方逻辑说明）
 - **系统提示词注入** —— agent 知道当前用哪个引擎、哪些需要 key；并明确所有搜索结果是**不可信外部数据**，不得执行其中的指令
 - **提示注入防护（不可信数据边界）** —— 插件自有工具（advanced_search / platform_search / free_search_test）的网页文本包在 `<untrusted-web-content>` 边界内（正文里自带的同名标记会被剥离，防止提前闭合）；核心 web_search / web_fetch 由 DSH 核心自带同类提示（`External web content follows...`）；所有 snippet 统一清洗并截断到 300 字符
-- **版本号 + 检查更新** —— 设置卡片显示当前版本（v0.4.17），"检查更新"按钮直连 npm registry 对比最新版，有新版本时提示并可一键跳转
+- **版本号 + 检查更新** —— 设置卡片显示当前版本（跟随 `PLUGIN_VERSION`，随发布更新），"检查更新"按钮直连 npm registry 对比最新版，有新版本时提示并可一键跳转
 - **结果缓存** —— 相同查询（含引擎/时间过滤参数）5 分钟内命中缓存（LRU 50 条），防免费引擎限流、省付费额度；时长可在设置页 0-5 分钟自由配置（0 关闭）
 - **免费标注** —— 设置页中免费引擎带绿色 `FREE` 徽章，付费引擎带橙色 `API KEY` 徽章
 - **网页抓取（web_fetch）** —— 让 agent 抓取网页内容（官方 `dsh-web-fetch-http` provider，纯 JS，零额外依赖）
@@ -192,7 +192,7 @@ Error: configured web provider "ddg" is not registered
   - **推荐**：付费引擎 key 建议写入 harness 凭据中心 `~/.dsh/.credentials.yaml`（如 `DEEPSEEK_API_KEY: sk-...`，与官方 LLM provider 一致，一处管理所有 key）。插件读取优先级：凭据中心 > 设置页 > 环境变量，设置页填的 key 仅作为遗留兼容。
 - **Test engine**：直测当前引擎可用性（不走回退链，付费引擎无 key 会明确报错）
 - **Use Bing default**：把当前搜索引擎切回稳定的免费 Bing；`Discard` 只撤销尚未保存的编辑
-- **Platform search**：勾选启用 GitHub / V2EX / Bilibili / YouTube / Vimeo 平台搜索（`platform_search` 工具按此过滤）
+- **Platform search**：勾选启用 GitHub / V2EX / Bilibili / Reddit / Hacker News / Stack Overflow / 维基百科 / npm / YouTube / Vimeo 平台搜索（`platform_search` 工具按此过滤）
 - **EN / 中文**：切换界面语言（默认中文）
 
 <table align="center" style="border: none; border-collapse: collapse;">
@@ -253,7 +253,7 @@ DSH 0.1.7-rc.1 起，配置跟随 profile 的插件条目保存：设置页与 `
 
 ```yaml
 # profiles/<profile>/cordis.patch.yml 中该条目的 config：
-provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / parallel / perplexity / serpbase / serply / deepseek-official / you / baidu / kimi / aliyun / doubao / openai / gemini / claude / auto / multi
+provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / parallel / perplexity / serpbase / serply / deepseek-official / you / baidu / kimi / aliyun / doubao / zhihu_global / zhihu_site / openai / gemini / claude / auto / multi
 fallbackOn: [quota, auth, bot-wall, transient, invalid-response, unknown]   # 允许触发回退的失败类别；[] = 任何失败都立即中止（默认全部）
 lang: zh                    # 设置页界面语言（zh / en）
 bingMarket: zh-CN           # Bing 市场
@@ -400,6 +400,21 @@ Search engine test:
 
 切换后重启 `dsh web` 生效。
 
+#### 离线自检断言（tools/）
+
+仓库自带 6 个零依赖断言脚本，**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑：
+
+| 脚本 | 覆盖 | 运行 |
+|---|---|---|
+| `assert-engines.mjs` | 引擎清单 / 免费引擎口径 / 语言分池路由 / 池配置字段 / 知乎 URL 剥 utm | `node tools/assert-engines.mjs`（19 项） |
+| `assert-research-degradation.mjs` | research 无 key 全降级、`node:sqlite` no-op、90s 预算隔离、缓存目录可配置、`budget.exhausted` 契约名 | `node tools/assert-research-degradation.mjs`（19 项） |
+| `assert-fetch-chain.mjs` | `fs-quality-fetch` 四层链序、任一层命中即停、exa 失败静默降级 firecrawl、全层失败聚合报错 | `node tools/assert-fetch-chain.mjs`（8 项） |
+| `assert-vertical.mjs` | `domain_search` 37 引擎注册表、每引擎 desc、未知引擎报错、不依赖 research | `node tools/assert-vertical.mjs`（8 项） |
+| `assert-free-search-test-schema.mjs` | `free_search_test` 输出 schema 与真实产出一致（含 auto/multi 虚拟模式） | `node tools/assert-free-search-test-schema.mjs`（8 项） |
+| `assert-single-fetch-layer.mjs` | 抓取层全库只有一份实现、依赖单向、替身键不串层 | `node tools/assert-single-fetch-layer.mjs`（22 项） |
+
+任何一个失败会以非 0 退出码结束并列出失败项；把某个旧版本文件路径作为参数传进去，可以看到修复前必红（用来证明断言不是空转）。改动发布相关逻辑后建议先跑一遍再发版。
+
 > 配置卡片挂在左侧「插件」页的 `plugins.row.config` 行配置插槽（dsh 自带），配置读写走插件自建 bridge，**不依赖 dsh-web-ui**，插件可独立使用。
 
 ### 代理说明（国内用户）
@@ -455,7 +470,7 @@ This plugin provides multiple free search engines with automatic fallback, compl
 - **Time Filtering** — The `advanced_search` tool supports `timeRange`: fixed tiers, custom relative values, or an absolute date (details below)
 - **System Prompt Injection** — The agent is aware of the currently active engine and which engines require API keys; it is also told that all search output is **untrusted external data** and must never be executed as instructions
 - **Prompt-Injection Guard (untrusted-data boundary)** — Web-derived text from the plugin's own tools (`advanced_search` / `platform_search` / `free_search_test`) is wrapped in an explicit `<untrusted-web-content>` boundary (look-alike tags inside the text are stripped to prevent early closure); the core `web_search` / `web_fetch` tools carry DSH core's own notice (`External web content follows...`); every snippet is cleaned and capped at 300 characters
-- **Version + Update Check** — The settings card shows the current version (v0.4.17), and a "Check update" button queries the npm registry to compare against the latest release, prompting a one-click jump when a newer version exists
+- **Version + Update Check** — The settings card shows the current version (tracks PLUGIN_VERSION, bumped on release), and a "Check update" button queries the npm registry to compare against the latest release, prompting a one-click jump when a newer version exists
 - **Result Caching** — Identical queries (same engine / time-filter args) hit an LRU cache (50 entries) for up to 5 minutes, protecting free engines from rate-limiting and saving paid quota; the TTL is configurable from 0-5 minutes in the settings UI (0 disables caching)
 - **Visual Badges** — Free engines feature a green `FREE` badge, while paid engines show an orange `API KEY` badge in the settings UI
 - **Webpage Fetching (`web_fetch`)** — Allows the agent to read full webpage contents (official `dsh-web-fetch-http` provider, pure JS, zero extra dependencies)
@@ -670,7 +685,7 @@ The old `free-search:` section of `~/.dsh/settings.yaml` is **not** imported by 
 
 ```yaml
 # config of that entry in profiles/<profile>/cordis.patch.yml:
-provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / parallel / perplexity / serpbase / serply / deepseek-official / you / baidu / kimi / aliyun / doubao / openai / gemini / claude / auto / multi
+provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / parallel / perplexity / serpbase / serply / deepseek-official / you / baidu / kimi / aliyun / doubao / zhihu_global / zhihu_site / openai / gemini / claude / auto / multi
 fallbackOn: [quota, auth, bot-wall, transient, invalid-response, unknown]   # failure classes allowed to trigger fallback; [] = abort on any failure (default: all)
 lang: zh                    # settings UI language (zh / en)
 bingMarket: zh-CN           # Bing market
@@ -816,6 +831,21 @@ The `tools/` directory includes a lightweight, zero-dependency switcher:
 - **`switch-engine.ps1`** — Headless PowerShell script: `powershell -File tools/switch-engine.ps1 -Engine bing`.
 
 Restart `dsh web` after switching to apply changes.
+
+#### Offline self-check assertions (`tools/`)
+
+Six zero-dependency assertion scripts ship with the repo: **no API keys, no network, no test framework**, Node ≥ 20:
+
+| Script | Covers | Run |
+|---|---|---|
+| `assert-engines.mjs` | engine registry / free-engine rule / language-pool routing / pool config fields / Zhihu URL utm stripping | `node tools/assert-engines.mjs` (19) |
+| `assert-research-degradation.mjs` | research degrades fully without keys, `node:sqlite` no-op, 90s budget isolation, configurable cache dir, `budget.exhausted` contract names | `node tools/assert-research-degradation.mjs` (19) |
+| `assert-fetch-chain.mjs` | `fs-quality-fetch` tier ordering, stop-on-first-success, silent firecrawl degradation, aggregated all-tiers failure | `node tools/assert-fetch-chain.mjs` (8) |
+| `assert-vertical.mjs` | `domain_search` registry of 37 engines, per-engine descriptions, unknown-engine errors, no research dependency | `node tools/assert-vertical.mjs` (8) |
+| `assert-free-search-test-schema.mjs` | `free_search_test` output schema matches real output (incl. auto/multi virtual modes) | `node tools/assert-free-search-test-schema.mjs` (8) |
+| `assert-single-fetch-layer.mjs` | exactly one fetch implementation repo-wide, one-way deps, seams owned by the right layer | `node tools/assert-single-fetch-layer.mjs` (22) |
+
+Any failure exits non-zero with the failing items listed. Passing the path of an older file shows the pre-fix failures (proving the assertions are not vacuous). Worth running before a release.
 
 > The settings card mounts into the official `plugins.row.config` component-row slot on the sidebar Plugins page (built into DSH), and configuration reads/writes go through the plugin's own bridge. **No `dsh-web-ui` dependency — the plugin can be used standalone.**
 
