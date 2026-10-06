@@ -3,7 +3,8 @@
 // ③ 90s 预算只作用于 research 自身（不波及 web_search）——由常量与独立 AbortController 静态验证。
 // ⑤ budget.exhausted 写契约 kind 名（评审 6016010103：不得写 Max 字段名）。
 // 运行：node tools/assert-research-degradation.mjs
-import { readFileSync, existsSync, rmSync } from "node:fs";
+import { readFileSync, existsSync, rmSync, mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
 
 let pass = 0;
@@ -23,6 +24,13 @@ const { decide, rerank, embed } = await import("../lib/rerank.js");
 assert((await decide({}, [], undefined)) === null, "decide() 无端点/无 key 起始返回 null（调用方走规则回退）");
 assert((await rerank("q", ["a"], undefined)) === null, "rerank() 无 key 返回 null（失败软降级）");
 assert((await embed(["a"], undefined)) === null, "embed() 无 key 返回 null（失败软降级）");
+
+// 用临时目录做缓存，避免写入开发者真实的 ~/.cache/dsh-free-search/research.db，
+// 也避免第二次跑时 getFresh() 读到上一轮写进去的数据而误报。import 之前就要设好——
+// cache.js 在模块顶层读这个变量。
+const CACHE_DIR = mkdtempSync(process.env.RESEARCH_CACHE_DIR_TMP || `${tmpdir()}/dsh-fs-assert-`);
+process.env.RESEARCH_CACHE_DIR = CACHE_DIR;
+const cleanupCacheDir = () => rmSync(CACHE_DIR, { recursive: true, force: true });
 
 const { registerResearchTool } = await import("../lib/research.js");
 assert(typeof registerResearchTool === "function", "research 工具可注册（无 key 时模块仍可加载，不抛）");
@@ -50,17 +58,10 @@ section("④ 缓存路径可配置");
 const cacheSrc = readFileSync(new URL("../lib/cache.js", import.meta.url), "utf8");
 assert(/process\.env\.RESEARCH_CACHE_DIR/.test(cacheSrc), "cache.js 读取 RESEARCH_CACHE_DIR");
 // 真跑一次：指向临时目录，确认 db 建在那
-const tmp = "D:/维护/.tmp-research-cache-test";
-rmSync(tmp, { recursive: true, force: true });
-const out = execFileSync(process.execPath, ["-e", `
-process.env.RESEARCH_CACHE_DIR = ${JSON.stringify(tmp)};
-await import(${JSON.stringify(new URL("../lib/cache.js", import.meta.url).href)});
-await new Promise(r => setTimeout(r, 150));
-`], { encoding: "utf8", env: { ...process.env, RESEARCH_CACHE_DIR: tmp } });
-const dbThere = existsSync(`${tmp}/research.db`);
-assert(dbThere, `RESEARCH_CACHE_DIR 生效：research.db 建在指定目录（本机 Node 支持 node:sqlite 时）`);
+const dbThere = existsSync(`${CACHE_DIR}/research.db`);
+assert(dbThere, "RESEARCH_CACHE_DIR 生效：research.db 建在指定目录（本机 Node 支持 node:sqlite 时）");
 if (!dbThere) console.log("      （若本机 Node <22.5，无 node:sqlite 属预期 no-op，此项会 FAIL——请按环境判读）");
-rmSync(tmp, { recursive: true, force: true });
+cleanupCacheDir();
 
 // ---------- ⑤ budget.exhausted 契约 ----------
 section("⑤ budget.exhausted 写契约 kind 名");
