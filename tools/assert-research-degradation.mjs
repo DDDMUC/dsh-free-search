@@ -1,6 +1,7 @@
 // tools/assert-research-degradation.mjs — #59 评审四问的断言。
 // ① 无 key 完全降级  ② node:sqlite 降级  ④ 缓存路径可配置
 // ③ 90s 预算只作用于 research 自身（不波及 web_search）——由常量与独立 AbortController 静态验证。
+// ⑤ budget.exhausted 写契约 kind 名（评审 6016010103：不得写 Max 字段名）。
 // 运行：node tools/assert-research-degradation.mjs
 import { readFileSync, existsSync, rmSync } from "node:fs";
 import { execFileSync } from "node:child_process";
@@ -60,6 +61,44 @@ const dbThere = existsSync(`${tmp}/research.db`);
 assert(dbThere, `RESEARCH_CACHE_DIR 生效：research.db 建在指定目录（本机 Node 支持 node:sqlite 时）`);
 if (!dbThere) console.log("      （若本机 Node <22.5，无 node:sqlite 属预期 no-op，此项会 FAIL——请按环境判读）");
 rmSync(tmp, { recursive: true, force: true });
+
+// ---------- ⑤ budget.exhausted 契约 ----------
+section("⑤ budget.exhausted 写契约 kind 名");
+const { makeBudget, budgetAllows } = await import("../lib/research.js");
+{
+  const b = makeBudget(3);
+  b.searchRequestsUsed = b.searchRequestsMax; // 打满
+  assert(budgetAllows(b, "search") === false && b.exhausted === "searchRequests", "打满 searchRequestsMax 后 exhausted === \"searchRequests\"（非 Max 字段名）");
+}
+{
+  const b = makeBudget(3);
+  b.fetchAttemptsUsed = b.fetchAttemptsMax;
+  assert(budgetAllows(b, "fetchAttempt") === false && b.exhausted === "fetchAttempts", "打满 fetchAttemptsMax 后 exhausted === \"fetchAttempts\"");
+}
+{
+  const b = makeBudget(3);
+  b.fetchesUsed = b.fetchMax;
+  assert(budgetAllows(b, "fetchAttempt") === false && b.exhausted === "fetches", "打满 fetchMax 后 exhausted === \"fetches\"（文档数上限）");
+}
+{
+  const b = makeBudget(3);
+  b.rerankCandidateUsed = b.rerankCandidateMax;
+  assert(budgetAllows(b, "rerankCandidate") === false && b.exhausted === "rerankCandidates", "打满 rerankCandidateMax 后 exhausted === \"rerankCandidates\"");
+}
+{
+  const b = makeBudget(3);
+  b.rerankWindowUsed = b.rerankWindowMax;
+  assert(budgetAllows(b, "rerankWindow") === false && b.exhausted === "rerankWindows", "打满 rerankWindowMax 后 exhausted === \"rerankWindows\"");
+}
+{
+  // 首次超限定 exhausted（??= 语义），后续其他超限不得改写
+  const b = makeBudget(3);
+  b.searchRequestsUsed = b.searchRequestsMax;
+  budgetAllows(b, "search");
+  b.fetchAttemptsUsed = b.fetchAttemptsMax;
+  budgetAllows(b, "fetchAttempt");
+  assert(b.exhausted === "searchRequests", "exhausted 只记首个超限维度（??= 不被后续超限覆盖）");
+}
 
 console.log("");
 if (failures.length === 0) console.log(`OK: ${pass} assertions passed`);
