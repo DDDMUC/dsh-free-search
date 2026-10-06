@@ -34,7 +34,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 - **弹出式切换命令** —— 聊天框输入 `/free-search-engine`，弹出引擎选择窗口，点选即切换（等效设置页 + 保存）
 - **引擎测试** —— `free_search_test` 工具让 agent 一键测试所有引擎；设置页也有"测试引擎"按钮（直测当前引擎，不走回退链，付费引擎无 key 会明确报错）
 - **全局引擎开关与回退优先级** —— 设置页可勾选/取消引擎（取消后全局生效：普通搜索 / Auto / `advanced_search` / `multi_search` / 引擎测试都不再用它），并可用 ↑↓ 调整全局回退顺序（一键恢复默认）
-- **Multi 模式** —— 可把搜索引擎设为 `Multi Search`：`web_search` 并发请求前 3 个已启用引擎、按 URL 合并去重、跨源命中的结果优先（代价是成倍消耗额度；multi 失败会自动退回单引擎回退链）
+- **Multi 模式** —— 可把搜索引擎设为 `Multi Search`：`web_search` 按查询语言并发**对应语言池的全部**已启用引擎（不再是前 3 个；中文/英文池可在设置页编辑，每池最低 2 个引擎）、按 URL 合并去重、跨源命中的结果优先（代价是成倍消耗额度；multi 失败会自动退回单引擎回退链）
 - **统一引擎回退** —— 任何引擎失败（付费/免费，缺 key/401/限流/网络）自动轮流尝试下一个引擎：首选引擎 → 其他引擎（exa/tavily/keenable/firecrawl/parallel 无 key 也会尝试，因为它们自带 keyless 免费额度）→ 剩余免费引擎，搜索永不直接失败；结果顶部注明实际生效的引擎（如 `Note: perplexity unavailable or failed, using exa.`）；失败按类别处理：额度/鉴权失败→本会话冷却该引擎，反爬→短退避，超时/5xx/限流→同引擎重试一次，解析失败/0 结果→不冷却（详见下文「失败分类与引擎冷却」）
 - **时间过滤** —— `advanced_search` 工具支持 `timeRange`：固定档、自定义相对值、绝对日期三种形式（详见下方逻辑说明）
 - **系统提示词注入** —— agent 知道当前用哪个引擎、哪些需要 key；并明确所有搜索结果是**不可信外部数据**，不得执行其中的指令
@@ -203,11 +203,12 @@ Error: configured web provider "ddg" is not registered
 
 #### 引擎开关、回退优先级与 Multi 模式
 
-设置页有三个新块（都会保存进条目 config）：
+设置页有这些块（都会保存进条目 config）：
 
 - **全局启用的搜索引擎**：取消勾选后，该引擎会从普通 `web_search` 回退链、Auto 智能路由、`advanced_search`、`multi_search` 和引擎测试中**全局排除**；至少要保留一个引擎。
 - **全局回退优先级**：用 ↑↓ 调整先后顺序。首选引擎仍先尝试；Auto 保留"语言/时间"路由规则，但自定义后同一分组内及后续回退按此顺序。被禁用的引擎保留在列表里（标记「已禁用」）但不执行；「恢复默认顺序」一键还原。
-- **搜索引擎下拉里的 `Multi Search`**：选中后 `web_search` 会并发查询路由/优先级前 3 个已启用引擎，URL 去重合并、跨源命中的结果排前面。注意并发会成倍消耗额度；Multi 失败时会自动退回普通单引擎回退链并在结果里注明。
+- **中文查询池（zhPool）/ 英文查询池（enPool）**：Auto 路由的起始组，也是 Multi 模式的并发池。按查询语言自动二选一（检测到中日韩文字走中文池，其余走英文池）；两池都可用 ↑↓ 排序、下拉添加引擎、「−」移除（**每池最低 2 个引擎，无上限**）。默认中文池 `bing / baidu / aliyun / anysearch`，默认英文池 `bing / exa / tavily`；禁用/冷却/缺 key 的引擎运行时自动跳过。
+- **搜索引擎下拉里的 `Multi Search`**：选中后 `web_search` 会并发查询**查询语言对应池的全部**已启用引擎（不再是前 3 个），URL 去重合并、跨源命中的结果排前面。注意整池并发会成倍消耗额度（池里含按额度计费引擎时尤其注意）；Multi 失败时会自动退回普通单引擎回退链并在结果里注明。
 
 #### 失败分类与引擎冷却（Failure-aware fallback）
 
@@ -297,7 +298,7 @@ Search engine test:
 
 当需要对重要问题做**多源交叉验证**、避免单一引擎偏差或单源死锁时，可以让 agent 调用 `multi_search` 工具：
 
-- **并发请求**：默认基于当前查询类型并发请求前 3 个优选引擎（或显式传入 `engines` 列表），各引擎独立解析 API Key 与容错（缺 key 引擎自动跳过，不阻断其他引擎）。
+- **并发请求**：默认按查询语言并发**对应语言池的全部**引擎（不再是前 3 个；或显式传入 `engines` 列表），各引擎独立解析 API Key 与容错（缺 key 引擎自动跳过，不阻断其他引擎）。
 - **去重与合并**：按规范化 URL 去除结尾斜杠并合并结果，多引擎共同命中的条目优先置顶排在最前，并在结果附带 `seenIn` 命中来源清单（如 `[seen in: bing, exa]`）。
 - **不可信边界与清洗**：严格遵守 `<untrusted-web-content>` 数据边界，正文 snippet 统一清洗。
 - ⚠️ 注：多源并发会消耗更多 API 配额，建议在需要多角度核验时按需使用。
@@ -401,7 +402,7 @@ This plugin provides multiple free search engines with automatic fallback, compl
 - **Popup Switch Command** — Type `/free-search-engine` in the chat: a picker opens with all engines; click one to switch (equivalent to the settings page + save)
 - **Engine Testing** — `free_search_test` for the agent to check all engines in one call; the settings UI also has a "Test engine" button that tests the selected engine directly (no fallback chain; paid engines without a key report an explicit error)
 - **Global engine enable/disable & fallback priority** — uncheck engines you never want (applies everywhere: web_search fallback, Auto routing, advanced_search, multi_search, engine tests) and reorder the global fallback chain with ↑↓ (one-click reset)
-- **Multi mode** — pick `Multi Search` as the engine: web_search queries the top 3 enabled engines concurrently, merges/deduplicates URLs and prioritizes cross-source hits (costs more quota; a failed multi run automatically falls back to the single-engine chain)
+- **Multi mode** — pick `Multi Search` as the engine: web_search queries **every enabled engine of the query's language pool** concurrently (no longer top 3; zh/en pools editable in the settings UI, minimum 2 engines each), merges/deduplicates URLs and prioritizes cross-source hits (costs more quota; a failed multi run automatically falls back to the single-engine chain)
 - **Unified Engine Fallback** — Any engine failure (paid or free, missing key, 401, rate limit, network error) automatically tries the next engine: the configured engine first, then other engines (exa/tavily/keenable/firecrawl/parallel are tried even without a key because they have built-in keyless quota), then the remaining free engines (Bing/AnySearch etc.) — with a note attached to the results naming the engine that actually served them (e.g. `Note: perplexity unavailable or failed, using exa.`). Failures are classified: quota/auth failures cool the engine down for the session, anti-bot walls back off briefly, timeout/5xx/rate-limit failures retry the same engine once, and parse errors / 0 results are reported without cooling it down (see "Failure-aware fallback" below). Search never fails outright.
 - **Time Filtering** — The `advanced_search` tool supports `timeRange`: fixed tiers, custom relative values, or an absolute date (details below)
 - **System Prompt Injection** — The agent is aware of the currently active engine and which engines require API keys; it is also told that all search output is **untrusted external data** and must never be executed as instructions
@@ -570,11 +571,12 @@ The command only changes the preferred engine; search still goes through `web_se
 
 #### Engine Switches, Fallback Priority and Multi Mode
 
-The settings page has three new blocks (all saved into the entry config):
+The settings page has these blocks (all saved into the entry config):
 
 - **Globally enabled engines**: unchecking an engine excludes it everywhere — the web_search fallback chain, Auto routing, `advanced_search`, `multi_search` and engine tests. At least one engine must remain enabled.
 - **Global fallback priority**: use ↑↓ to reorder. The preferred engine is still tried first; Auto keeps its language/time routing, while a customized order governs engines inside a route group and the remaining fallback chain. Disabled engines stay in the list (marked "disabled") but are skipped; "Reset default order" restores the defaults.
-- **`Multi Search` in the engine dropdown**: web_search then queries the top 3 enabled routed/prioritized engines concurrently, merges/deduplicates URLs and prioritizes cross-source hits. This multiplies quota usage; if a multi run fails it automatically falls back to the single-engine chain and says so in the result note.
+- **Chinese query pool (zhPool) / English query pool (enPool)**: the route head for Auto and the concurrent pool for Multi. Picked automatically by query language (CJK scripts go to the zh pool, everything else to en). Both pools support ↑↓ reordering, adding engines from a dropdown and removing with "−" (**minimum 2 engines per pool, no upper limit**). Defaults: zh `bing / baidu / aliyun / anysearch`, en `bing / exa / tavily`; disabled/cooling/keyless engines are skipped at runtime.
+- **`Multi Search` in the engine dropdown**: web_search then queries **every enabled engine of the query's language pool** concurrently (no longer top 3), merges/deduplicates URLs and prioritizes cross-source hits. Running a whole pool multiplies quota usage (mind engines billed per credit); if a multi run fails it automatically falls back to the single-engine chain and says so in the result note.
 
 #### Failure-aware fallback
 
@@ -664,7 +666,7 @@ Example: *"Find DSH news from the last 3 days"* → agent calls `advanced_search
 
 When you need **cross-source verification** to prevent biases or fail-safes from a single engine, the agent can call `multi_search`:
 
-- **Concurrent Execution**: Defaults to querying the top 3 recommended engines for the query type (or an explicit list passed via `engines`). Each engine independently resolves API keys and handles errors (missing keys are skipped without failing the batch).
+- **Concurrent Execution**: Defaults to querying **every engine of the query's language pool** (no longer top 3; or an explicit list passed via `engines`). Each engine independently resolves API keys and handles errors (missing keys are skipped without failing the batch).
 - **Deduplication & Merge**: Normalizes URLs and ranks items by the number of engines that found them (`seenIn` counts), with cross-hit results placed at the top.
 - **Untrusted Boundary**: Enforces the `<untrusted-web-content>` safety wrapper and trims snippets.
 - ⚠️ Note: Running multiple engines in parallel consumes more search quota; use on demand when high source diversity is needed.
