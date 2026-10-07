@@ -30,7 +30,15 @@ assert((await embed(["a"], undefined)) === null, "embed() 无 key 返回 null（
 // cache.js 在模块顶层读这个变量。
 const CACHE_DIR = mkdtempSync(process.env.RESEARCH_CACHE_DIR_TMP || `${tmpdir()}/dsh-fs-assert-`);
 process.env.RESEARCH_CACHE_DIR = CACHE_DIR;
-const cleanupCacheDir = () => rmSync(CACHE_DIR, { recursive: true, force: true });
+// Windows 下 sqlite 句柄可能短暂占用临时目录导致 EPERM：加重试；仍失败则忽略
+// （清理失败不影响任何断言结论，临时目录交给系统清理）。
+const cleanupCacheDir = () => {
+  try {
+    rmSync(CACHE_DIR, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+  } catch {
+    /* ignore: EPERM on Windows while the sqlite handle is still held */
+  }
+};
 
 const { registerResearchTool } = await import("../lib/research.js");
 assert(typeof registerResearchTool === "function", "research 工具可注册（无 key 时模块仍可加载，不抛）");
