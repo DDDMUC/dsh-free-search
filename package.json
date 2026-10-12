@@ -21,6 +21,8 @@
     "lib/fetch_upstream.js",
     "lib/weather.js",
     "lib/domain_filter.js",
+    "lib/url_norm.js",
+    "lib/multi_policy.js",
     "cordis.patch.yml"
   ],
   "keywords": [
