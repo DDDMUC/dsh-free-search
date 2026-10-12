@@ -7,7 +7,7 @@
 //       minimum... should not discard valid evidence or fail solely because a
 //       configured success target was not reached.」——目标成功数不是硬下限。
 //   §6 兼容：默认值必须让现有行为完全不变，升级对用户透明。
-import { selectEngines, planTopUp, resolveMaxEngines, resolveMinSources, describeTarget } from "../lib/multi_policy.js";
+import { selectEngines, planTopUp, resolveMaxEngines, resolveMinSources, describeTarget, REQUIRED_CREDENTIALS, credentialRequirement, isCredentialEligible, partitionByCredentials } from "../lib/multi_policy.js";
 
 let passed = 0;
 const failures = [];
@@ -65,7 +65,72 @@ check("已达标 → 无提示", describeTarget({ minSources: 2, achieved: 3 }) 
 check("恰好达标 → 无提示", describeTarget({ minSources: 2, achieved: 2 }) === null);
 check("未达标 → 产出可读提示", describeTarget({ minSources: 3, achieved: 1 }) === "sourcesTarget: 3, achieved: 1");
 
-// ---------- F. 兼容性：默认配置下行为与今天逐字一致 ----------
+// ---------- G. 凭据资格：#69 §2「Missing credentials」必须在选上限之前滤掉 ----------
+// 起因：multi 池默认 zh: [bing, baidu, aliyun, anysearch]。本机 baidu/aliyun 无 key，
+// 但它们要到 runEngineTest 才发现 not configured —— 那时已经占掉了并发上限的名额。
+// 上限设 3 时取走的正是这三个不可用的，唯一能跑的 anysearch 被切掉 → 整次 multi 失败。
+const noneAvailable = () => false;
+const allAvailable = () => true;
+
+for (const keyless of ["ddg", "ddg-lite", "bing", "searxng"]) {
+  check(`免 key 引擎 ${keyless} 永不被凭据过滤`, isCredentialEligible(keyless, noneAvailable));
+}
+for (const fallback of ["anysearch", "exa", "parallel"]) {
+  check(`有免 key 兜底的 ${fallback} 缺 key 也算合格`, isCredentialEligible(fallback, noneAvailable));
+}
+for (const engine of Object.keys(REQUIRED_CREDENTIALS)) {
+  check(`${engine} 缺 key → 不合格`, !isCredentialEligible(engine, noneAvailable));
+  check(`${engine} 有 key → 合格`, isCredentialEligible(engine, allAvailable));
+  const descs = credentialRequirement(engine);
+  check(`${engine} 的凭据描述符带 env 与 settings 两项`,
+    Array.isArray(descs) && descs.length > 0
+    && descs.every((d) => typeof d.env === "string" && d.env && (typeof d.settings === "string" || d.settings === null)));
+}
+check("credentialRequirement 返回副本（外部改动不污染清单）",
+  (() => { const a = credentialRequirement("baidu"); a.push({ env: "X", settings: null }); return credentialRequirement("baidu").length === 1; })());
+check("免 key 引擎的 credentialRequirement 为 null", credentialRequirement("bing") === null);
+
+// 池子实测：正是出问题那一幕
+{
+  const pool = ["bing", "baidu", "aliyun", "anysearch"];
+  const onlyThese = (...ok) => (engine) => ok.includes(engine);
+  const { eligible, missing } = partitionByCredentials(pool, onlyThese("bing", "anysearch"));
+  check("出问题那一幕：bing/anysearch 通过凭据资格（无 key 也能跑）", eligible.join() === "bing,anysearch");
+  check("被滤掉的正是 baidu/aliyun（占名额的元凶）", missing.join() === "baidu,aliyun");
+  check("滤完再套上限 3，唯一可用引擎 anysearch 不再被切掉",
+    selectEngines(eligible, 3).includes("anysearch"));
+  check("滤完再套上限 1，退化成 Fast 语义", selectEngines(eligible, 1).join() === "bing");
+  check("上限 0（默认）时仍跑满合格集，行为不变", selectEngines(eligible, 0).length === 2);
+  check("全有 key 时滤不掉任何引擎", partitionByCredentials(pool, allAvailable).missing.length === 0);
+  check("全没 key 时只留免 key/兜底引擎",
+    partitionByCredentials(pool, noneAvailable).eligible.join() === "bing,anysearch");
+  check("eligible+missing 覆盖全池且不改顺序",
+    partitionByCredentials(pool, onlyThese("baidu")).eligible.join() === "bing,baidu,anysearch");
+}
+
+check("分区：空输入不抛", partitionByCredentials([], noneAvailable).eligible.length === 0);
+check("分区：非数组不抛", partitionByCredentials(undefined, noneAvailable).missing.length === 0);
+check("未知引擎不抛且算合格（宁放过不误杀）", isCredentialEligible("some-future-engine", noneAvailable));
+
+// 交叉校验（防漂移）：清单必须与 index.js 里 runEngineTest 的 "not configured" 分支一一对应
+{
+  const { readFileSync } = await import("node:fs");
+  const { fileURLToPath } = await import("node:url");
+  const path = await import("node:path");
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const src = readFileSync(path.join(here, "..", "lib", "index.js"), "utf8");
+
+  for (const [engine, descs] of Object.entries(REQUIRED_CREDENTIALS)) {
+    // 每个描述符的 env 名都必须能在 index.js 里找到对应的 "not configured" 或 resolver 用法
+    const declared = descs.some((d) => src.includes(`${d.env} not configured`));
+    check(`交叉校验：${engine} 的 ${descs[0].env} 在 index.js 里确实有 "not configured" 声明`, declared);
+  }
+  for (const engine of ["ddg", "ddg-lite", "bing", "searxng", "anysearch", "exa", "parallel"]) {
+    check(`交叉校验：${engine} 未被误列入必需凭据清单`, !(engine in REQUIRED_CREDENTIALS));
+  }
+  check("交叉校验：settings 名与 index.js 的 config 字段对应",
+    Object.values(REQUIRED_CREDENTIALS).flat().every((d) => d.settings === null || src.includes(d.settings)));
+}
 check("兼容：不配置任何新字段 → 上限不限制、目标 1、无补跑",
   selectEngines(POOL, undefined).length === 4
   && resolveMinSources(undefined, 4) === 1
