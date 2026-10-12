@@ -34,12 +34,20 @@ process.on("uncaughtException", (e) => uncaught.push(e));
 const isWin = process.platform === "win32";
 const pidAlive = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } };
 
-// ---- 1. 能从线上文件抠出 killTree（形状未变）----
+// ---- 前置：从线上文件抠出 killTree ----
+// 这条「能抠出 killTree」portable 版已经断言过（它的 B1），这里不重复计数；
+// 但抠不到必须硬失败退出——否则本文件会一条不跑还打印 "OK: 0 assertions passed"，
+// 那是假绿（LESSONS 第 3 条：断言必须能红，不能空转）。
 // 与 portable 版同一条正则：killTree 结束于 4 空格缩进的 `};`
 const extracted = src.match(/const killTree = \(\) => \{[\s\S]*?\n    \};/);
-assert(!!extracted, "能从 lib/fetch_provider.js 抠出 killTree 源码（函数形状未被重构改坏）");
+if (!extracted) {
+  process.removeAllListeners("uncaughtException");
+  for (const h of prevHandlers) process.on("uncaughtException", h);
+  console.error("FAIL: 无法从 lib/fetch_provider.js 抠出 killTree 源码（函数形状被重构改坏；请同步更新本文件的正则）");
+  process.exit(1);
+}
 
-if (extracted) {
+{
   const makeKillTree = (child, injectedSpawn = spawn, injectedProcess = process) =>
     new Function("child", "spawn", "process", extracted[0] + "; return killTree;")(
       child, injectedSpawn, injectedProcess,
