@@ -113,6 +113,54 @@ assert(
 );
 assert(stripZhihuTracking("not a url") === "not a url", "非法 URL 原样返回（不抛异常）");
 
+// ---------- H. Bing 不做「空 SERP 重试」（实测结论：重试只会加重限流） ----------
+// 2026-10-13 实测：Bing 对可疑出口 IP 间歇返回约 91KB 空 SERP（b_algo=0）。曾加过「多试一次」
+// 的兜底，但请求数翻倍后反而更容易被压死；根因在出口 IP（直连正常、走该代理为 0），不在解析。
+// 因此这里反向钉住：searchBing 必须保持「单次抓取 + 单次解析」，不得重新引入重试循环。
+section("H. Bing 不重试（防回退到加重限流的写法）");
+{
+  const { readFileSync } = await import("node:fs");
+  const { fileURLToPath } = await import("node:url");
+  const path = await import("node:path");
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const src = readFileSync(path.join(here, "..", "lib", "index.js"), "utf8");
+  const start = src.indexOf("async function searchBing(");
+  const end = src.indexOf("//#region searxng");
+  const body = start >= 0 && end > start ? src.slice(start, end) : "";
+  assert(body.length > 0, "能定位 searchBing 函数体");
+  assert(!/for\s*\(\s*let attempt = 1; attempt <= \d+; attempt\+\+\s*\)/.test(body),
+    "searchBing 内没有重试循环（空 SERP 重试已实测为有害）");
+  assert(/const html = await fetchHtmlWithRetry\(/.test(body), "仍走带重试的统一抓取（仅网络错/短响应时重试）");
+}
+
+// ---------- I. runEngineTest 的重试分支必须走统一收尾（防结果被静默丢弃） ----------
+// 背景（2026-10-13 实测定位）：重试分支曾直接 `return await attempt()`，而大多数引擎的 attempt()
+// 返回 `{ sources, truncated }`（没有 ok 字段）。调用方 `if (res.ok)` 遇 undefined 即当失败 ——
+// 于是「首次空、重试成功」的引擎，结果被丢弃并报成 `[unknown] (unknown error)`（连错误信息都是空的）。
+// exa / bing 都实测踩过。此断言钉住：重试路径与首次路径共用同一收尾，且不得再出现裸 return。
+section("I. runEngineTest 重试分支收口");
+{
+  const { readFileSync } = await import("node:fs");
+  const { fileURLToPath } = await import("node:url");
+  const path = await import("node:path");
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const src = readFileSync(path.join(here, "..", "lib", "index.js"), "utf8");
+  const start = src.indexOf("const runEngineTest = async (");
+  const end = src.indexOf("runMultiSearch = async (");
+  const body = start >= 0 && end > start ? src.slice(start, end) : "";
+  assert(body.length > 0, "能定位 runEngineTest 函数体");
+
+  const code = body
+    .split("\n")
+    .filter((l) => !l.trim().startsWith("//"))
+    .join("\n");
+  assert(!/return await attempt\(\)/.test(code), "代码里没有裸 `return await attempt()`（重试不得原样返回）");
+  assert(/const finalize = \(r\) => \(/.test(body), "存在统一收尾函数 finalize");
+  assert(/return finalize\(result\)/.test(code), "首次成功路径走 finalize");
+  assert(/return finalize\(retried\)/.test(code), "重试成功路径走 finalize（修复点）");
+  assert(/if \(retried\.ok === false\) return retried;/.test(code), "重试若返回付费引擎的失败结果，仍如实透传");
+}
+
 console.log("");
 if (failures.length === 0) {
   console.log(`OK: ${pass} assertions passed`);
