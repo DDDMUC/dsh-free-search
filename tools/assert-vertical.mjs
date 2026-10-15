@@ -13,7 +13,7 @@ const section = (t) => console.log("\n== " + t + " ==");
 section("A. 注册表与工具形态（离线）");
 const { ENGINES, registerDomainSearchTool } = await import("../lib/vertical.js");
 const keys = Object.keys(ENGINES);
-assert(keys.length === 37, `引擎注册表共 37 个（实际 ${keys.length}）`);
+assert(keys.length === 41, `引擎注册表共 41 个（实际 ${keys.length}）`);
 assert(typeof registerDomainSearchTool === "function", "registerDomainSearchTool 可导入（模块无网络副作用）");
 assert(keys.every((k) => typeof ENGINES[k].run === "function" && typeof ENGINES[k].desc === "string" && ENGINES[k].desc), "每个引擎都有 run() 与非空 desc");
 const dupDesc = keys.map((k) => ENGINES[k].desc).filter((d, i, a) => a.indexOf(d) !== i);
@@ -35,7 +35,7 @@ assert(renderBad[0].text.includes("failed") && renderBad[0].text.includes("domai
 
 if (process.argv.includes("--live")) {
   section("C. 免 key 真跑（3 引擎抽测）");
-  for (const [engine, query] of [["pypi", "react"], ["worldclock", "北京"], ["crates", "serde"]]) {
+  for (const [engine, query] of [["pypi", "react"], ["worldclock", "北京"], ["crates", "serde"], ["federalregister", "privacy"], ["courtlistener", "privacy"], ["openlegaldata", "Datenschutz"], ["uk_legislation", "privacy"]]) {
     try {
       const r = await registered.execute({ engine, query });
       assert(!r.error && r.sources.length > 0, `${engine} "${query}" 返回 ${r.sources.length} 条（真跑）`);
