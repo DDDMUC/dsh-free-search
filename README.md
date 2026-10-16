@@ -34,13 +34,14 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 - **弹出式切换命令** —— 聊天框输入 `/free-search-engine`，弹出引擎选择窗口，点选即切换（等效设置页 + 保存）
 - **引擎测试** —— `free_search_test` 工具让 agent 一键测试所有引擎；设置页也有"测试引擎"按钮（直测当前引擎，不走回退链，付费引擎无 key 会明确报错）
 - **全局引擎开关与回退优先级** —— 设置页可勾选/取消引擎（取消后全局生效：普通搜索 / Auto / `advanced_search` / `multi_search` / 引擎测试都不再用它），并可用 ↑↓ 调整全局回退顺序（一键恢复默认）
-- **Multi 模式** —— 可把搜索引擎设为 `Multi Search`：`web_search` 按查询语言并发**对应语言池的全部**已启用引擎（不再是前 3 个；中文/英文池可在设置页编辑，每池最低 2 个引擎）、按 URL 合并去重、跨源命中的结果优先（代价是成倍消耗额度；multi 失败会自动退回单引擎回退链）
+- **Multi 模式** —— 可把搜索引擎设为 `Multi Search`：`web_search` 按查询语言并发**对应语言池的全部**已启用引擎（不再是前 3 个；中文/英文池可在设置页编辑，每池最低 2 个引擎）、按 URL 合并去重（同站判定用 **eTLD+1**）、跨源命中的结果优先；设置页有 **Fast / Balanced / Deep** 三档强度，也可手填并发上限与目标成功源数；整轮检索共享 **30 秒总预算**，到点返回已有结果（代价是成倍消耗额度；multi 失败会自动退回单引擎回退链）
 - **统一引擎回退** —— 任何引擎失败（付费/免费，缺 key/401/限流/网络）自动轮流尝试下一个引擎：首选引擎 → 其他引擎（exa/tavily/keenable/firecrawl/parallel 无 key 也会尝试，因为它们自带 keyless 免费额度）→ 剩余免费引擎，搜索永不直接失败；结果顶部注明实际生效的引擎（如 `Note: perplexity unavailable or failed, using exa.`）；失败按类别处理：额度/鉴权失败→本会话冷却该引擎，反爬→短退避，超时/5xx/限流→同引擎重试一次，解析失败/0 结果→不冷却（详见下文「失败分类与引擎冷却」）
 - **时间过滤** —— `advanced_search` 工具支持 `timeRange`：固定档、自定义相对值、绝对日期三种形式（详见下方逻辑说明）
 - **系统提示词注入** —— agent 知道当前用哪个引擎、哪些需要 key；并明确所有搜索结果是**不可信外部数据**，不得执行其中的指令
 - **提示注入防护（不可信数据边界）** —— 插件自有工具（advanced_search / platform_search / free_search_test）的网页文本包在 `<untrusted-web-content>` 边界内（正文里自带的同名标记会被剥离，防止提前闭合）；核心 web_search / web_fetch 由 DSH 核心自带同类提示（`External web content follows...`）；所有 snippet 统一清洗并截断到 300 字符
 - **版本号 + 检查更新** —— 设置卡片显示当前版本（跟随 `PLUGIN_VERSION`，随发布更新），"检查更新"按钮直连 npm registry 对比最新版，有新版本时提示并可一键跳转
 - **结果缓存** —— 相同查询（含引擎/时间过滤参数）5 分钟内命中缓存（LRU 50 条），防免费引擎限流、省付费额度；时长可在设置页 0-5 分钟自由配置（0 关闭）
+- **域名黑名单与安全搜索** —— `blockedDomains`：命中的域名不会进入任何结果；`safeSearch`（`off` / `moderate` / `strict`）为 Bing / DuckDuckGo 加一层过滤
 - **免费标注** —— 设置页中免费引擎带绿色 `FREE` 徽章，付费引擎带橙色 `API KEY` 徽章
 - **网页抓取（web_fetch）** —— 让 agent 抓取网页内容（官方 `dsh-web-fetch-http` provider，纯 JS，零额外依赖）
 - **平台搜索（platform_search）** —— 搜 GitHub / V2EX / B站 / Reddit / Hacker News / Stack Overflow / 维基百科 / npm / YouTube / Vimeo / 掘金 / 豆瓣 / Qiita（公开 API 或免 key 抓取，零依赖）
@@ -246,6 +247,18 @@ Error: configured web provider "ddg" is not registered
 
 `fallbackOn` 控制哪些失败类别**允许**触发回退：默认勾选全部六类，即当前的「搜索永不直接失败」；取消某类后，遇到该类失败会**停下并把该引擎的错误报出**，不再换引擎（例如去掉 `invalid-response`：首选引擎返回空/解析失败时直接报错，而不是静默退回低质引擎）。设为空数组 `[]` 则任何失败都立即中止。注意**缺 key、被禁用、不支持时间过滤不算失败**，无论怎样都照常换引擎。设置页有对应勾选框，也可在 config 写 `fallbackOn: [quota, auth, bot-wall, transient, invalid-response, unknown]`。
 
+#### 安全搜索（safeSearch）
+
+`safeSearch` 控制内置来源是否额外套一层安全过滤，默认 `off`（不加参数，保持引擎自身默认行为）：
+
+| 值 | 含义 |
+|---|---|
+| `off`（默认） | 不加过滤参数，保持引擎默认行为 |
+| `moderate` | 过滤成人内容 |
+| `strict` | 最严格过滤 |
+
+作用于 **Bing**（`adlt`）、**DuckDuckGo HTML**（`adlt`）、**DuckDuckGo Lite**（`adlt`）；其它引擎没有对应参数，不受影响。设置页有下拉框，也可直接在 config 里写 `safeSearch: moderate`。
+
 #### 配置文件
 
 DSH 0.1.7-rc.1 起，配置跟随 profile 的插件条目保存：设置页与 `/free-search-engine` 都会写入当前 profile 的 `cordis.patch.yml` 中 `web-search-free`（`dsh-free-search`）条目的 `config`。
@@ -261,7 +274,12 @@ bingMarket: zh-CN           # Bing 市场
 region: cn-zh               # DuckDuckGo 区域（可选）
 searxngInstances:           # 自定义 SearXNG 实例（可选）
   - https://your-instance.example
-searxngBearerToken: ...      # 可选：发送 Authorization: Bearer <token>
+searxngBearerToken: ...      # 可选：发送 Authorization: Bearer <token>（设置页「SearXNG Bearer Token」同款）
+safeSearch: off              # 安全搜索：off（默认）/ moderate / strict，作用于 bing / ddg / ddg-lite
+blockedDomains:              # 域名黑名单（可选）：命中的域名不会进入结果
+  - spam-example.com
+multiMaxEngines: 0           # multi 并发上限（0 = 不限，跑完整语言池）；设置页有 Fast/Balanced/Deep 档位
+multiMinSources: 1           # multi 目标成功源数（只用于触发补跑，不是硬下限）
 exaApiKey: ...              # 或通过设置页填写
 tavilyApiKey: ...           # 或通过设置页填写
 keenableApiKey: ...         # 或通过设置页填写
@@ -320,7 +338,19 @@ Search engine test:
 当需要对重要问题做**多源交叉验证**、避免单一引擎偏差或单源死锁时，可以让 agent 调用 `multi_search` 工具：
 
 - **并发请求**：默认按查询语言并发**对应语言池的全部**引擎（不再是前 3 个；或显式传入 `engines` 列表），各引擎独立解析 API Key 与容错（缺 key 引擎自动跳过，不阻断其他引擎）。
-- **去重与合并**：按规范化 URL 去除结尾斜杠并合并结果，多引擎共同命中的条目优先置顶排在最前，并在结果附带 `seenIn` 命中来源清单（如 `[seen in: bing, exa]`）。
+- **三档强度**（设置页单选按钮，选完即写入配置）：
+
+  | 档位 | 并发上限 | 目标成功源数 |
+  |---|---|---|
+  | `Fast · 1/1` | 1 | 1 |
+  | `Balanced · 3/1` | 3 | 1 |
+  | `Deep · 6/2` | 6 | 2 |
+
+  手填下面的数字即为「自定义」，不会有档位按钮处于选中态。
+- **并发上限**（`multiMaxEngines`，默认 `0` = **不限**，跑完整语言池）：这是**天花板**，不是下限——实际并发数取「上限」与「凭据合格引擎数」的较小值；凭据判定在截断**之前**完成，缺 key 的引擎不会白占名额（所以 3 个可用引擎 + 上限 6 仍然全部跑）。
+- **目标成功源数**（`multiMinSources`，默认 `1`）：**不是硬下限**。只用来触发补跑——已返回源数不足时，按域名轮转顺序**串行补跑**剩余的合格引擎；补跑跑完或时间到就返回已有结果（拿不满不报错）。
+- **总预算 30 秒**（`SEARCH_BUDGET_MS`）：并发扇出 + 全部补跑共享同一个 deadline，到点即停并返回**已经拿到的结果**，不会因为某个慢引擎把整次搜索拖死。
+- **去重与合并**：按规范化 URL 去重（去掉结尾斜杠与已审计的 tracking 参数），多引擎共同命中的条目优先置顶并附带 `seenIn` 命中来源清单（如 `[seen in: bing, exa]`）；**同站判定用 eTLD+1**——`a.example.co.uk` 与 `b.example.co.uk` 视为同一站点，域外多样性轮转在**站点**粒度上做，不会被多个子域刷屏。
 - **不可信边界与清洗**：严格遵守 `<untrusted-web-content>` 数据边界，正文 snippet 统一清洗。
 - ⚠️ 注：多源并发会消耗更多 API 配额，建议在需要多角度核验时按需使用。
 
@@ -404,16 +434,25 @@ Search engine test:
 
 #### 离线自检断言（tools/）
 
-仓库自带 6 个零依赖断言脚本，**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑：
+仓库自带 **15 个**零依赖断言脚本（合计 **463 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑：
 
-| 脚本 | 覆盖 | 运行 |
+| 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
-| `assert-engines.mjs` | 引擎清单 / 免费引擎口径 / 语言分池路由 / 池配置字段 / 知乎 URL 剥 utm | `node tools/assert-engines.mjs`（19 项） |
-| `assert-research-degradation.mjs` | research 无 key 全降级、`node:sqlite` no-op、90s 预算隔离、缓存目录可配置、`budget.exhausted` 契约名 | `node tools/assert-research-degradation.mjs`（19 项） |
-| `assert-fetch-chain.mjs` | `fs-quality-fetch` 四层链序、任一层命中即停、exa 失败静默降级 firecrawl、全层失败聚合报错 | `node tools/assert-fetch-chain.mjs`（8 项） |
-| `assert-vertical.mjs` | `domain_search` 41 引擎注册表、每引擎 desc、未知引擎报错、不依赖 research | `node tools/assert-vertical.mjs`（8 项） |
-| `assert-free-search-test-schema.mjs` | `free_search_test` 输出 schema 与真实产出一致（含 auto/multi 虚拟模式） | `node tools/assert-free-search-test-schema.mjs`（8 项） |
-| `assert-single-fetch-layer.mjs` | 抓取层全库只有一份实现、依赖单向、替身键不串层 | `node tools/assert-single-fetch-layer.mjs`（22 项） |
+| `assert-engines.mjs` | 引擎清单 / 免费引擎口径 / 语言分池路由 / 池配置字段 / 知乎 URL 剥 utm | `node tools/assert-engines.mjs`（28） |
+| `assert-blocked-domains.mjs` | 域名黑名单：解析、匹配、收口，且前后端清洗同口径 | `node tools/assert-blocked-domains.mjs`（69） |
+| `assert-multi-policy.mjs` | multi 执行策略：并发上限是天花板 / 目标成功源非硬下限 / 凭据资格在上限之前分流 / **Fast·Balanced·Deep 档位** | `node tools/assert-multi-policy.mjs`（142） |
+| `assert-result-ranking.mjs` | 合并排序：**eTLD+1 同域判定** / 域名轮转 / `seenIn` 降为末位 / 时效仅带时间过滤时生效 | `node tools/assert-result-ranking.mjs`（31） |
+| `assert-url-norm.mjs` | URL 规范化：只剔已审计的 tracking 参数，保留可能区分资源的参数 | `node tools/assert-url-norm.mjs`（72） |
+| `assert-prompt-contract.mjs` | 系统提示词契约：**检索≠抓取**、不可信边界、模型内置搜索只在显式选中时运行 | `node tools/assert-prompt-contract.mjs`（9） |
+| `assert-research-degradation.mjs` | research 无 key 全降级、`node:sqlite` no-op、90s 预算隔离、缓存目录可配置、`budget.exhausted` 契约名 | `node tools/assert-research-degradation.mjs`（19） |
+| `assert-research-call-wrappers.mjs` | research 四个 `call*` 包装层的替身/底层透传（#75 回归） | `node tools/assert-research-call-wrappers.mjs`（23） |
+| `assert-fetch-chain.mjs` | `fs-quality-fetch` 四层链序、任一层命中即停、exa 失败静默降级 firecrawl、全层失败聚合报错 | `node tools/assert-fetch-chain.mjs`（8） |
+| `assert-single-fetch-layer.mjs` | 抓取层全库只有一份实现、依赖单向、替身键不串层 | `node tools/assert-single-fetch-layer.mjs`（22） |
+| `assert-vertical.mjs` | `domain_search` 41 引擎注册表、每引擎 desc、未知引擎报错、不依赖 research | `node tools/assert-vertical.mjs`（8） |
+| `assert-free-search-test-schema.mjs` | `free_search_test` 输出 schema 与真实产出一致（含 auto/multi 虚拟模式） | `node tools/assert-free-search-test-schema.mjs`（8） |
+| `assert-weather-contract.mjs` | `weather` 工具输出 schema 契约（缺字段裁剪、英文输出、空 geocode 抛错） | `node tools/assert-weather-contract.mjs`（11） |
+| `assert-killtree-win32.mjs` | Windows 子进程树终止（#74）：不再依赖 `taskkill` | `node tools/assert-killtree-win32.mjs`（8） |
+| `assert-killtree-portable.mjs` | 跨平台 `killTree` 便携版契约 | `node tools/assert-killtree-portable.mjs`（5） |
 
 任何一个失败会以非 0 退出码结束并列出失败项；把某个旧版本文件路径作为参数传进去，可以看到修复前必红（用来证明断言不是空转）。改动发布相关逻辑后建议先跑一遍再发版。
 
@@ -467,13 +506,14 @@ This plugin provides multiple free search engines with automatic fallback, compl
 - **Popup Switch Command** — Type `/free-search-engine` in the chat: a picker opens with all engines; click one to switch (equivalent to the settings page + save)
 - **Engine Testing** — `free_search_test` for the agent to check all engines in one call; the settings UI also has a "Test engine" button that tests the selected engine directly (no fallback chain; paid engines without a key report an explicit error)
 - **Global engine enable/disable & fallback priority** — uncheck engines you never want (applies everywhere: web_search fallback, Auto routing, advanced_search, multi_search, engine tests) and reorder the global fallback chain with ↑↓ (one-click reset)
-- **Multi mode** — pick `Multi Search` as the engine: web_search queries **every enabled engine of the query's language pool** concurrently (no longer top 3; zh/en pools editable in the settings UI, minimum 2 engines each), merges/deduplicates URLs and prioritizes cross-source hits (costs more quota; a failed multi run automatically falls back to the single-engine chain)
+- **Multi mode** — pick `Multi Search` as the engine: web_search queries **every enabled engine of the query's language pool** concurrently (no longer top 3; zh/en pools editable in the settings UI, minimum 2 engines each), merges/deduplicates URLs (same-site detection via **eTLD+1**) and prioritizes cross-source hits; the settings UI offers **Fast / Balanced / Deep** presets or your own cap and target numbers; the whole run shares one **30-second budget** and returns whatever it already has when time is up (costs more quota; a failed multi run automatically falls back to the single-engine chain)
 - **Unified Engine Fallback** — Any engine failure (paid or free, missing key, 401, rate limit, network error) automatically tries the next engine: the configured engine first, then other engines (exa/tavily/keenable/firecrawl/parallel are tried even without a key because they have built-in keyless quota), then the remaining free engines (Bing/AnySearch etc.) — with a note attached to the results naming the engine that actually served them (e.g. `Note: perplexity unavailable or failed, using exa.`). Failures are classified: quota/auth failures cool the engine down for the session, anti-bot walls back off briefly, timeout/5xx/rate-limit failures retry the same engine once, and parse errors / 0 results are reported without cooling it down (see "Failure-aware fallback" below). Search never fails outright.
 - **Time Filtering** — The `advanced_search` tool supports `timeRange`: fixed tiers, custom relative values, or an absolute date (details below)
 - **System Prompt Injection** — The agent is aware of the currently active engine and which engines require API keys; it is also told that all search output is **untrusted external data** and must never be executed as instructions
 - **Prompt-Injection Guard (untrusted-data boundary)** — Web-derived text from the plugin's own tools (`advanced_search` / `platform_search` / `free_search_test`) is wrapped in an explicit `<untrusted-web-content>` boundary (look-alike tags inside the text are stripped to prevent early closure); the core `web_search` / `web_fetch` tools carry DSH core's own notice (`External web content follows...`); every snippet is cleaned and capped at 300 characters
 - **Version + Update Check** — The settings card shows the current version (tracks PLUGIN_VERSION, bumped on release), and a "Check update" button queries the npm registry to compare against the latest release, prompting a one-click jump when a newer version exists
 - **Result Caching** — Identical queries (same engine / time-filter args) hit an LRU cache (50 entries) for up to 5 minutes, protecting free engines from rate-limiting and saving paid quota; the TTL is configurable from 0-5 minutes in the settings UI (0 disables caching)
+- **Domain blocklist & safe search** — `blockedDomains` keeps matching domains out of every result; `safeSearch` (`off` / `moderate` / `strict`) adds a filter layer for Bing / DuckDuckGo
 - **Visual Badges** — Free engines feature a green `FREE` badge, while paid engines show an orange `API KEY` badge in the settings UI
 - **Webpage Fetching (`web_fetch`)** — Allows the agent to read full webpage contents (official `dsh-web-fetch-http` provider, pure JS, zero extra dependencies)
 - **Platform Search (`platform_search`)** — Search GitHub / V2EX / Bilibili / Reddit / Hacker News / Stack Overflow / Wikipedia / npm / YouTube / Vimeo / Juejin / Douban / Qiita (public APIs or keyless scraping, zero extra dependencies)
@@ -680,6 +720,18 @@ Cooldowns are per-process (reloading the plugin or restarting clears them) and a
 
 `fallbackOn` decides which failure classes are **allowed** to trigger a fallback: by default all six are checked, i.e. today's "search never fails outright". Unchecking a class makes such a failure **stop the search and surface that engine's error** instead of trying another engine (e.g. drop `invalid-response` and a preferred engine that returns nothing/parses badly fails loudly rather than silently handing you a lower-quality engine's results). An empty array `[]` aborts on any failure. Note that **missing keys, disabled engines and unsupported time filters are not failures** and always advance. There is a matching checkbox group in the settings page, and you can also write `fallbackOn: [quota, auth, bot-wall, transient, invalid-response, unknown]` in the config.
 
+#### Safe Search (`safeSearch`)
+
+`safeSearch` controls whether the built-in sources apply an extra safety filter. Default is `off` (no parameter is added — each engine keeps its own default):
+
+| Value | Meaning |
+|---|---|
+| `off` (default) | no filter parameter; engine default behavior |
+| `moderate` | filter adult content |
+| `strict` | strictest filtering |
+
+It applies to **Bing** (`adlt`), **DuckDuckGo HTML** (`adlt`), and **DuckDuckGo Lite** (`adlt`). Other engines have no such parameter and are unaffected. There is a dropdown in the settings page; you can also write `safeSearch: moderate` in the config.
+
 #### Configuration File
 
 Since DSH 0.1.7-rc.1 the configuration is stored with the profile's plugin entry: the settings page and `/free-search-engine` both write the `config` of the `web-search-free` (`dsh-free-search`) entry in the active profile's `cordis.patch.yml`.
@@ -695,6 +747,12 @@ bingMarket: zh-CN           # Bing market
 region: cn-zh               # DuckDuckGo region (optional)
 searxngInstances:           # Custom SearXNG instances (optional)
   - https://your-instance.example
+searxngBearerToken: ...      # Optional: send Authorization: Bearer <token> (same as the "SearXNG Bearer Token" row in the settings UI)
+safeSearch: off              # Safe search: off (default) / moderate / strict; applies to bing / ddg / ddg-lite
+blockedDomains:              # Domain blocklist (optional): matching domains never enter the results
+  - spam-example.com
+multiMaxEngines: 0           # multi concurrency cap (0 = unlimited, whole language pool); the settings UI has Fast/Balanced/Deep presets
+multiMinSources: 1           # multi target source count (only triggers top-up runs; not a hard minimum)
 exaApiKey: ...              # Or configure via the web settings UI
 tavilyApiKey: ...           # Or configure via the web settings UI
 keenableApiKey: ...         # Or configure via the web settings UI
@@ -753,7 +811,19 @@ Example: *"Find DSH news from the last 3 days"* → agent calls `advanced_search
 When you need **cross-source verification** to prevent biases or fail-safes from a single engine, the agent can call `multi_search`:
 
 - **Concurrent Execution**: Defaults to querying **every engine of the query's language pool** (no longer top 3; or an explicit list passed via `engines`). Each engine independently resolves API keys and handles errors (missing keys are skipped without failing the batch).
-- **Deduplication & Merge**: Normalizes URLs and ranks items by the number of engines that found them (`seenIn` counts), with cross-hit results placed at the top.
+- **Three presets** (radio buttons in the settings UI; the choice is written to the config immediately):
+
+  | Preset | Concurrency cap | Target sources |
+  |---|---|---|
+  | `Fast · 1/1` | 1 | 1 |
+  | `Balanced · 3/1` | 3 | 1 |
+  | `Deep · 6/2` | 6 | 2 |
+
+  Typing your own numbers below the buttons counts as "custom" and no preset appears selected.
+- **Concurrency cap** (`multiMaxEngines`, default `0` = **unlimited**, the whole language pool): this is a **ceiling, not a floor** — the actual fan-out is `min(cap, credential-eligible engines)`. Credential eligibility is resolved **before** truncation, so keyless engines never occupy slots (3 eligible engines with a cap of 6 still run all 3).
+- **Target source count** (`multiMinSources`, default `1`): **not a hard minimum**. It only triggers top-up runs — when too few sources have returned, the remaining eligible engines run **serially** in domain round-robin order; once they are exhausted or time runs out, the results in hand are returned (coming up short is not an error).
+- **30-second total budget** (`SEARCH_BUDGET_MS`): the fan-out and every top-up run share one deadline; at expiry the plugin stops and returns **whatever it already has**, so one slow engine cannot stall the whole search.
+- **Deduplication & Merge**: Normalizes URLs (drops trailing slashes and audited tracking params) and ranks items by the number of engines that found them (`seenIn` counts), with cross-hit results placed at the top; **same-site detection uses eTLD+1** — `a.example.co.uk` and `b.example.co.uk` count as one site, so domain-diversity rotation happens at the **site** level and cannot be flooded by many subdomains.
 - **Untrusted Boundary**: Enforces the `<untrusted-web-content>` safety wrapper and trims snippets.
 - ⚠️ Note: Running multiple engines in parallel consumes more search quota; use on demand when high source diversity is needed.
 
@@ -837,16 +907,25 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-Six zero-dependency assertion scripts ship with the repo: **no API keys, no network, no test framework**, Node ≥ 20:
+**Fifteen** zero-dependency assertion scripts ship with the repo (**463 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20:
 
-| Script | Covers | Run |
+| Script | Covers | Run (count) |
 |---|---|---|
-| `assert-engines.mjs` | engine registry / free-engine rule / language-pool routing / pool config fields / Zhihu URL utm stripping | `node tools/assert-engines.mjs` (19) |
+| `assert-engines.mjs` | engine registry / free-engine rule / language-pool routing / pool config fields / Zhihu URL utm stripping | `node tools/assert-engines.mjs` (28) |
+| `assert-blocked-domains.mjs` | domain blocklist: parsing, matching, choke points, and byte-identical front/back-end sanitizing | `node tools/assert-blocked-domains.mjs` (69) |
+| `assert-multi-policy.mjs` | multi execution policy: ceiling semantics / target-is-not-a-hard-minimum / credential eligibility before the ceiling / **Fast·Balanced·Deep presets** | `node tools/assert-multi-policy.mjs` (142) |
+| `assert-result-ranking.mjs` | merged ranking: **eTLD+1 same-site detection** / domain round-robin / `seenIn` demoted / freshness only under a time filter | `node tools/assert-result-ranking.mjs` (31) |
+| `assert-url-norm.mjs` | URL normalization: strips only audited tracking params, keeps params that may identify different resources | `node tools/assert-url-norm.mjs` (72) |
+| `assert-prompt-contract.mjs` | system-prompt contract: **search ≠ fetch**, untrusted-data boundary, model engines only when explicitly selected | `node tools/assert-prompt-contract.mjs` (9) |
 | `assert-research-degradation.mjs` | research degrades fully without keys, `node:sqlite` no-op, 90s budget isolation, configurable cache dir, `budget.exhausted` contract names | `node tools/assert-research-degradation.mjs` (19) |
+| `assert-research-call-wrappers.mjs` | the four research `call*` wrappers proxy to stubs / the real layer (#75 regression) | `node tools/assert-research-call-wrappers.mjs` (23) |
 | `assert-fetch-chain.mjs` | `fs-quality-fetch` tier ordering, stop-on-first-success, silent firecrawl degradation, aggregated all-tiers failure | `node tools/assert-fetch-chain.mjs` (8) |
+| `assert-single-fetch-layer.mjs` | exactly one fetch implementation repo-wide, one-way deps, seams owned by the right layer | `node tools/assert-single-fetch-layer.mjs` (22) |
 | `assert-vertical.mjs` | `domain_search` registry of 41 engines, per-engine descriptions, unknown-engine errors, no research dependency | `node tools/assert-vertical.mjs` (8) |
 | `assert-free-search-test-schema.mjs` | `free_search_test` output schema matches real output (incl. auto/multi virtual modes) | `node tools/assert-free-search-test-schema.mjs` (8) |
-| `assert-single-fetch-layer.mjs` | exactly one fetch implementation repo-wide, one-way deps, seams owned by the right layer | `node tools/assert-single-fetch-layer.mjs` (22) |
+| `assert-weather-contract.mjs` | `weather` output schema contract (field pruning, English output, empty geocode throws) | `node tools/assert-weather-contract.mjs` (11) |
+| `assert-killtree-win32.mjs` | Windows process-tree termination (#74): no longer relies on `taskkill` | `node tools/assert-killtree-win32.mjs` (8) |
+| `assert-killtree-portable.mjs` | portable `killTree` contract | `node tools/assert-killtree-portable.mjs` (5) |
 
 Any failure exits non-zero with the failing items listed. Passing the path of an older file shows the pre-fix failures (proving the assertions are not vacuous). Worth running before a release.
 
@@ -873,9 +952,3 @@ Windows users: The desktop shortcut already includes this configuration (`set NO
 ### License
 
 MIT
-
-## safeSearch 安全搜索过滤
-
-- 全新配置项 `safeSearch`：`off`（引擎默认，不加参数）/ `moderate` / `strict`
-- 作用于 Bing（adlt）、DuckDuckGo HTML（adlt）、DuckDuckGo Lite（adlt）
-- 默认 `off`：不额外过滤，保持引擎自身默认行为；需要时在「设置 > 插件 > Free Search」切换
