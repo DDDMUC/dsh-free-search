@@ -7,7 +7,7 @@
 //       minimum... should not discard valid evidence or fail solely because a
 //       configured success target was not reached.」——目标成功数不是硬下限。
 //   §6 兼容：默认值必须让现有行为完全不变，升级对用户透明。
-import { selectEngines, planTopUp, resolveMaxEngines, resolveMinSources, describeTarget, REQUIRED_CREDENTIALS, credentialRequirement, isCredentialEligible, partitionByCredentials } from "../lib/multi_policy.js";
+import { selectEngines, planTopUp, resolveMaxEngines, resolveMinSources, describeTarget, REQUIRED_CREDENTIALS, credentialRequirement, isCredentialEligible, partitionByCredentials, MULTI_PRESETS, presetForSettings } from "../lib/multi_policy.js";
 
 let passed = 0;
 const failures = [];
@@ -135,6 +135,39 @@ check("兼容：不配置任何新字段 → 上限不限制、目标 1、无补
   selectEngines(POOL, undefined).length === 4
   && resolveMinSources(undefined, 4) === 1
   && planTopUp({ attempted: ["bing"], succeeded: 1, minSources: resolveMinSources(undefined, 4), chain: ["ddg", "exa"] }).length === 0);
+
+// ---------- G. 执行档位（#69 §1：只复用现有两个旋钮，零后端新增） ----------
+check("fast = 1 并发 / 1 目标", presetForSettings(1, 1) === "fast");
+check("balanced = 3 并发 / 1 目标", presetForSettings(3, 1) === "balanced");
+check("deep = 6 并发 / 2 目标", presetForSettings(6, 2) === "deep");
+check("默认 0/1 不属于任何档位 → 自定义（升级无感）", presetForSettings(0, 1) === "custom");
+check("默认 undefined → 自定义", presetForSettings(undefined, undefined) === "custom");
+check("改一个数字即回自定义", presetForSettings(4, 2) === "custom" && presetForSettings(3, 2) === "custom");
+check("档位值本身合法（上限为正或 0、目标 ≥1）",
+  Object.values(MULTI_PRESETS).every((p) => p.maxEngines > 0 && p.minSources >= 1));
+check("档位上限与 reporter 的 1/3/6 一致",
+  MULTI_PRESETS.fast.maxEngines === 1 && MULTI_PRESETS.balanced.maxEngines === 3 && MULTI_PRESETS.deep.maxEngines === 6);
+check("档位能驱动既有两个旋钮（selectEngines / resolveMinSources 不报错）",
+  selectEngines(POOL, MULTI_PRESETS.fast.maxEngines).length === 1
+  && resolveMinSources(MULTI_PRESETS.deep.minSources, 4) === 2);
+check("每个档位的 (上限,目标) 都能反推回自己（往返一致）",
+  Object.entries(MULTI_PRESETS).every(([id, p]) => presetForSettings(p.maxEngines, p.minSources) === id));
+// 交叉校验：client.js 无 import，内联了一份档位表——两份必须一致（否则 UI 点出来的值后端不认）
+{
+  const { readFileSync } = await import("node:fs");
+  const { fileURLToPath } = await import("node:url");
+  const pathMod = await import("node:path");
+  const here = pathMod.dirname(fileURLToPath(import.meta.url));
+  const clientSrc = readFileSync(pathMod.join(here, "..", "lib", "client.js"), "utf8");
+  const m = clientSrc.match(/MULTI_PRESET_VALUES\s*=\s*\{([\s\S]*?)\n\s*\};/);
+  check("交叉校验：client.js 内联档位表存在", Boolean(m));
+  if (m) {
+    for (const [id, p] of Object.entries(MULTI_PRESETS)) {
+      const re = new RegExp(`${id}\\s*:\\s*\\{\\s*maxEngines:\\s*${p.maxEngines}\\s*,\\s*minSources:\\s*${p.minSources}\\s*\\}`);
+      check(`交叉校验：client.js 的 ${id} 与后端一致（${p.maxEngines}/${p.minSources}）`, re.test(m[1]));
+    }
+  }
+}
 
 console.log("");
 if (failures.length === 0) console.log(`OK: ${passed} assertions passed`);

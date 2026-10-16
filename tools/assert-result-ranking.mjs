@@ -22,13 +22,20 @@ const check = (name, cond) => {
 const mk = (i, d, c = 1, publishedAt = null) => ({ i, domain: d, order: i, corroboration: c, publishedAt });
 const idx = (out) => out.map((x) => x.i).join(",");
 
-// ---------- A. domainOf ----------
-check("domainOf 取主机名", domainOf("https://blog.csdn.net/a/b?x=1") === "blog.csdn.net");
+// ---------- A. domainOf（eTLD+1） ----------
+check("domainOf 取可注册域（子域归并）", domainOf("https://blog.csdn.net/a/b?x=1") === "csdn.net");
 check("domainOf 去 www.", domainOf("https://www.example.com/x") === "example.com");
 check("domainOf 小写化", domainOf("https://EXAMPLE.com/X") === "example.com");
 check("domainOf 保留端口外的路径无关性", domainOf("https://a.com:8443/x") === "a.com");
 check("domainOf 非法 URL 不抛", typeof domainOf("not a url") === "string");
 check("domainOf 空值不抛", domainOf("") === "");
+// eTLD+1 的核心收益：同一站点的不同子域必须归一（旧行为会当成两个独立来源）
+check("eTLD+1：blog/download 归为同域", domainOf("https://blog.example.com/x") === domainOf("https://download.example.com/y"));
+check("eTLD+1：多段后缀 co.uk 保留三段", domainOf("https://a.foo.co.uk/x") === "foo.co.uk");
+check("eTLD+1：多段后缀 com.cn 保留三段", domainOf("https://news.sina.com.cn/x") === "sina.com.cn");
+check("eTLD+1：深度子域只取可注册域", domainOf("https://a.b.c.example.com/x") === "example.com");
+check("eTLD+1：IPv4 原样", domainOf("https://192.168.1.1/x") === "192.168.1.1");
+check("eTLD+1：localhost 原样", domainOf("http://localhost:3000/x") === "localhost");
 
 // ---------- B. seenIn 不再是主排序键 ----------
 // 场景：条目 0（order 最小、域 d1）只有 1 个引擎；条目 5（order 更大）被 3 个引擎返回。
