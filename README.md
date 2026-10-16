@@ -261,6 +261,7 @@ bingMarket: zh-CN           # Bing 市场
 region: cn-zh               # DuckDuckGo 区域（可选）
 searxngInstances:           # 自定义 SearXNG 实例（可选）
   - https://your-instance.example
+searxngBearerToken: ...      # 可选：发送 Authorization: Bearer <token>
 exaApiKey: ...              # 或通过设置页填写
 tavilyApiKey: ...           # 或通过设置页填写
 keenableApiKey: ...         # 或通过设置页填写
