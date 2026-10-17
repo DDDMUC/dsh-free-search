@@ -5,7 +5,8 @@
 //   node tools/assert-engines.mjs
 // 全部通过输出 `OK: N assertions passed` 并以 0 退出；任何失败以 1 退出并列出失败项。
 
-import { FREE_ENGINES, ALL_ENGINES, routeEngines, Config, stripZhihuTracking } from "../lib/index.js";
+import { FREE_ENGINES, ALL_ENGINES, TIME_ENGINES, DEFAULT_FALLBACK_ORDER, routeEngines, Config, stripZhihuTracking } from "../lib/index.js";
+import { REQUIRED_CREDENTIALS } from "../lib/multi_policy.js";
 
 let pass = 0;
 const failures = [];
@@ -159,6 +160,47 @@ section("I. runEngineTest 重试分支收口");
   assert(/return finalize\(result\)/.test(code), "首次成功路径走 finalize");
   assert(/return finalize\(retried\)/.test(code), "重试成功路径走 finalize（修复点）");
   assert(/if \(retried\.ok === false\) return retried;/.test(code), "重试若返回付费引擎的失败结果，仍如实透传");
+}
+
+// ---------- J. deepseek-tools（原生 /v1/tools/search）注册点齐全 ----------
+// 背景（2026-10-17）：官方上线原生搜索 API——直接 POST /v1/tools/search 返回结构化 results[]，
+// 无模型参与。同 query 下实测 ~0.3s vs 旧 Anthropic web_search 工具路径的 ~5-6s，且不耗 token。
+// 新引擎最容易漏的是「声明点不全」：漏一处就会在某一入口上静默不可见或不可用，
+// 因此这里把 6 个接入点逐一钉住。
+section("J. deepseek-tools 注册点");
+assert(ALL_ENGINES.includes("deepseek-tools"), "ALL_ENGINES 含 deepseek-tools（否则配置/UI/工具参数都会拒收）");
+assert(
+  DEFAULT_FALLBACK_ORDER.includes("deepseek-tools") && DEFAULT_FALLBACK_ORDER.indexOf("deepseek-tools") < DEFAULT_FALLBACK_ORDER.indexOf("deepseek-official"),
+  "回退链含 deepseek-tools 且排在 deepseek-official 之前（同一把 key 下优先走快的那条）"
+);
+assert(TIME_ENGINES.includes("deepseek-tools"), "TIME_ENGINES 含 deepseek-tools（时间过滤走 query 的 after: 语法）");
+assert(
+  !!REQUIRED_CREDENTIALS["deepseek-tools"]?.some((r) => r.env === "DEEPSEEK_API_KEY" && r.settings === "deepseekApiKey"),
+  "REQUIRED_CREDENTIALS 声明 DEEPSEEK_API_KEY（缺 key 时被合格性筛选跳过，而不是发起必然失败的请求）"
+);
+assert(!FREE_ENGINES.includes("deepseek-tools"), "deepseek-tools 需要 key，不得进入 FREE_ENGINES");
+assert(!ALL_ENGINES.includes("deepseek-tool"), "没有拼写漂移的 deepseek-tool 残留");
+{
+  const { readFileSync } = await import("node:fs");
+  const { fileURLToPath } = await import("node:url");
+  const path = await import("node:path");
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const src = readFileSync(path.join(here, "..", "lib", "index.js"), "utf8");
+  // 两处分派必须都在：provider 主循环 + runEngineTest（缺后者则 free_search_test 测不到它）
+  const dispatch = src.match(/engine === "deepseek-tools"/g) ?? [];
+  assert(dispatch.length >= 1, "provider 主循环里有 deepseek-tools 分支");
+  assert(/case "deepseek-tools":/.test(src), "runEngineTest 的 switch 里有 deepseek-tools 分支");
+  const factory = src.indexOf("async function searchDeepSeekTools(");
+  const end = src.indexOf("// SerpBase:", factory);
+  const body = factory >= 0 && end > factory ? src.slice(factory, end) : "";
+  assert(body.length > 0, "能定位 searchDeepSeekTools 函数体");
+  assert(/\/v1\/tools\/search/.test(src), "走原生 /v1/tools/search 端点");
+  assert(/summary/.test(body), "优先取 summary（600~800 字，面向模型）而非 snippet（100~200 字）");
+  assert(!/tools\/fetch/.test(body), "搜索函数不掺 Fetch 端点");
+  // 摘要上限：新引擎的 summary 若按默认 300 截断会被拦腰砍断
+  const cap = src.indexOf("SNIPPET_MAX_BY_ENGINE");
+  const capLine = src.slice(cap, src.indexOf("\n", src.indexOf("{", cap)));
+  assert(/"deepseek-tools"\s*:\s*2000/.test(capLine), "SNIPPET_MAX_BY_ENGINE 为 deepseek-tools 放宽到 2000（否则 summary 被截半）");
 }
 
 console.log("");
