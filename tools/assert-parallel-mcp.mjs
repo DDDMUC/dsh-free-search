@@ -182,5 +182,5 @@ try {
   else process.env.PARALLEL_API_KEY = savedKey;
   if (savedCacheDir === undefined) delete process.env.RESEARCH_CACHE_DIR;
   else process.env.RESEARCH_CACHE_DIR = savedCacheDir;
-  rmSync(cacheDir, { recursive: true, force: true });
+  try { rmSync(cacheDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch {}
 }
