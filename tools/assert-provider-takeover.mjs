@@ -38,21 +38,22 @@ function makeCtx({ searchProvider, fetchProvider, hasConfigRefs = false, duplica
     if (searchProvider !== undefined) web.searchProviderId = searchProvider;
     if (fetchProvider !== undefined) web.fetchProviderId = fetchProvider;
   }
+  const logs = [];
   const ctx = {
-    logger: { info() {}, warn() {} },
+    logger: { info: (...args) => logs.push(args.join(" ")), warn: (...args) => logs.push(args.join(" ")) },
     get() { return undefined; },
     inject(deps, callback) {
       if (Array.isArray(deps) && deps.includes("settings")) callback({ settings, effect: () => () => {}, on() {} });
     },
     web,
   };
-  return { ctx, web, mutations, registrations };
+  return { ctx, web, mutations, registrations, logs };
 }
 
 function run(options) {
-  const { ctx, web, mutations, registrations } = makeCtx(options);
+  const { ctx, web, mutations, registrations, logs } = makeCtx(options);
   apply(ctx, baseConfig());
-  return { web, mutations: mutations.filter((entry) => entry.ns === "web"), registrations };
+  return { web, mutations: mutations.filter((entry) => entry.ns === "web"), registrations, logs };
 }
 
 check("legacy API: an unset searchProvider is taken over", () => {
@@ -104,6 +105,14 @@ check("duplicate registrations from another context do not abort apply", () => {
   apply(ctx, baseConfig());
   assert.equal(registrations.search, 1);
   assert.equal(registrations.fetch, 1);
+});
+
+check("repeated takeover logs are deduplicated per process", () => {
+  const foreign = "someone-else-" + Date.now();
+  const first = run({ searchProvider: foreign, fetchProvider: foreign });
+  assert.ok(first.logs.length > 0, "the takeover should log at least once");
+  const second = run({ searchProvider: foreign, fetchProvider: foreign });
+  assert.equal(second.logs.length, 0, "the same messages must not be logged twice");
 });
 
 console.log(`OK: ${checks} provider takeover checks passed`);

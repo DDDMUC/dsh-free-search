@@ -260,6 +260,25 @@ Error: configured web provider "ddg" is not registered
 
 作用于 **Bing**（`adlt`）、**DuckDuckGo HTML**（`adlt`）、**DuckDuckGo Lite**（`adlt`）；其它引擎没有对应参数，不受影响。设置页有下拉框，也可直接在 config 里写 `safeSearch: moderate`。
 
+#### fetch provider 接管（与其它 fetch 插件冲突）
+
+插件运行时会尝试接管 `web.fetchProvider`：
+
+- 未设置、或仍是出厂默认 `http` → 接管为 `fs-quality-fetch`（直连 → exa contents → firecrawl → crawl4ai）；
+- 已被**显式指向其它 provider**（例如 `playwright`）→ **不抢占**，只记一条日志（进程内只打一次）。
+
+如果你同时装了也会注册 fetch provider 的插件（例如 `dsh-web-fetch-playwright`、`dsh-chatgpt-subscription`），**请在 profile 的 `cordis.patch.yml` 里明确让一方退出**：
+
+```yaml
+- id: web
+  config:
+    fetchProvider: playwright   # 用别人的 fetch；本插件只接管 search
+```
+
+否则启动阶段可能出现「互相写 `web` config → web 服务重建 → 插件重复 apply」的循环（见 issue #82）。
+
+`searchProvider` 的规则相同：未设置或仍是 `deepseek-official` 时接管，显式指定其它 provider 时不抢占。
+
 #### 配置文件
 
 DSH 0.1.7-rc.1 起，配置跟随 profile 的插件条目保存：设置页与 `/free-search-engine` 都会写入当前 profile 的 `cordis.patch.yml` 中 `web-search-free`（`dsh-free-search`）条目的 `config`。
@@ -436,7 +455,7 @@ Search engine test:
 
 #### 离线自检断言（tools/）
 
-仓库自带 **17 个**零依赖断言脚本（合计 **503 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑：
+仓库自带 **17 个**零依赖断言脚本（合计 **504 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑：
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -456,7 +475,7 @@ Search engine test:
 | `assert-killtree-win32.mjs` | Windows 子进程树终止（#74）：不再依赖 `taskkill` | `node tools/assert-killtree-win32.mjs`（8） |
 | `assert-killtree-portable.mjs` | 跨平台 `killTree` 便携版契约 | `node tools/assert-killtree-portable.mjs`（5） |
 | `assert-parallel-mcp.mjs` | Parallel MCP 引擎：25 s 超时/调用方取消覆盖**响应体读取**、共享 SSE 解析器（通知/多行帧）、6 类错误路径、REST 精确时间过滤 | `node tools/assert-parallel-mcp.mjs`（15） |
-| `assert-provider-takeover.mjs` | provider 接管：旧属性 API 与 rc.2 的 `config.*` ref 两套兼容、`settings.mutate(web)` 单批写入、显式指定的 provider 不被抢占，以及 apply 重入/重复注册不再中断 | `node tools/assert-provider-takeover.mjs`（8） |
+| `assert-provider-takeover.mjs` | provider 接管：旧属性 API 与 rc.2 的 `config.*` ref 两套兼容、`settings.mutate(web)` 单批写入、显式指定的 provider 不被抢占、apply 重入/重复注册不再中断、重复日志去重 | `node tools/assert-provider-takeover.mjs`（9） |
 
 任何一个失败会以非 0 退出码结束并列出失败项；把某个旧版本文件路径作为参数传进去，可以看到修复前必红（用来证明断言不是空转）。改动发布相关逻辑后建议先跑一遍再发版。
 
@@ -737,6 +756,25 @@ Cooldowns are per-process (reloading the plugin or restarting clears them) and a
 
 It applies to **Bing** (`adlt`), **DuckDuckGo HTML** (`adlt`), and **DuckDuckGo Lite** (`adlt`). Other engines have no such parameter and are unaffected. There is a dropdown in the settings page; you can also write `safeSearch: moderate` in the config.
 
+#### Fetch provider takeover (conflicts with other fetch plugins)
+
+At runtime the plugin tries to take over `web.fetchProvider`:
+
+- unset, or still the factory default `http` → taken over as `fs-quality-fetch` (direct → exa contents → firecrawl → crawl4ai);
+- **explicitly pointed at another provider** (e.g. `playwright`) → **not stolen**, one log line only (once per process).
+
+If you also run a plugin that registers a fetch provider (`dsh-web-fetch-playwright`, `dsh-chatgpt-subscription`, …), **make one of them step aside** in the profile's `cordis.patch.yml`:
+
+```yaml
+- id: web
+  config:
+    fetchProvider: playwright   # use theirs; this plugin only takes over search
+```
+
+Otherwise startup can loop on "write the `web` config → the web service rebuilds → the plugin re-applies" (see issue #82).
+
+`searchProvider` follows the same rule: taken over when unset or still `deepseek-official`, never when explicitly pointed elsewhere.
+
 #### Configuration File
 
 Since DSH 0.1.7-rc.1 the configuration is stored with the profile's plugin entry: the settings page and `/free-search-engine` both write the `config` of the `web-search-free` (`dsh-free-search`) entry in the active profile's `cordis.patch.yml`.
@@ -913,7 +951,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Seventeen** zero-dependency assertion scripts ship with the repo (**503 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20:
+**Seventeen** zero-dependency assertion scripts ship with the repo (**504 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20:
 
 | Script | Covers | Run (count) |
 |---|---|---|
@@ -933,7 +971,7 @@ Restart `dsh web` after switching to apply changes.
 | `assert-killtree-win32.mjs` | Windows process-tree termination (#74): no longer relies on `taskkill` | `node tools/assert-killtree-win32.mjs` (8) |
 | `assert-killtree-portable.mjs` | portable `killTree` contract | `node tools/assert-killtree-portable.mjs` (5) |
 | `assert-parallel-mcp.mjs` | Parallel MCP engine: the 25 s timeout / caller abort covers the **body read**, shared SSE parser (notifications, multiline frames), six error paths, REST precise time filtering | `node tools/assert-parallel-mcp.mjs` (15) |
-| `assert-provider-takeover.mjs` | provider takeover: both the legacy property API and the rc.2 `config.*` refs, a single batched `settings.mutate(web)`, and explicit foreign providers left untouched | `node tools/assert-provider-takeover.mjs` (8) |
+| `assert-provider-takeover.mjs` | provider takeover: both the legacy property API and the rc.2 `config.*` refs, a single batched `settings.mutate(web)`, explicit foreign providers left untouched, apply re-entry / duplicate registrations tolerated, and repeated logs deduplicated | `node tools/assert-provider-takeover.mjs` (9) |
 
 Any failure exits non-zero with the failing items listed. Passing the path of an older file shows the pre-fix failures (proving the assertions are not vacuous). Worth running before a release.
 
