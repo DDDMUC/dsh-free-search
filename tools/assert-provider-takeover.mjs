@@ -1,4 +1,4 @@
-﻿// Provider takeover across both DSH web APIs. No network or API key.
+﻿// Provider takeover + registration idempotence across DSH web APIs. No network or API key.
 // Node >= 20: node tools/assert-provider-takeover.mjs
 import assert from "node:assert/strict";
 
@@ -12,15 +12,23 @@ const baseConfig = () => ({
   disabledEngines: ALL_ENGINES.filter((engine) => engine !== "bing" && engine !== "ddg"),
 });
 
-function run({ searchProvider, fetchProvider, hasConfigRefs = false }) {
+function makeCtx({ searchProvider, fetchProvider, hasConfigRefs = false, duplicateRegisters = false } = {}) {
   const mutations = [];
+  const registrations = { search: 0, fetch: 0 };
   const settings = {
     mutate: async (ns, ops) => { mutations.push({ ns, ops }); },
     configure() {},
   };
+  const duplicate = (what) => Object.assign(new Error(`a web provider with id "${what}" is already registered`), { code: "WEB_DUPLICATE_PROVIDER" });
   const web = {
-    registerSearchProvider() {},
-    registerFetchProvider() {},
+    registerSearchProvider() {
+      registrations.search++;
+      if (duplicateRegisters) throw duplicate("ddg");
+    },
+    registerFetchProvider() {
+      registrations.fetch++;
+      if (duplicateRegisters) throw duplicate("fs-quality-fetch");
+    },
   };
   if (hasConfigRefs) {
     web.config = {};
@@ -38,8 +46,13 @@ function run({ searchProvider, fetchProvider, hasConfigRefs = false }) {
     },
     web,
   };
+  return { ctx, web, mutations, registrations };
+}
+
+function run(options) {
+  const { ctx, web, mutations, registrations } = makeCtx(options);
   apply(ctx, baseConfig());
-  return { web, mutations: mutations.filter((entry) => entry.ns === "web") };
+  return { web, mutations: mutations.filter((entry) => entry.ns === "web"), registrations };
 }
 
 check("legacy API: an unset searchProvider is taken over", () => {
@@ -76,6 +89,21 @@ check("rc.2 API: no takeover when a foreign provider is selected", () => {
 check("rc.2 API: an explicit plugin id is not rewritten", () => {
   const { mutations } = run({ searchProvider: "ddg", fetchProvider: "fs-quality-fetch", hasConfigRefs: true });
   assert.equal(mutations.length, 0);
+});
+
+check("re-entering apply on the same context is a no-op", () => {
+  const { ctx, registrations } = makeCtx();
+  apply(ctx, baseConfig());
+  apply(ctx, baseConfig());
+  apply(ctx, baseConfig());
+  assert.deepEqual(registrations, { search: 1, fetch: 1 });
+});
+
+check("duplicate registrations from another context do not abort apply", () => {
+  const { ctx, registrations } = makeCtx({ duplicateRegisters: true });
+  apply(ctx, baseConfig());
+  assert.equal(registrations.search, 1);
+  assert.equal(registrations.fetch, 1);
 });
 
 console.log(`OK: ${checks} provider takeover checks passed`);
