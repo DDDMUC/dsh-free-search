@@ -5,6 +5,8 @@ import assert from "node:assert/strict";
 const { apply, ALL_ENGINES } = await import("../lib/index.js");
 let checks = 0;
 const check = (name, fn) => { fn(); checks++; console.log(`  ok  ${name}`); };
+const checkAsync = async (name, fn) => { await fn(); checks++; console.log(`  ok  ${name}`); };
+const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 const baseConfig = () => ({
   provider: "bing",
@@ -12,15 +14,15 @@ const baseConfig = () => ({
   disabledEngines: ALL_ENGINES.filter((engine) => engine !== "bing" && engine !== "ddg"),
 });
 
-function makeCtx({ searchProvider, fetchProvider, hasConfigRefs = false, duplicateRegisters = false, describeValue = null } = {}) {
+function makeCtx({ searchProvider, fetchProvider, hasConfigRefs = false, duplicateRegisters = false, describeValue = null, describeUid = null } = {}) {
   const mutations = [];
   const registrations = { search: 0, fetch: 0 };
   const handlers = {};
-  const described = { value: describeValue };
+  const described = { value: describeValue, uid: describeUid };
   const settings = {
     mutate: async (ns, ops) => { mutations.push({ ns, ops }); },
     configure() {},
-    describe: () => (described.value === null ? [] : [{ ns: "web", value: described.value }]),
+    describe: () => (described.value === null ? [] : [{ ns: "web", value: described.value, schema: { uid: described.uid } }]),
   };
   const duplicate = (what) => Object.assign(new Error(`a web provider with id "${what}" is already registered`), { code: "WEB_DUPLICATE_PROVIDER" });
   const web = {
@@ -136,21 +138,59 @@ check("repeated takeover logs are deduplicated per process", () => {
   assert.equal(second.logs.length, 0, "the same messages must not be logged twice");
 });
 
-check("#82 diagnostic reports only the web fields that changed", () => {
-  const { ctx, handlers, described, logs } = makeCtx({
+await checkAsync("#82 diagnostic ignores describe()-triggered noise", async () => {
+  const { ctx, handlers, logs } = makeCtx({
     searchProvider: "ddg",
     fetchProvider: "fs-quality-fetch",
     hasConfigRefs: true,
     describeValue: { searchProvider: "ddg", fetchProvider: "fs-quality-fetch", cache: true },
+    describeUid: 94,
   });
   apply(ctx, baseConfig());
-  assert.equal(logs.length, 0, "no takeover log is expected");
-  described.value = { searchProvider: "someone-else", fetchProvider: "fs-quality-fetch", cache: true };
   handlers["settings/document-updated"]("web");
-  const line = logs.find((entry) => entry.includes("the web config was updated"));
-  assert.ok(line, "the web config update must be logged");
-  assert.match(line, /changed: searchProvider/);
-  assert.doesNotMatch(line, /changed: (cache|fetchProvider)/);
+  await tick();
+  handlers["settings/document-updated"]("web");
+  await tick();
+  assert.equal(logs.filter((entry) => entry.includes("the web entry changed")).length, 0);
+});
+
+await checkAsync("#82 diagnostic reports a nested config change", async () => {
+  const { ctx, handlers, described, logs } = makeCtx({
+    searchProvider: "ddg",
+    fetchProvider: "fs-quality-fetch",
+    hasConfigRefs: true,
+    describeValue: { cache: true, providers: { search: "ddg" } },
+    describeUid: 94,
+  });
+  apply(ctx, baseConfig());
+  handlers["settings/document-updated"]("web");
+  await tick();
+  described.value = { cache: true, providers: { search: "someone-else" } };
+  handlers["settings/document-updated"]("web");
+  await tick();
+  const line = logs.find((entry) => entry.includes("the web entry changed"));
+  assert.ok(line, "the change must be logged");
+  assert.match(line, /config providers\.search: "ddg" → "someone-else"/);
+  assert.doesNotMatch(line, /cache/);
+});
+
+await checkAsync("#82 diagnostic reports a web service rebuild", async () => {
+  const { ctx, handlers, described, logs } = makeCtx({
+    searchProvider: "ddg",
+    fetchProvider: "fs-quality-fetch",
+    hasConfigRefs: true,
+    describeValue: { searchProvider: "ddg", fetchProvider: "fs-quality-fetch" },
+    describeUid: 94,
+  });
+  apply(ctx, baseConfig());
+  handlers["settings/document-updated"]("web");
+  await tick();
+  described.uid = 95;
+  handlers["settings/document-updated"]("web");
+  await tick();
+  const line = logs.find((entry) => entry.includes("the web entry changed"));
+  assert.ok(line, "the rebuild must be logged");
+  assert.match(line, /entry uid 94 → 95/);
 });
 
 console.log(`OK: ${checks} provider takeover checks passed`);
