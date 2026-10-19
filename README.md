@@ -277,6 +277,8 @@ Error: configured web provider "ddg" is not registered
 
 否则启动阶段可能出现「互相写 `web` config → web 服务重建 → 插件重复 apply」的循环（见 issue #82）。
 
+如果你**特意** pin 了 `fetchProvider: http`（只想要内置抓取），把 `fetchProviderTakeover` 设为 `false` 即可：本插件不再把 `http` 当成「出厂默认」去接管，但仍会在完全未设置时补上。
+
 `searchProvider` 的规则相同：未设置或仍是 `deepseek-official` 时接管，显式指定其它 provider 时不抢占。
 
 #### 配置文件
@@ -289,8 +291,10 @@ DSH 0.1.7-rc.1 起，配置跟随 profile 的插件条目保存：设置页与 `
 # profiles/<profile>/cordis.patch.yml 中该条目的 config：
 provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / parallel / perplexity / serpbase / serply / deepseek-official / deepseek-tools / you / baidu / kimi / aliyun / doubao / zhihu_global / zhihu_site / openai / gemini / claude / auto / multi
 fallbackOn: [quota, auth, bot-wall, transient, invalid-response, unknown]   # 允许触发回退的失败类别；[] = 任何失败都立即中止（默认全部）
-lang: zh                    # 设置页界面语言（zh / en）
-bingMarket: zh-CN           # Bing 市场
+lang: zh                    # 搜索语言池/本地化（zh / en / ru …，不再被设置页强行改写）
+uiLang: zh                  # 设置页界面语言（zh / en）；留空则跟随 lang
+bingMarket: zh-CN           # Bing 市场；留空 = 自动（不发送 mkt）
+fetchProviderTakeover: true # false = 保留你显式 pin 的 fetchProvider: http
 region: cn-zh               # DuckDuckGo 区域（可选）
 searxngInstances:           # 自定义 SearXNG 实例（可选）
   - https://your-instance.example
@@ -455,7 +459,7 @@ Search engine test:
 
 #### 离线自检断言（tools/）
 
-仓库自带 **17 个**零依赖断言脚本（合计 **504 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑：
+仓库自带 **17 个**零依赖断言脚本（合计 **507 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑：
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -475,7 +479,7 @@ Search engine test:
 | `assert-killtree-win32.mjs` | Windows 子进程树终止（#74）：不再依赖 `taskkill` | `node tools/assert-killtree-win32.mjs`（8） |
 | `assert-killtree-portable.mjs` | 跨平台 `killTree` 便携版契约 | `node tools/assert-killtree-portable.mjs`（5） |
 | `assert-parallel-mcp.mjs` | Parallel MCP 引擎：25 s 超时/调用方取消覆盖**响应体读取**、共享 SSE 解析器（通知/多行帧）、6 类错误路径、REST 精确时间过滤 | `node tools/assert-parallel-mcp.mjs`（15） |
-| `assert-provider-takeover.mjs` | provider 接管：旧属性 API 与 rc.2 的 `config.*` ref 两套兼容、`settings.mutate(web)` 单批写入、显式指定的 provider 不被抢占、apply 重入/重复注册不再中断、重复日志去重 | `node tools/assert-provider-takeover.mjs`（9） |
+| `assert-provider-takeover.mjs` | provider 接管：旧属性 API 与 rc.2 的 `config.*` ref 两套兼容、`settings.mutate(web)` 单批写入、显式指定的 provider 不被抢占、`fetchProviderTakeover: false` 时保留显式 `http`、apply 重入/重复注册不再中断、重复日志去重 | `node tools/assert-provider-takeover.mjs`（12） |
 
 任何一个失败会以非 0 退出码结束并列出失败项；把某个旧版本文件路径作为参数传进去，可以看到修复前必红（用来证明断言不是空转）。改动发布相关逻辑后建议先跑一遍再发版。
 
@@ -773,6 +777,8 @@ If you also run a plugin that registers a fetch provider (`dsh-web-fetch-playwri
 
 Otherwise startup can loop on "write the `web` config → the web service rebuilds → the plugin re-applies" (see issue #82).
 
+If you deliberately pinned `fetchProvider: http` (you only want the built-in fetcher), set `fetchProviderTakeover: false`: `http` is no longer treated as the factory default, while a completely unset provider is still filled in.
+
 `searchProvider` follows the same rule: taken over when unset or still `deepseek-official`, never when explicitly pointed elsewhere.
 
 #### Configuration File
@@ -785,8 +791,10 @@ The old `free-search:` section of `~/.dsh/settings.yaml` is **not** imported by 
 # config of that entry in profiles/<profile>/cordis.patch.yml:
 provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / parallel / perplexity / serpbase / serply / deepseek-official / deepseek-tools / you / baidu / kimi / aliyun / doubao / zhihu_global / zhihu_site / openai / gemini / claude / auto / multi
 fallbackOn: [quota, auth, bot-wall, transient, invalid-response, unknown]   # failure classes allowed to trigger fallback; [] = abort on any failure (default: all)
-lang: zh                    # settings UI language (zh / en)
-bingMarket: zh-CN           # Bing market
+lang: zh                    # search language pools / localization (zh / en / ru …; no longer rewritten by the settings page)
+uiLang: zh                  # settings UI language (zh / en); empty = follow lang
+bingMarket: zh-CN           # Bing market; empty = automatic (no mkt sent)
+fetchProviderTakeover: true # false = keep the fetchProvider: http you pinned yourself
 region: cn-zh               # DuckDuckGo region (optional)
 searxngInstances:           # Custom SearXNG instances (optional)
   - https://your-instance.example
@@ -951,7 +959,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Seventeen** zero-dependency assertion scripts ship with the repo (**504 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20:
+**Seventeen** zero-dependency assertion scripts ship with the repo (**507 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20:
 
 | Script | Covers | Run (count) |
 |---|---|---|
@@ -971,7 +979,7 @@ Restart `dsh web` after switching to apply changes.
 | `assert-killtree-win32.mjs` | Windows process-tree termination (#74): no longer relies on `taskkill` | `node tools/assert-killtree-win32.mjs` (8) |
 | `assert-killtree-portable.mjs` | portable `killTree` contract | `node tools/assert-killtree-portable.mjs` (5) |
 | `assert-parallel-mcp.mjs` | Parallel MCP engine: the 25 s timeout / caller abort covers the **body read**, shared SSE parser (notifications, multiline frames), six error paths, REST precise time filtering | `node tools/assert-parallel-mcp.mjs` (15) |
-| `assert-provider-takeover.mjs` | provider takeover: both the legacy property API and the rc.2 `config.*` refs, a single batched `settings.mutate(web)`, explicit foreign providers left untouched, apply re-entry / duplicate registrations tolerated, and repeated logs deduplicated | `node tools/assert-provider-takeover.mjs` (9) |
+| `assert-provider-takeover.mjs` | provider takeover: both the legacy property API and the rc.2 `config.*` refs, a single batched `settings.mutate(web)`, explicit foreign providers left untouched, an explicit `http` kept when `fetchProviderTakeover` is off, apply re-entry / duplicate registrations tolerated, and repeated logs deduplicated | `node tools/assert-provider-takeover.mjs` (12) |
 
 Any failure exits non-zero with the failing items listed. Passing the path of an older file shows the pre-fix failures (proving the assertions are not vacuous). Worth running before a release.
 
