@@ -12,6 +12,7 @@
 |---|---|---|---|
 | `bing` / `ddg` / `ddg-lite` / `searxng` / `anysearch` | 无限（免 key） | — | 免费 |
 | `exa` / `tavily` / `keenable` / `firecrawl` / `parallel` | 匿名额度，配 key 提额 | 按量 | 免费 |
+| `you` | 免 key 每天 100 次，配 key（`YDC_API_KEY`）提额 | 按量 | 免费 |
 | `baidu` | 每日 50 次 | 按量后付费 | 额度 |
 | `aliyun` | 新用户 200 次包 | 约 ￥0.03/次 | 付费 |
 | `doubao` | 每月 500 次 | 按量付费 | 免费额度 |
@@ -19,7 +20,6 @@
 | `kimi` | **无免费额度** | 约 ￥0.01/次 | 付费 |
 | `serpbase` | 注册送 100 次 | 按量 | 付费 |
 | `serply` | 新账户 30 天 2,500 次 | 按量 | 付费 |
-| `you` | 注册送额度 | 按量 | 付费 |
 | `openai` / `gemini` / `claude` | 无（按次计费） | 按次 | 按次计费 |
 
 两处与现状不一致，值得改：
@@ -31,7 +31,7 @@
 
 ```
 ① 无限免 key        bing · ddg · ddg-lite · searxng · anysearch
-② 匿名额度          exa · tavily · keenable · firecrawl · parallel
+② 匿名额度          exa · tavily · keenable · firecrawl · parallel · you
 ③ 免费额度（中文）   zhihu_global · zhihu_site · doubao · aliyun · baidu
 ④ 付费·质量升级      kimi
 ⑤ 按次计费·显式专用  openai · gemini · claude

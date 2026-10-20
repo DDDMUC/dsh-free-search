@@ -125,7 +125,7 @@ check("未知引擎不抛且算合格（宁放过不误杀）", isCredentialElig
     const declared = descs.some((d) => src.includes(`${d.env} not configured`));
     check(`交叉校验：${engine} 的 ${descs[0].env} 在 index.js 里确实有 "not configured" 声明`, declared);
   }
-  for (const engine of ["ddg", "ddg-lite", "bing", "searxng", "anysearch", "exa", "parallel"]) {
+  for (const engine of ["ddg", "ddg-lite", "bing", "searxng", "anysearch", "exa", "parallel", "you"]) {
     check(`交叉校验：${engine} 未被误列入必需凭据清单`, !(engine in REQUIRED_CREDENTIALS));
   }
   check("交叉校验：settings 名与 index.js 的 config 字段对应",
