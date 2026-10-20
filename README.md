@@ -32,6 +32,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 - **多引擎可选**：DuckDuckGo（html/lite）、Bing、SearXNG（元搜索，支持自定义实例）、AnySearch、Exa、Tavily、Keenable、Firecrawl、Parallel、Perplexity、SerpBase、Serply、DeepSeek 官方、DeepSeek 原生搜索 API、You.com、百度千帆、Kimi、阿里云百炼、火山联网搜索（豆包搜索）、知乎全网/站内（`zhihu_global`/`zhihu_site`，经知乎开放平台 MCP）、OpenAI / Gemini / Claude 模型内置搜索
 - **网页设置页** —— 引擎切换 + API key 配置（UI 中 key 脱敏显示"已配置"）+ 中英文切换；入口在左侧「插件」页的组件行配置（`plugins.row.config`，DSH 0.1.7-rc.1+）。远程访问（VPS / 反向代理 / 自定义域名）下也能用：桥接接口沿用宿主的 Host 围栏，`--trusted-host` 与 `--public-url` 声明的地址会放行（#84）
 - **右侧浮动目录** —— 卡片右侧的页面留白里浮出「引擎 / 回退 / 语言池 / 搜索行为 / 抓取 / 性能」六个快捷跳转，滚动自动高亮当前项、点击平滑跳转；不占用正文宽度（正文布局与 0.9.6 一致），右侧留白不足时自动隐藏
+- **多 key 轮换** —— 任何 key 字段（或对应环境变量）都可以用逗号 / 分号 / 换行分隔多把 key；遇到 401/402/429（鉴权失败、额度耗尽）先轮换同一引擎的下一把，再走引擎回退
 - **弹出式切换命令** —— 聊天框输入 `/free-search-engine`，弹出引擎选择窗口，点选即切换（等效设置页 + 保存）
 - **引擎测试** —— `free_search_test` 工具让 agent 一键测试所有引擎；设置页也有"测试引擎"按钮（直测当前引擎，不走回退链，付费引擎无 key 会明确报错）
 - **全局引擎开关与回退优先级** —— 设置页可勾选/取消引擎（取消后全局生效：普通搜索 / Auto / `advanced_search` / `multi_search` / 引擎测试都不再用它），并可用 ↑↓ 调整全局回退顺序（一键恢复默认）
@@ -67,7 +68,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 | `exa` | Exa | 免费 | **无 key 也可用**（MCP 匿名），配 key 提升额度 |
 | `tavily` | Tavily | 免费 | **无 key 也可用**（keyless 匿名），配 key 提升额度 |
 | `keenable` | Keenable | 免费 | **无 key 也可用**（MCP 匿名），配 key 提升额度 |
-| `firecrawl` | Firecrawl | 免费 | **无 key 也可用**（官方免 key 匿名额度），配 key 提升限额 |
+| `firecrawl` | Firecrawl | 免费 | **无 key 也可用**（官方免 key 匿名额度），配 key 提升限额。注意：keyless 档按**出口 IP** 判定，VPN/代理出口会被 403 拒绝；插件会冷却 6 小时并说明原因（有 key 不受影响） |
 | `parallel` | Parallel | 免费 | **无 key 也可用**（官方 MCP 匿名额度），配 key 提升额度并支持精确时间过滤 |
 | `perplexity` | Perplexity | 付费 | 需 `PERPLEXITY_API_KEY` |
 | `serpbase` | SerpBase | 付费 | 需 `SERPBASE_API_KEY`（serpbase.dev，注册送 100 次免费额度） |
@@ -392,6 +393,20 @@ Search engine test:
 - **不可信边界与清洗**：严格遵守 `<untrusted-web-content>` 数据边界，正文 snippet 统一清洗。
 - ⚠️ 注：多源并发会消耗更多 API 配额，建议在需要多角度核验时按需使用。
 
+#### 输出契约（meta.uncertainty）
+
+`advanced_search` 与 `multi_search` 的输出多了一个可选字段 `meta.uncertainty`，用来告诉 agent「这次结果有多可信」，不影响原有 `provider` / `content` / `sources`：
+
+```json
+{ "provider": "multi", "sources": [ ... ],
+  "meta": { "uncertainty": { "level": "medium", "notes": ["只有 2 个来源"] } } }
+```
+
+- `level`：`high` / `medium` / `low`，按来源数量、站点是否同一家、带时间过滤却无发布时间、是否包含聚合站、是否有引擎失败等启发式判定；
+- `notes`：具体原因（中文）；`high` 时通常为空；
+- 渲染文本在非 `high` 时会追加一行 `Confidence: …`。
+
+这是**小步版**：只新增字段，旧解析不受影响。
 #### 抓取网页内容（web_fetch）
 
 搜索到 URL 后，可以让 agent **读取网页全文**（如"打开第一个链接看看内容"）。`web_fetch` 工具已启用（官方 `dsh-web-fetch-http` provider）：
@@ -472,7 +487,7 @@ Search engine test:
 
 #### 离线自检断言（tools/）
 
-仓库自带 **20 个**零依赖断言脚本（合计 **534 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑：
+仓库自带 **23 个**零依赖断言脚本（合计 **550 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑：
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -492,6 +507,9 @@ Search engine test:
 | `assert-killtree-win32.mjs` | Windows 子进程树终止（#74）：不再依赖 `taskkill` | `node tools/assert-killtree-win32.mjs`（8） |
 | `assert-killtree-portable.mjs` | 跨平台 `killTree` 便携版契约 | `node tools/assert-killtree-portable.mjs`（5） |
 | `assert-parallel-mcp.mjs` | Parallel MCP 引擎：25 s 超时/调用方取消覆盖**响应体读取**、共享 SSE 解析器（通知/多行帧）、6 类错误路径、REST 精确时间过滤 | `node tools/assert-parallel-mcp.mjs`（15） |
+| `assert-uncertainty.mjs` | 输出契约：0/1 源为 low、2 源与同站为 medium、3 个不同域为 high、时间过滤无日期、失败备注、聚合站提示 | `node tools/assert-uncertainty.mjs`（8） |
+| `assert-multikey.mjs` | 多 key 字段：单 key 不变、逗号/分号/换行分隔、空白项丢弃、空输入为空数组 | `node tools/assert-multikey.mjs`（3） |
+| `assert-firecrawl-keyless.mjs` | Firecrawl keyless 出口判定：403 + VPN/proxy 文案才算拒绝、普通 403 与 401/429/500 不算、冷却初始未触发 | `node tools/assert-firecrawl-keyless.mjs`（5） |
 | `assert-fetch-charset.mjs` | 抓取编码（#88）：`charset=gbk` / `gb2312` 按声明解码、无声明时嗅探 `<meta charset>` 与 http-equiv 形式、默认 UTF-8、未知 label 兜底 UTF-8 不抛错 | `node tools/assert-fetch-charset.mjs`（6） |
 | `assert-fetch-abort.mjs` | 抓取中断（#87）：压缩响应中途断连必须 reject（不再永久 pending）、明文断连同样 reject、abort 能打断停滞的 gzip 流、complete 响应与重定向仍正常 | `node tools/assert-fetch-abort.mjs`（6） |
 | `assert-bridge-access.mjs` | 桥接 Host 围栏（#84）：loopback 放行、remote peer 打 loopback Host 拒绝、`--trusted-host`（无端口匹配任意端口 / 带端口精确匹配）、`--public-url`、绑定地址、跨站与异源拒绝 | `node tools/assert-bridge-access.mjs`（11） |
@@ -547,6 +565,7 @@ This plugin provides multiple free search engines with automatic fallback, compl
 - **Multi-Engine Support** — DuckDuckGo (HTML / Lite), Bing, AnySearch AI, SearXNG (meta-search with custom instances), Exa, Tavily, Keenable, Firecrawl, Parallel, Perplexity, SerpBase, Serply, DeepSeek Official, You.com, Baidu Qianfan, Kimi, Aliyun Bailian, Volcano Doubao, Zhihu web-wide/site search (`zhihu_global`/`zhihu_site`, via the Zhihu open-platform MCP), and the model-based OpenAI / Gemini / Claude searches
 - **Web Settings UI** — Engine switching, API key configuration (keys masked as "configured" in the UI), and a Chinese/English toggle; the entry is the component-row config (`plugins.row.config`) on the sidebar Plugins page (DSH 0.1.7-rc.1+). Remote access (VPS, reverse proxy, custom domain) works too: the bridge reuses the host's own Host fence, so addresses declared with `--trusted-host` or `--public-url` are accepted (#84)
 - **Right-hand section rail** — A floating list (Engines / Fallback / Language pools / Search behaviour / Fetch / Performance) sits in the page margin to the right of the card: it highlights the section you are in while scrolling and jumps smoothly on click. It is rendered in a portal and never narrows the card, so the body layout is unchanged; it hides itself when the margin is too tight.
+- **Multi-key rotation** — Any key field (or its env var) accepts several keys separated by commas, semicolons or newlines; on 401/402/429 (bad key, quota exhausted) the same engine retries with the next key before the engine-level fallback runs
 - **Popup Switch Command** — Type `/free-search-engine` in the chat: a picker opens with all engines; click one to switch (equivalent to the settings page + save)
 - **Engine Testing** — `free_search_test` for the agent to check all engines in one call; the settings UI also has a "Test engine" button that tests the selected engine directly (no fallback chain; paid engines without a key report an explicit error)
 - **Global engine enable/disable & fallback priority** — uncheck engines you never want (applies everywhere: web_search fallback, Auto routing, advanced_search, multi_search, engine tests) and reorder the global fallback chain with ↑↓ (one-click reset)
@@ -582,7 +601,7 @@ If this plugin has been helpful, a ⭐ on [GitHub](https://github.com/DDDMUC/dsh
 | `exa` | Exa | Free | **Usable without a key** (anonymous MCP); configure a key for higher quota |
 | `tavily` | Tavily | Free | **Usable without a key** (keyless anonymous); configure a key for higher quota |
 | `keenable` | Keenable | Free | **Usable without a key** (anonymous MCP); configure a key for higher quota |
-| `firecrawl` | Firecrawl | Free | **Usable without a key** (official keyless anonymous quota); configure a key for higher limits |
+| `firecrawl` | Firecrawl | Free | **Usable without a key** (official keyless anonymous quota); a key adds higher limits. Note: the keyless tier is judged by **egress IP** — VPN/proxy egress gets a 403, in which case the plugin cools it down for 6 hours and says why (a key is unaffected) |
 | `parallel` | Parallel | Free | **Works without a key** (official MCP anonymous quota); a key raises limits and enables precise time filtering |
 | `perplexity` | Perplexity | Paid | Requires `PERPLEXITY_API_KEY` |
 | `serpbase` | SerpBase | Paid | Requires `SERPBASE_API_KEY` (serpbase.dev, 100 free queries on signup) |
@@ -908,6 +927,20 @@ When you need **cross-source verification** to prevent biases or fail-safes from
 - **Untrusted Boundary**: Enforces the `<untrusted-web-content>` safety wrapper and trims snippets.
 - ⚠️ Note: Running multiple engines in parallel consumes more search quota; use on demand when high source diversity is needed.
 
+#### Output contract (meta.uncertainty)
+
+`advanced_search` and `multi_search` now return an optional `meta.uncertainty` field describing how much the result should be trusted; the existing `provider` / `content` / `sources` shape is unchanged:
+
+```json
+{ "provider": "multi", "sources": [ ... ],
+  "meta": { "uncertainty": { "level": "medium", "notes": ["only two sources"] } } }
+```
+
+- `level`: `high` / `medium` / `low`, derived from the number of sources, whether they all come from one site, a time filter without publish dates, aggregator hosts, and whether any engine failed;
+- `notes`: readable reasons; usually empty at `high`;
+- the rendered text appends a `Confidence: …` line whenever the level is not `high`.
+
+This is the **small step**: additive fields only, existing parsers keep working.
 #### Fetch Webpage Content (`web_fetch`)
 
 After searching, the agent can **read full webpage content** (e.g., *"Open the first link and summarize it"*). The `web_fetch` tool is enabled by default (official `dsh-web-fetch-http` provider):
@@ -988,7 +1021,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Twenty** zero-dependency assertion scripts ship with the repo (**534 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20:
+**Twenty-three** zero-dependency assertion scripts ship with the repo (**550 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20:
 
 | Script | Covers | Run (count) |
 |---|---|---|
@@ -1008,6 +1041,9 @@ Restart `dsh web` after switching to apply changes.
 | `assert-killtree-win32.mjs` | Windows process-tree termination (#74): no longer relies on `taskkill` | `node tools/assert-killtree-win32.mjs` (8) |
 | `assert-killtree-portable.mjs` | portable `killTree` contract | `node tools/assert-killtree-portable.mjs` (5) |
 | `assert-parallel-mcp.mjs` | Parallel MCP engine: the 25 s timeout / caller abort covers the **body read**, shared SSE parser (notifications, multiline frames), six error paths, REST precise time filtering | `node tools/assert-parallel-mcp.mjs` (15) |
+| `assert-uncertainty.mjs` | output contract: 0/1 source is low, two sources or a single site is medium, three distinct domains is high, time filter without dates, failure notes, aggregator caveat | `node tools/assert-uncertainty.mjs` (8) |
+| `assert-multikey.mjs` | multi-key fields: a single key is unchanged, comma/semicolon/newline separate keys, blank entries are dropped, empty input yields none | `node tools/assert-multikey.mjs` (3) |
+| `assert-firecrawl-keyless.mjs` | Firecrawl keyless egress refusal: only a 403 with the VPN/proxy wording counts, plain 403 and 401/429/500 do not, and the cooldown starts inactive | `node tools/assert-firecrawl-keyless.mjs` (5) |
 | `assert-fetch-charset.mjs` | fetch encoding (#88): `charset=gbk` / `gb2312` decoded as declared, `<meta charset>` and the http-equiv form sniffed when the header omits it, UTF-8 by default, and an unknown label falls back to UTF-8 instead of throwing | `node tools/assert-fetch-charset.mjs` (6) |
 | `assert-fetch-abort.mjs` | fetch interruption (#87): a compressed response cut mid-body rejects instead of hanging forever, identity truncation rejects too, abort breaks a stalled gzip stream, and complete responses plus redirects still work | `node tools/assert-fetch-abort.mjs` (6) |
 | `assert-bridge-access.mjs` | bridge Host fence (#84): loopback allowed, a remote peer behind a loopback Host refused, `--trusted-host` (port-less matches any port, explicit port matches exactly), `--public-url`, the bind address, cross-site and foreign-Origin refused | `node tools/assert-bridge-access.mjs` (11) |
