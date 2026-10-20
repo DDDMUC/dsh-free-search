@@ -139,33 +139,45 @@ dsh web
 
 #### 接管行为与验证
 
-插件加载后**自动接管搜索**（运行时接管，不改配置层）：
+插件加载后**自动接管搜索**：
 
 - `web.searchProvider` 未设置，或仍是 DSH 出厂默认的官方搜索 `deepseek-official` 时，自动切换为本插件的 provider（id 固定为 `ddg`）；
 - 如果（你或别的插件）已显式选择其他 provider，本插件不抢占，只在启动日志输出 WARN 与切换用的 YAML。
 
-**不再往配置里写 `searchProvider: ddg`**：静态覆盖曾导致"悬空引用"——patch 是整段覆盖 config，一旦插件那一行被**停用或跳过**（比如在插件管理器里关掉），配置仍指向 `ddg` 而没有任何东西注册它，于是每次搜索都失败：
+**接管会写进 profile（DSH 0.2.x）**：从 `0.2.0-rc.2` 起 provider 选择存放在 config 的 volatile ref 里，只能经 `settings.mutate("web", …)` 写入，落盘结果就是 `profiles/<profile>/cordis.patch.yml` 多出：
+
+```yaml
+- id: web
+  config:
+    searchProvider: ddg
+    fetchProvider: fs-quality-fetch
+```
+
+所以**停用或卸载本插件之前，请先删掉 `- id: web` 这两行**（或整行删掉让 DSH 回到出厂默认）。否则配置仍指向 `ddg` 而没有任何东西注册它，每次搜索都会失败：
 
 ```
 Error: configured web provider "ddg" is not registered
 ```
 
-现在没有这层覆盖：插件被停用时 `web.searchProvider` 保持官方默认（`deepseek-official`），搜索至少还能走官方通道；插件启用时由上面的运行时接管切到 `ddg`。
+更早的 DSH（0.1.x）由 patch 静态覆盖 config，不需要也更不该手写这段，这里不再赘述。
 
-> 如果你曾按旧文档手动在 `profiles/<profile>/cordis.patch.yml` 里加过下面这段，而插件没有启用，就会看到上面那条错误——**删掉这段即可**（或重新启用插件）：
+#### DSH 的「DeepSeek 搜索 API」开关
 
-```yaml
-# 可选，通常不需要：只有你想强制指定时才加。
-# DSH 0.1.2+ 的 patch 是"整段覆盖 config"，必须保留 fetchProvider。
-- id: web
-  config:
-    searchProvider: ddg
-    fetchProvider: http
-```
+DSH 0.2.1 设置 → 网页搜索 → **DeepSeek 搜索 API** 开关会和本插件互相影响，行为如下：
+
+| 操作 | 结果 |
+|---|---|
+| 打开开关 | `web.searchProvider` 写成 `deepseek-search-api`（属于「显式选择其他 provider」），**本插件主动让路**，搜索走官方直连 API；抓取同时变成 `deepseek-fetch-api` |
+| 关闭开关 | DSH 会把整行 `- id: web` 删掉，provider 回到出厂默认 `deepseek-official` —— 这是**模型搜索**（一次完整 aux 请求，实测 ~12s、按 token 计费），不是免费引擎 |
+| 关闭后 | **0.9.8 起**：插件检测到 `deepseek-official` 会在运行时补一次接管（日志 `DSH's search switch put the web providers back to the official defaults — re-took …`），通常几秒内恢复免费链路；若没恢复，完整重启 DSH |
+
+想换引擎请用 `/free-search-engine` 或本插件设置页，**不要动那个开关**。打开开关再关掉，官方直连会退回模型搜索，直到插件重新接管或重启。
+
+> 如果你在 0.1.x 时代按旧文档手写过 `- id: web`，现在可以删掉：0.2.x 由运行时接管写入。手写时注意 `fetchProvider` 应该是 `fs-quality-fetch`（本插件注册的抓取 provider），不是 `http`。
 
 - `searchProvider: ddg` —— 本插件的 **provider id（固定值）**，不是"使用 DuckDuckGo 引擎"；用哪个引擎由设置页的 `provider` 字段决定（`bing`/`baidu`/`auto`/…）。
-- `fetchProvider: http` —— 官方网页抓取（web-fetch-http），手动声明时必须保留。
-- 想改用官方搜索：在插件管理器里停用本插件条目即可，不需要改配置。
+- `fetchProvider: fs-quality-fetch` —— 本插件的抓取 provider（直接 → exa contents → firecrawl → crawl4ai）。
+- 想改用官方搜索：**先删掉 `- id: web` 的两行，再在插件管理器里停用本插件**。
 
 #### 姊妹插件：dsh-preset-workbench（预设工作台）
 
@@ -460,7 +472,7 @@ Search engine test:
 
 #### 离线自检断言（tools/）
 
-仓库自带 **18 个**零依赖断言脚本（合计 **520 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑：
+仓库自带 **18 个**零依赖断言脚本（合计 **522 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑：
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -481,7 +493,7 @@ Search engine test:
 | `assert-killtree-portable.mjs` | 跨平台 `killTree` 便携版契约 | `node tools/assert-killtree-portable.mjs`（5） |
 | `assert-parallel-mcp.mjs` | Parallel MCP 引擎：25 s 超时/调用方取消覆盖**响应体读取**、共享 SSE 解析器（通知/多行帧）、6 类错误路径、REST 精确时间过滤 | `node tools/assert-parallel-mcp.mjs`（15） |
 | `assert-bridge-access.mjs` | 桥接 Host 围栏（#84）：loopback 放行、remote peer 打 loopback Host 拒绝、`--trusted-host`（无端口匹配任意端口 / 带端口精确匹配）、`--public-url`、绑定地址、跨站与异源拒绝 | `node tools/assert-bridge-access.mjs`（11） |
-| `assert-provider-takeover.mjs` | provider 接管：旧属性 API 与 rc.2 的 `config.*` ref 两套兼容、`settings.mutate(web)` 单批写入、显式指定的 provider 不被抢占、`fetchProviderTakeover: false` 时保留显式 `http`、describe 噪声不误报、嵌套 config 变化与 web 重建分别成行、apply 重入/重复注册不再中断、重复日志去重 | `node tools/assert-provider-takeover.mjs`（14） |
+| `assert-provider-takeover.mjs` | provider 接管：旧属性 API 与 rc.2 的 `config.*` ref 两套兼容、`settings.mutate(web)` 单批写入、显式指定的 provider 不被抢占、`fetchProviderTakeover: false` 时保留显式 `http`、describe 噪声不误报、嵌套 config 变化与 web 重建分别成行、关闭 DSH 搜索开关后重新接管且不抢 `deepseek-search-api`、apply 重入/重复注册不再中断、重复日志去重 | `node tools/assert-provider-takeover.mjs`（16） |
 
 任何一个失败会以非 0 退出码结束并列出失败项；把某个旧版本文件路径作为参数传进去，可以看到修复前必红（用来证明断言不是空转）。改动发布相关逻辑后建议先跑一遍再发版。
 
@@ -641,33 +653,45 @@ dsh web
 
 #### Takeover behavior and verification
 
-The plugin **takes over search at runtime** once loaded (it does not touch the config layer):
+The plugin **takes over search** once loaded:
 
 - When `web.searchProvider` is unset, or still the shipped default `deepseek-official`, it switches to this plugin's provider (id: `ddg`);
 - If you (or another plugin) explicitly selected a different provider, it does not steal it — it only logs a WARN with a copy-pasteable YAML snippet.
 
-**It no longer writes `searchProvider: ddg` into the config layer.** A static override used to create a dangling reference: a patch replaces the whole row config, so when the plugin's row was **disabled or skipped** (e.g. switched off in the plugin manager) the config still said `ddg` while nothing registered it, and every search failed with:
+**The takeover is persisted into the profile (DSH 0.2.x).** Since `0.2.0-rc.2` the provider selection lives in volatile config refs and can only be written through `settings.mutate("web", …)`, which lands in `profiles/<profile>/cordis.patch.yml` as:
+
+```yaml
+- id: web
+  config:
+    searchProvider: ddg
+    fetchProvider: fs-quality-fetch
+```
+
+So **remove those `- id: web` lines before disabling or uninstalling this plugin** (or delete the whole row and let DSH fall back to its defaults). Otherwise the config still points at `ddg` while nothing registers it, and every search fails with:
 
 ```
 Error: configured web provider "ddg" is not registered
 ```
 
-Without that override, a disabled plugin leaves `web.searchProvider` at the shipped default (`deepseek-official`) so search still works through the official provider; when the plugin is enabled the runtime takeover above points it at `ddg`.
+Older DSH (0.1.x) used a static patch layer for this; writing that row by hand there is neither needed nor recommended.
 
-> If you previously added the snippet below by hand to `profiles/<profile>/cordis.patch.yml` *and* the plugin is not enabled, you will see that error — **just remove the snippet** (or re-enable the plugin):
+#### DSH's "DeepSeek search API" switch
 
-```yaml
-# Optional; normally unnecessary — only to force a specific provider.
-# Since DSH 0.1.2 a patch REPLACES the whole entry config: keep fetchProvider.
-- id: web
-  config:
-    searchProvider: ddg
-    fetchProvider: http
-```
+DSH 0.2.1 has Settings → Web search → **DeepSeek search API**, which interacts with this plugin:
+
+| Action | Result |
+|---|---|
+| Turn the switch on | `web.searchProvider` becomes `deepseek-search-api` (an explicit choice), so **this plugin steps aside** and search goes through the official direct API; fetch becomes `deepseek-fetch-api` as well |
+| Turn the switch off | DSH deletes the whole `- id: web` row, so the provider falls back to the shipped default `deepseek-official` — that is **model search** (a full auxiliary request, ~12 s in practice, billed per token), not the free engines |
+| After turning it off | **Since 0.9.8**: the plugin notices `deepseek-official` and re-takes at runtime (log line `DSH's search switch put the web providers back to the official defaults — re-took …`), normally within seconds; if it does not, restart DSH |
+
+Use `/free-search-engine` or this plugin's settings page to change engines, **not that switch**. Turning it on and then off drops you from the official direct API back to model search until the plugin re-takes over or DSH restarts.
+
+> If you hand-wrote `- id: web` back in the 0.1.x era, you can drop it now: 0.2.x writes it at runtime. If you do declare it by hand, `fetchProvider` should be `fs-quality-fetch` (the fetch provider this plugin registers), not `http`.
 
 - `searchProvider: ddg` — this plugin's **fixed provider id**, not "use the DuckDuckGo engine"; the engine is chosen by the `provider` field in settings (`bing` / `baidu` / `auto` / …).
-- `fetchProvider: http` — the official web-fetch provider; keep it when declaring the row by hand.
-- To go back to official search: disable this plugin's entry in the plugin manager — no config edit needed.
+- `fetchProvider: fs-quality-fetch` — this plugin's fetch provider (direct → exa contents → firecrawl → crawl4ai).
+- To go back to official search: **remove those `- id: web` lines first, then disable this plugin** in the plugin manager.
 
 #### Sister Plugin: dsh-preset-workbench
 
@@ -962,7 +986,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Eighteen** zero-dependency assertion scripts ship with the repo (**520 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20:
+**Eighteen** zero-dependency assertion scripts ship with the repo (**522 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20:
 
 | Script | Covers | Run (count) |
 |---|---|---|
@@ -983,7 +1007,7 @@ Restart `dsh web` after switching to apply changes.
 | `assert-killtree-portable.mjs` | portable `killTree` contract | `node tools/assert-killtree-portable.mjs` (5) |
 | `assert-parallel-mcp.mjs` | Parallel MCP engine: the 25 s timeout / caller abort covers the **body read**, shared SSE parser (notifications, multiline frames), six error paths, REST precise time filtering | `node tools/assert-parallel-mcp.mjs` (15) |
 | `assert-bridge-access.mjs` | bridge Host fence (#84): loopback allowed, a remote peer behind a loopback Host refused, `--trusted-host` (port-less matches any port, explicit port matches exactly), `--public-url`, the bind address, cross-site and foreign-Origin refused | `node tools/assert-bridge-access.mjs` (11) |
-| `assert-provider-takeover.mjs` | provider takeover: both the legacy property API and the rc.2 `config.*` refs, a single batched `settings.mutate(web)`, explicit foreign providers left untouched, an explicit `http` kept when `fetchProviderTakeover` is off, describe()-triggered events ignored when nothing changed, nested config changes and web rebuilds reported separately, apply re-entry / duplicate registrations tolerated, and repeated logs deduplicated | `node tools/assert-provider-takeover.mjs` (14) |
+| `assert-provider-takeover.mjs` | provider takeover: both the legacy property API and the rc.2 `config.*` refs, a single batched `settings.mutate(web)`, explicit foreign providers left untouched, an explicit `http` kept when `fetchProviderTakeover` is off, describe()-triggered events ignored when nothing changed, nested config changes and web rebuilds reported separately, re-takeover after DSH's search switch is turned off without fighting an explicit `deepseek-search-api`, apply re-entry / duplicate registrations tolerated, and repeated logs deduplicated | `node tools/assert-provider-takeover.mjs` (16) |
 
 Any failure exits non-zero with the failing items listed. Passing the path of an older file shows the pre-fix failures (proving the assertions are not vacuous). Worth running before a release.
 
