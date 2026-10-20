@@ -193,4 +193,43 @@ await checkAsync("#82 diagnostic reports a web service rebuild", async () => {
   assert.match(line, /entry uid 94 → 95/);
 });
 
+await checkAsync("#86 reclaims the shipped default after DSH's search switch is turned off", async () => {
+  const { ctx, handlers, described, mutations } = makeCtx({
+    searchProvider: "ddg",
+    fetchProvider: "fs-quality-fetch",
+    hasConfigRefs: true,
+    describeValue: { searchProvider: "ddg", fetchProvider: "fs-quality-fetch" },
+    describeUid: 94,
+  });
+  apply(ctx, baseConfig());
+  handlers["settings/document-updated"]("web");
+  await tick();
+  // 关掉 DSH 的「DeepSeek 搜索 API」开关：整行 web 被删，provider 回到出厂默认
+  described.value = { searchProvider: "deepseek-official", fetchProvider: "http" };
+  handlers["settings/document-updated"]("web");
+  await tick();
+  await tick();
+  const ops = mutations.filter((entry) => entry.ns === "web").flatMap((entry) => entry.ops);
+  assert.equal(ops.find((op) => op.path?.[0] === "searchProvider")?.value, "ddg");
+  assert.equal(ops.find((op) => op.path?.[0] === "fetchProvider")?.value, "fs-quality-fetch");
+});
+
+await checkAsync("#86 never fights an explicit deepseek-search-api choice", async () => {
+  const { ctx, handlers, described, mutations } = makeCtx({
+    searchProvider: "ddg",
+    fetchProvider: "fs-quality-fetch",
+    hasConfigRefs: true,
+    describeValue: { searchProvider: "ddg", fetchProvider: "fs-quality-fetch" },
+    describeUid: 94,
+  });
+  apply(ctx, baseConfig());
+  handlers["settings/document-updated"]("web");
+  await tick();
+  described.value = { searchProvider: "deepseek-search-api", fetchProvider: "deepseek-fetch-api" };
+  handlers["settings/document-updated"]("web");
+  await tick();
+  await tick();
+  assert.equal(mutations.filter((entry) => entry.ns === "web").length, 0);
+});
+
 console.log(`OK: ${checks} provider takeover checks passed`);
