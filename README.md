@@ -101,7 +101,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
   - Serply：<https://serply.io>（API 文档：<https://serply.io/docs>）
   - DeepSeek：<https://platform.deepseek.com/api_keys>
   - 豆包搜索（火山联网搜索）：<https://console.volcengine.com/search-infinity/web-search>
-  - You.com：<https://you.com/platform/api-keys?utm_source=dddmuc-dsh-free-search&utm_medium=oss_integration&utm_campaign=2026-10-oss-integrations&utm_content=readme>
+  - You.com：<https://you.com/platform/api-keys>
 
 #### 引擎额度分层
 
@@ -640,7 +640,7 @@ If this plugin has been helpful, a ⭐ on [GitHub](https://github.com/DDDMUC/dsh
   - Serply: <https://serply.io> (API docs: <https://serply.io/docs>)
   - DeepSeek: <https://platform.deepseek.com/api_keys>
   - Doubao / Volcano Web Search: <https://console.volcengine.com/search-infinity/web-search>
-  - You.com: <https://you.com/platform/api-keys?utm_source=dddmuc-dsh-free-search&utm_medium=oss_integration&utm_campaign=2026-10-oss-integrations&utm_content=readme>
+  - You.com: <https://you.com/platform/api-keys>
 
 #### Engine quota tiers
 #### Why are some engines free?
