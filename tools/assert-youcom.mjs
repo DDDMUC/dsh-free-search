@@ -1,5 +1,5 @@
 // You.com 引擎断言：无 key 走免 key 档、有 key 走官方 Search API、YDC_API_KEY 为标准名且 YOUCOM_API_KEY 继续兼容、
-// User-Agent 只在 You.com 请求上追加集成标识、失败消息能被 classifyFailure 正确分类。
+// You.com 请求沿用插件自身 UA（不追加集成标识）、失败消息能被 classifyFailure 正确分类。
 // 用 mock fetch，不需要 key、不发起网络请求、不依赖测试框架。
 // 运行（Node >= 20，git clone 后 `npm install`）：
 //   node tools/assert-youcom.mjs
@@ -12,7 +12,6 @@ import {
   DEFAULT_FALLBACK_ORDER,
   YOUCOM_FREE_URL,
   YOUCOM_URL,
-  YOUCOM_USER_AGENT,
 } from "../lib/index.js";
 
 let pass = 0;
@@ -84,11 +83,7 @@ try {
 
   // ---------- C. User-Agent ----------
   section("C. User-Agent");
-  assert(
-    YOUCOM_USER_AGENT === "deepseek-harness/free-search youdotcom-integration/dddmuc-dsh-free-search",
-    "在插件 UA 后追加 youdotcom-integration/dddmuc-dsh-free-search"
-  );
-  assert(calls[0].init.headers["user-agent"] === YOUCOM_USER_AGENT, "You.com 请求带该 UA");
+  assert(calls[0].init.headers["user-agent"] === "deepseek-harness/free-search", "You.com 请求沿用插件自身 UA，不追加集成标识");
 
   // ---------- D. key 解析：YDC_API_KEY 标准名 + YOUCOM_API_KEY 别名 ----------
   section("D. key 解析");
@@ -120,8 +115,9 @@ try {
   // ---------- F. 回退链位置 ----------
   section("F. 回退链");
   assert(
-    DEFAULT_FALLBACK_ORDER.indexOf("you") === DEFAULT_FALLBACK_ORDER.indexOf("parallel") + 1,
-    "you 紧随免 key 档（exa/tavily/keenable/firecrawl/parallel）之后"
+    DEFAULT_FALLBACK_ORDER.indexOf("you") === DEFAULT_FALLBACK_ORDER.indexOf("deepseek-official") + 1 &&
+      DEFAULT_FALLBACK_ORDER.indexOf("baidu") === DEFAULT_FALLBACK_ORDER.indexOf("you") + 1,
+    "you 保持原有回退位置（deepseek-official 与 baidu 之间），不改变默认回退顺序"
   );
 } finally {
   globalThis.fetch = realFetch;
