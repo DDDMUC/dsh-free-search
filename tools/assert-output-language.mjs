@@ -1,7 +1,8 @@
 // #92: search language vs output language, and localized tool text.
 import assert from "node:assert/strict";
 
-const { searchLanguage, outputLanguage, assessUncertainty } = await import("../lib/index.js");
+const { searchLanguage, outputLanguage, configLanguage, acceptLanguageFor, assessUncertainty } = await import("../lib/index.js");
+const { browserishHeaders } = await import("../lib/fetch_provider.js");
 const { wmoText, textLanguage } = await import("../lib/weather.js");
 
 let checks = 0;
@@ -69,4 +70,27 @@ check("a failure note is reported in the output language", () => {
   assert.ok(zh.notes.some((note) => /不完整/.test(note)));
 });
 
+check("an unset lang keeps the schema default (zh), while an unsupported value falls back to en", () => {
+  assert.equal(configLanguage({}), "zh");
+  assert.equal(configLanguage({ lang: "" }), "zh");
+  assert.equal(configLanguage({ lang: "  " }), "zh");
+  assert.equal(configLanguage({ lang: "ja" }), "ja");
+  assert.equal(configLanguage({ lang: "JA" }), "ja");
+  assert.equal(configLanguage({ lang: "pt" }), "pt");
+});
+
+check("Accept-Language follows lang, bingMarket wins, unknown falls back to en", () => {
+  assert.equal(acceptLanguageFor({}), "zh-CN,zh;q=0.9,en;q=0.8");
+  assert.equal(acceptLanguageFor({ lang: "ja" }), "ja-JP,ja;q=0.9,en;q=0.8");
+  assert.equal(acceptLanguageFor({ lang: "pt" }), "en-US,en;q=0.9");
+  assert.equal(acceptLanguageFor({ bingMarket: "ja-JP" }), "ja-JP,ja;q=0.9,en;q=0.8");
+  assert.equal(acceptLanguageFor({ lang: "ja", bingMarket: "zh-CN" }), "zh-CN,zh;q=0.9,en;q=0.8");
+});
+
+check("the fetch provider sends the language it is given (and a sane default)", () => {
+  assert.equal(browserishHeaders("ja-JP,ja;q=0.9,en;q=0.8")["Accept-Language"], "ja-JP,ja;q=0.9,en;q=0.8");
+  assert.equal(browserishHeaders()["Accept-Language"], "en-US,en;q=0.9");
+  assert.equal(browserishHeaders("  ")["Accept-Language"], "en-US,en;q=0.9");
+  assert.match(browserishHeaders("ja-JP")["User-Agent"], /Mozilla/);
+});
 console.log(`OK: ${checks} output-language checks passed`);
