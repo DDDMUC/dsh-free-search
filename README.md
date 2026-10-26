@@ -65,6 +65,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 | `bing` | Bing | 免费 | **默认引擎**，最稳定，中文优化（zh-CN） |
 | `anysearch` | AnySearch AI | 免费 | AI 搜索，无 key（匿名额度） |
 | `searxng` | SearXNG 元搜索 | 免费 | 多实例自动切换，支持自定义实例 |
+| `degoog` | Degoog（自建聚合器） | 免费 | 需要自己的实例（`degoogInstances`），免 key；实例开启 API Key 时用 `degoogApiKey`（Bearer） |
 | `exa` | Exa | 免费 | **无 key 也可用**（MCP 匿名），配 key 提升额度 |
 | `tavily` | Tavily | 免费 | **无 key 也可用**（keyless 匿名），配 key 提升额度 |
 | `keenable` | Keenable | 免费 | **无 key 也可用**（MCP 匿名），配 key 提升额度 |
@@ -318,6 +319,9 @@ region: cn-zh               # DuckDuckGo 区域（可选）
 searxngInstances:           # 自定义 SearXNG 实例（可选）
   - https://your-instance.example
 searxngBearerToken: ...      # 可选：发送 Authorization: Bearer <token>（设置页「SearXNG Bearer Token」同款）
+degoogInstances:            # 自建 degoog 实例（可选，例如 https://search.example.com）
+  - https://search.example.com
+degoogApiKey: ...           # 可选：实例开启 API Key 时使用的 Bearer 密钥
 safeSearch: off              # 安全搜索：off（默认）/ moderate / strict，作用于 bing / ddg / ddg-lite
 blockedDomains:              # 域名黑名单（可选）：命中的域名不会进入结果
   - spam-example.com
@@ -492,7 +496,7 @@ Search engine test:
 
 #### 离线自检断言（tools/）
 
-仓库自带 **24 个**零依赖断言脚本（合计 **558 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑：
+仓库自带 **26 个**零依赖断言脚本（合计 **587 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑：
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -514,6 +518,8 @@ Search engine test:
 | `assert-parallel-mcp.mjs` | Parallel MCP 引擎：25 s 超时/调用方取消覆盖**响应体读取**、共享 SSE 解析器（通知/多行帧）、6 类错误路径、REST 精确时间过滤 | `node tools/assert-parallel-mcp.mjs`（15） |
 | `assert-output-language.mjs` | 语言分支（#92）：`searchLanguage` 支持 zh/en/ja/ru/de/es/fr/ko 其余回退 en、`outputLanguage` 只输出 zh/en、天气文案 zh/en/ja（其它回退英文，含 WMO 描述与正文）、置信度说明随语言、失败备注随语言 | `node tools/assert-output-language.mjs`（10） |
 | `assert-uncertainty.mjs` | 输出契约：0/1 源为 low、2 源与同站为 medium、3 个不同域为 high、时间过滤无日期、失败备注、聚合站提示 | `node tools/assert-uncertainty.mjs`（8） |
+| `assert-youcom.mjs` | You.com 免 key 档（#90）：两档 URL 与请求头、无 key 不发 `X-API-Key`、`YDC_API_KEY` 别名、429/401/402/5xx 分类 | `node tools/assert-youcom.mjs`（23） |
+| `assert-degoog.mjs` | degoog 自建实例（#85）：`/api/search` URL 规范化、查询编码、`time`/`lang` 参数、注册表位置、无需凭据 | `node tools/assert-degoog.mjs`（7） |
 | `assert-multikey.mjs` | 多 key 字段：单 key 不变、逗号/分号/换行分隔、空白项丢弃、空输入为空数组 | `node tools/assert-multikey.mjs`（3） |
 | `assert-firecrawl-keyless.mjs` | Firecrawl keyless 出口判定：403 + VPN/proxy 文案才算拒绝、普通 403 与 401/429/500 不算、冷却初始未触发 | `node tools/assert-firecrawl-keyless.mjs`（5） |
 | `assert-fetch-charset.mjs` | 抓取编码（#88）：`charset=gbk` / `gb2312` 按声明解码、无声明时嗅探 `<meta charset>` 与 http-equiv 形式、默认 UTF-8、未知 label 兜底 UTF-8 不抛错 | `node tools/assert-fetch-charset.mjs`（6） |
@@ -604,6 +610,7 @@ If this plugin has been helpful, a ⭐ on [GitHub](https://github.com/DDDMUC/dsh
 | `bing` | Bing | Free | **Default engine**, most stable, optimized for Chinese (`zh-CN`) |
 | `anysearch` | AnySearch AI | Free | AI search, no key needed (anonymous quota) |
 | `searxng` | SearXNG Meta Search | Free | Multi-instance automatic failover; supports custom instances |
+| `degoog` | Degoog (self-hosted aggregator) | Free | Needs your own instance (`degoogInstances`), no key; `degoogApiKey` (Bearer) only if the instance enables API keys |
 | `exa` | Exa | Free | **Usable without a key** (anonymous MCP); configure a key for higher quota |
 | `tavily` | Tavily | Free | **Usable without a key** (keyless anonymous); configure a key for higher quota |
 | `keenable` | Keenable | Free | **Usable without a key** (anonymous MCP); configure a key for higher quota |
@@ -858,6 +865,9 @@ region: cn-zh               # DuckDuckGo region (optional)
 searxngInstances:           # Custom SearXNG instances (optional)
   - https://your-instance.example
 searxngBearerToken: ...      # Optional: send Authorization: Bearer <token> (same as the "SearXNG Bearer Token" row in the settings UI)
+degoogInstances:           # Self-hosted degoog instances (optional, e.g. https://search.example.com)
+  - https://search.example.com
+degoogApiKey: ...          # Optional: bearer key, only when your instance enables API keys
 safeSearch: off              # Safe search: off (default) / moderate / strict; applies to bing / ddg / ddg-lite
 blockedDomains:              # Domain blocklist (optional): matching domains never enter the results
   - spam-example.com
@@ -1032,7 +1042,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Twenty-four** zero-dependency assertion scripts ship with the repo (**558 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20:
+**Twenty-six** zero-dependency assertion scripts ship with the repo (**587 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20:
 
 | Script | Covers | Run (count) |
 |---|---|---|
@@ -1054,6 +1064,8 @@ Restart `dsh web` after switching to apply changes.
 | `assert-parallel-mcp.mjs` | Parallel MCP engine: the 25 s timeout / caller abort covers the **body read**, shared SSE parser (notifications, multiline frames), six error paths, REST precise time filtering | `node tools/assert-parallel-mcp.mjs` (15) |
 | `assert-output-language.mjs` | language branches (#92): `searchLanguage` passes zh/en/ja/ru/de/es/fr/ko through and falls back to en, `outputLanguage` only returns zh/en, weather text has zh/en/ja (WMO descriptions and body; others fall back to English), and both confidence and failure notes follow the language | `node tools/assert-output-language.mjs` (10) |
 | `assert-uncertainty.mjs` | output contract: 0/1 source is low, two sources or a single site is medium, three distinct domains is high, time filter without dates, failure notes, aggregator caveat | `node tools/assert-uncertainty.mjs` (8) |
+| `assert-youcom.mjs` | You.com keyless tier (#90): both URLs and headers, no `X-API-Key` without a key, the `YDC_API_KEY` alias, and 429/401/402/5xx classification | `node tools/assert-youcom.mjs` (23) |
+| `assert-degoog.mjs` | degoog self-hosted instance (#85): `/api/search` URL normalisation, query encoding, `time`/`lang` parameters, registry placement, no credentials needed | `node tools/assert-degoog.mjs` (7) |
 | `assert-multikey.mjs` | multi-key fields: a single key is unchanged, comma/semicolon/newline separate keys, blank entries are dropped, empty input yields none | `node tools/assert-multikey.mjs` (3) |
 | `assert-firecrawl-keyless.mjs` | Firecrawl keyless egress refusal: only a 403 with the VPN/proxy wording counts, plain 403 and 401/429/500 do not, and the cooldown starts inactive | `node tools/assert-firecrawl-keyless.mjs` (5) |
 | `assert-fetch-charset.mjs` | fetch encoding (#88): `charset=gbk` / `gb2312` decoded as declared, `<meta charset>` and the http-equiv form sniffed when the header omits it, UTF-8 by default, and an unknown label falls back to UTF-8 instead of throwing | `node tools/assert-fetch-charset.mjs` (6) |
