@@ -24,8 +24,8 @@ const section = (t) => console.log("\n== " + t + " ==");
 // ---------- A. FREE_ENGINES 只含真正免 key 的引擎（意见 A） ----------
 section("A. FREE_ENGINES");
 assert(
-  FREE_ENGINES.join(",") === "ddg,ddg-lite,bing,searxng,anysearch",
-  "FREE_ENGINES = 5 个免 key 引擎（zhihu_* 需要 ZHIHU_API_KEY，不得进入）"
+  FREE_ENGINES.join(",") === "ddg,ddg-lite,bing,searxng,degoog,anysearch",
+  "FREE_ENGINES = 6 个免 key 引擎（zhihu_* 需要 ZHIHU_API_KEY，不得进入；degoog 只需要自建实例）"
 );
 assert(
   !FREE_ENGINES.includes("zhihu_global") && !FREE_ENGINES.includes("zhihu_site"),
