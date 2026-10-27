@@ -128,52 +128,17 @@ check("setActive 兜底清洗：URL 规则被规范化", j(cfgDump) === "blog.cs
 check("getter 仍返回副本", (cfgDump.push("x"), getActiveBlockedDomains().length === 2));
 setActiveBlockedDomains([]);
 
-// === 6. 前后端清洗一致性（防"存进去对、读回来错"）===
-// lib/client.js 是预编译产物（内联 JSX、CJS 风格），无法 import；这里把它的
-// parseBlockedDomains 源码抽出来 eval，与 lib/domain_filter.js 的 normalizeDomainList 对比。
-// 设置页存的规则 与 服务端 setActiveBlockedDomains 的规范化结果必须一致。
+// === 6. 设置页已移除黑名单编辑器（#95）===
+// 配置项与服务端过滤保留：已有 YAML 规则继续生效，只是不再提供 UI 编辑入口。
 {
   const { readFileSync } = await import("node:fs");
   const { fileURLToPath } = await import("node:url");
   const path = await import("node:path");
   const clientPath = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "lib", "client.js");
   const clientSrc = readFileSync(clientPath, "utf8");
-  const marker = "const parseBlockedDomains = (text) => {";
-  const start = clientSrc.indexOf(marker);
-  check("client.js 存在 parseBlockedDomains", start >= 0);
-  let depth = 0;
-  let end = -1;
-  let inStr = null;
-  let inLineComment = false;
-  for (let i = start; i < clientSrc.length; i++) {
-    const ch = clientSrc[i];
-    const nx = clientSrc[i + 1];
-    if (inLineComment) { if (ch === "\n") inLineComment = false; continue; }
-    if (inStr) { if (ch === "\\") { i++; continue; } if (ch === inStr) inStr = null; continue; }
-    if (ch === "/" && nx === "/") { inLineComment = true; i++; continue; }
-    if (ch === '"' || ch === "'" || ch === "`") { inStr = ch; continue; }
-    if (ch === "{") depth++;
-    else if (ch === "}") { depth--; if (depth === 0) { end = i + 1; break; } }
-  }
-  const fnSrc = clientSrc.slice(start, end);
-  check("解析出完整的 parseBlockedDomains 源码", end > start);
-  const clientParse = new Function(`${fnSrc}; return parseBlockedDomains;`)();
-  const tricky = [
-    "csdn.net", "https://blog.csdn.net", "http://CSDN.NET/", "www.51cto.com",
-    "  juejin.cn/post/7560635  ", "trae.cn:8443/x", "https://zhihu.com/question/1#a",
-    "blog.csdn.net", "csdn.net", "", "   ", "not a domain", "a_b.com", ".x.com",
-    "127.0.0.1", "sub.example.co.uk",
-  ];
-  const fromClient = clientParse(tricky.join("\n")).domains;
-  const fromServer = normalizeDomainList(tricky);
-  check("前后端清洗结果一致", fromClient.join(",") === fromServer.join(","));
-  check("一致性样本非空（断言真的在比较）", fromClient.length >= 6);
-  const st = clientParse("https://blog.csdn.net/x\nhttps://blog.csdn.net/x\n\nfoo bar\ngood.com").stats;
-  check("提示统计：修正数 = 2", st.corrected === 2);
-  check("提示统计：重复数 = 1", st.dupes === 1);
-  check("提示统计：丢弃数 = 1（只算非法行；空行静默忽略、不打扰用户）", st.dropped === 1);
-  const blankOnly = clientParse("\n\n   \n\n").stats;
-  check("提示统计：纯空行不产生任何提示", blankOnly.corrected === 0 && blankOnly.dupes === 0 && blankOnly.dropped === 0);
+  check("client.js 不再渲染 blockedDomains 编辑器", !clientSrc.includes("children: t.blockedDomainsLabel,"));
+  check("client.js 不再保存 blockedDomains（保留已有配置）", !clientSrc.includes('path: ["blockedDomains"]'));
+  check("服务端仍保留规范化入口（YAML 老配置继续生效）", typeof normalizeDomainList === "function");
 }
 
 setActiveBlockedDomains([]);
