@@ -437,7 +437,7 @@ Search engine test:
 | `reddit` | Reddit 帖子/讨论搜索（公开 JSON API；部分网络环境可能被 Reddit 反爬拦截） |
 | `hn` | Hacker News 技术社区讨论（Algolia 官方 API） |
 | `stackoverflow` | Stack Overflow 技术问答（Stack Exchange 官方公开 API） |
-| `wikipedia` | 维基百科词条（中文环境用 zh.wikipedia.org，`lang: en` 时切换 en.wikipedia.org） |
+| `wikipedia` | 维基百科词条（子域跟随 `lang`：zh → zh.wikipedia.org、ja → ja.wikipedia.org；不支持的语言回落 en.wikipedia.org） |
 | `npm` | npm 包搜索（registry 官方 API） |
 | `youtube` | YouTube 视频搜索（抓 results 页 `ytInitialData`，免 key） |
 | `vimeo` | Vimeo 视频搜索（抓搜索页内嵌数据；抓不到时退回网页搜索 `site:vimeo.com`，免 key） |
@@ -989,7 +989,7 @@ Ask the agent to search specific platforms (e.g., *"Search GitHub for deepseek h
 | `reddit` | Reddit posts / discussions (public JSON API; may be blocked by Reddit anti-bot in some network environments) |
 | `hn` | Hacker News tech community discussions (official Algolia API) |
 | `stackoverflow` | Stack Overflow Q&A (official public Stack Exchange API) |
-| `wikipedia` | Wikipedia articles (zh.wikipedia.org for Chinese; switches to en.wikipedia.org when `lang: en`) |
+| `wikipedia` | Wikipedia articles (subdomain follows `lang`: zh → zh.wikipedia.org, ja → ja.wikipedia.org; unsupported languages fall back to en.wikipedia.org) |
 | `npm` | npm package search (registry official API) |
 | `youtube` | YouTube video search (scrapes the results page `ytInitialData`, keyless) |
 | `vimeo` | Vimeo video search (scrapes the search page's embedded data; falls back to web search `site:vimeo.com`, keyless) |
