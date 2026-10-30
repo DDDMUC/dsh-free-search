@@ -34,9 +34,9 @@ check("every rail button carries its own data-dsh-fs-section so it can be clicke
   assert.match(client, /onClick: \(\) => goToSection\(item\.id\),/);
 });
 
-check("the section ids are exactly the six rail entries", () => {
+check("the section ids are exactly the seven rail entries", () => {
   const ids = [...client.matchAll(/\{ id: "([a-z]+)", anchor: "dshfs-anchor-[a-z]+" \}/g)].map((m) => m[1]);
-  assert.deepEqual(ids, ["engines", "fallback", "pools", "behavior", "fetch", "performance"]);
+  assert.deepEqual(ids, ["engines", "fallback", "pools", "behavior", "fetch", "performance", "prompt"]);
 });
 
 console.log(`OK: ${checks} rail-section checks passed`);
