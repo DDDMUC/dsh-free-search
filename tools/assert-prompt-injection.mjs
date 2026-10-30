@@ -87,14 +87,19 @@ check("the panel renders the built-in pages from the describe payload, with no e
   assert.equal(index.includes("/prompt-preview"), false);
   assert.equal(client.includes("bridgePromptPreview"), false);
   assert.match(client, /const \[builtinPrompts, setBuiltinPrompts\] = react\.useState\(\{ en: "", zh: "" \}\);/);
-  assert.match(client, /setBuiltinPrompts\(\{ en: String\(v\.promptBuiltin\.en \?\? ""\), zh: String\(v\.promptBuiltin\.zh \?\? ""\) \}\);/);
+  assert.match(client, /const builtin = result\.value\.promptBuiltin;/);
+  assert.match(client, /setBuiltinPrompts\(\{ en: String\(builtin\.en \?\? ""\), zh: String\(builtin\.zh \?\? ""\) \}\);/);
 });
 
-check("the seventh section has its own page controls and anchor", () => {
+check("the seventh section has a plain pager and its own anchor", () => {
   assert.match(client, /\{ id: "prompt", anchor: "dshfs-anchor-prompt" \},/);
   assert.match(client, /id: "dshfs-anchor-prompt",/);
   assert.match(client, /"data-dsh-section": "prompt",/);
-  assert.match(client, /children: t\.promptCopyPage \}, "copy"\)/);
+  assert.match(client, /children: `\$\{promptPageIndex \+ 1\} \/ \$\{promptPageTotal\}` \}/);
+  assert.match(client, /children: "\+" \}, "add"\)/);
+  assert.match(client, /children: "−" \}, "remove"\)/);
+  assert.equal(client.includes("promptPageName"), false);
+  assert.equal(client.includes("promptCopyPage"), false);
   assert.match(client, /const promptPageTotal = PROMPT_BUILTIN_PAGES \+ promptPages\.length;/);
   assert.match(client, /readOnly: promptPageKind\(promptPageIndex\) !== "user",/);
 });
