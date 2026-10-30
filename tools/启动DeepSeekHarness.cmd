@@ -6,20 +6,18 @@ setlocal
 set "NODE_USE_ENV_PROXY=1"
 set "HTTPS_PROXY=http://127.0.0.1:7897"
 set "HTTP_PROXY=http://127.0.0.1:7897"
-set "DSH_HOME=C:\Users\MVT\.dsh"
-set "TOKEN_LOG=C:\Users\MVT\.dsh\dsh-web-auth.log"
-set "TOKEN_ERR=C:\Users\MVT\.dsh\dsh-web-auth.err"
 
-if exist "%TOKEN_LOG%" del /q "%TOKEN_LOG%"
-if exist "%TOKEN_ERR%" del /q "%TOKEN_ERR%"
-
+rem If already running, just open the browser
 netstat -an | findstr /r /c:":3080 .*LISTENING" >nul 2>&1
 if not errorlevel 1 (
-    powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\MVT\.dsh\tools\read-token-open.ps1"
+    start "" "http://127.0.0.1:3080"
     exit /b 0
 )
 
-echo Starting dsh web on port 3080...
-powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\MVT\.dsh\tools\start-dsh-3080.ps1"
+rem Open browser after a short delay (wait for server to start)
+start "" /b cmd /c "timeout /t 4 /nobreak >nul & start "" http://127.0.0.1:3080"
+
+rem Run dsh web in foreground (close this window to stop)
+dsh web
 
 endlocal
