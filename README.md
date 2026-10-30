@@ -31,7 +31,18 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 - **零成本** —— 多个免费引擎，无需 key、无需注册
 - **多引擎可选**：DuckDuckGo（html/lite）、Bing、SearXNG（元搜索，支持自定义实例）、AnySearch、Exa、Tavily、Keenable、Firecrawl、Parallel、Perplexity、SerpBase、Serply、DeepSeek 官方、DeepSeek 原生搜索 API、You.com、百度千帆、Kimi、阿里云百炼、火山联网搜索（豆包搜索）、知乎全网/站内（`zhihu_global`/`zhihu_site`，经知乎开放平台 MCP）、OpenAI / Gemini / Claude 模型内置搜索
 - **网页设置页** —— 引擎切换 + API key 配置（UI 中 key 脱敏显示"已配置"）+ 中英文切换；入口在左侧「插件」页的组件行配置（`plugins.row.config`，DSH 0.1.7-rc.1+）。远程访问（VPS / 反向代理 / 自定义域名）下也能用：桥接接口沿用宿主的 Host 围栏，`--trusted-host` 与 `--public-url` 声明的地址会放行（#84）
-- **右侧浮动目录** —— 卡片右侧的页面留白里浮出「引擎 / 回退 / 语言池 / 搜索行为 / 抓取 / 性能」六个快捷跳转，滚动自动高亮当前项、点击平滑跳转；不占用正文宽度（正文布局与 0.9.6 一致），右侧留白不足时自动隐藏
+- **右侧浮动目录** —— 卡片右侧的页面留白里浮出「引擎 / 回退 / 语言池 / 搜索行为 / 抓取 / 性能」六个快捷跳转，滚动自动高亮当前项、点击平滑跳转；不占用正文宽度（正文布局与 0.9.6 一致），右侧留白不足时自动隐藏；每项都是真链接（`#/panel/plugins/dsh-free-search/<分区>`），可复制、可开新标签，见下方「分区链接契约」
+
+### 分区链接契约（与 dsh-url-router 对接）
+
+规则见 `dsh-url-router/docs/panel-sections.md`（数量不限，当前 7 段：engines / fallback / pools / behavior / fetch / performance / prompt）：
+
+- 页面根发布**恰好一个** `data-dsh-panel-section="<id>"` = 读者正在看的那一节（跟着滚动走，不做“到底=最后一节”的猜测）
+- 每个分区容器带 `data-dsh-section="<id>"`（滚动目标）
+- 侧栏每项是 `<a data-dsh-section="<id>" href="#/panel/plugins/dsh-free-search/<id>">`
+- 本插件**不写 URL**：`location.hash` / `history.pushState` / `replaceState` 一律不碰，地址栏唯一写者是 dsh-url-router；地址栏里出现本页分区链接时（`hashchange`）插件负责把它滚进视野
+
+加新分区只需三步：容器加 `data-dsh-section="<新id>"`、`NAV_ITEMS` 加一条（侧栏锚点自动生成，href 由 `item.id` 拼）、`assert-rail-section` 的 id 列表加一项。
 - **多 key 轮换** —— 任何 key 字段（或对应环境变量）都可以用逗号 / 分号 / 换行分隔多把 key；平时按请求轮流使用（round-robin，避免单 key 撞 QPS/RPM 风控），遇到 401/402/429（鉴权失败、额度耗尽、限流）先轮换同一引擎的下一把，再走引擎回退；`multi` 模式同样生效（#96）
 - **弹出式切换命令** —— 聊天框输入 `/free-search-engine`，弹出引擎选择窗口，点选即切换（等效设置页 + 保存）
 - **引擎测试** —— `free_search_test` 工具让 agent 一键测试所有引擎；设置页也有"测试引擎"按钮（直测当前引擎，不走回退链，付费引擎无 key 会明确报错）
@@ -589,7 +600,18 @@ This plugin provides multiple free search engines with automatic fallback, compl
 - **Zero Cost** — Multiple free engines with no API key or registration required
 - **Multi-Engine Support** — DuckDuckGo (HTML / Lite), Bing, AnySearch AI, SearXNG (meta-search with custom instances), Exa, Tavily, Keenable, Firecrawl, Parallel, Perplexity, SerpBase, Serply, DeepSeek Official, You.com, Baidu Qianfan, Kimi, Aliyun Bailian, Volcano Doubao, Zhihu web-wide/site search (`zhihu_global`/`zhihu_site`, via the Zhihu open-platform MCP), and the model-based OpenAI / Gemini / Claude searches
 - **Web Settings UI** — Engine switching, API key configuration (keys masked as "configured" in the UI), and a Chinese/English toggle; the entry is the component-row config (`plugins.row.config`) on the sidebar Plugins page (DSH 0.1.7-rc.1+). Remote access (VPS, reverse proxy, custom domain) works too: the bridge reuses the host's own Host fence, so addresses declared with `--trusted-host` or `--public-url` are accepted (#84)
-- **Right-hand section rail** — A floating list (Engines / Fallback / Language pools / Search behaviour / Fetch / Performance) sits in the page margin to the right of the card: it highlights the section you are in while scrolling and jumps smoothly on click. It is rendered in a portal and never narrows the card, so the body layout is unchanged; it hides itself when the margin is too tight.
+- **Right-hand section rail** — A floating list (Engines / Fallback / Language pools / Search behaviour / Fetch / Performance) sits in the page margin to the right of the card: it highlights the section you are in while scrolling and jumps smoothly on click. It is rendered in a portal and never narrows the card, so the body layout is unchanged; it hides itself when the margin is too tight. Every entry is a real link (`#/panel/plugins/dsh-free-search/<section>`), so it can be copied or opened in a tab - see the section-link contract below.
+
+### Section-link contract (with dsh-url-router)
+
+Rules live in `dsh-url-router/docs/panel-sections.md` (no fixed count; seven sections today: engines / fallback / pools / behavior / fetch / performance / prompt):
+
+- the page root publishes **exactly one** `data-dsh-panel-section="<id>"` = the section the reader is looking at (it follows scrolling; it never guesses "at the bottom = last section")
+- every section container carries `data-dsh-section="<id>"` (the scroll target)
+- every rail entry is `<a data-dsh-section="<id>" href="#/panel/plugins/dsh-free-search/<id>">`
+- this plugin **never writes the URL**: `location.hash` / `history.pushState` / `history.replaceState` are untouched because dsh-url-router owns the address bar; when a section link appears there, a `hashchange` listener scrolls that section into view
+
+Adding a section takes three steps: put `data-dsh-section="<new id>"` on the container, add one `NAV_ITEMS` entry (the rail anchor is generated from `item.id`), and add the id to `assert-rail-section`.
 - **Multi-key rotation** — Any key field (or its env var) accepts several keys separated by commas, semicolons or newlines. Keys are used round-robin per request (so a single key never absorbs every call), and on 401/402/429 (bad key, quota exhausted, rate limited) the same engine retries with the next key before the engine-level fallback runs. This also applies inside `multi` mode (#96).
 - **Popup Switch Command** — Type `/free-search-engine` in the chat: a picker opens with all engines; click one to switch (equivalent to the settings page + save)
 - **Engine Testing** — `free_search_test` for the agent to check all engines in one call; the settings UI also has a "Test engine" button that tests the selected engine directly (no fallback chain; paid engines without a key report an explicit error)
