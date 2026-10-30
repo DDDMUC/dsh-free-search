@@ -29,6 +29,11 @@ check("railActive is initialised from NAV_ITEMS and updated by the scroll spy", 
   assert.match(client, /setRailActive\(id\);/);
 });
 
+check("every rail button carries its own data-dsh-fs-section so it can be clicked", () => {
+  assert.match(client, /className: "dshfs-railItem" \+ \(railActive === item\.id \? " dshfs-railItemActive" : ""\),\s*\n\s*"data-dsh-fs-section": item\.id,/);
+  assert.match(client, /onClick: \(\) => goToSection\(item\.id\),/);
+});
+
 check("the section ids are exactly the six rail entries", () => {
   const ids = [...client.matchAll(/\{ id: "([a-z]+)", anchor: "dshfs-anchor-[a-z]+" \}/g)].map((m) => m[1]);
   assert.deepEqual(ids, ["engines", "fallback", "pools", "behavior", "fetch", "performance"]);
