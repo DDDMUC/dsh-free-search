@@ -60,11 +60,9 @@ check("current section is the one being read, not a guess at the last one", () =
   assert.match(client, /document\.documentElement\.scrollHeight > window\.innerHeight \+ 8/);
 });
 
-check("the preview effect keeps hook order (no reference to a later const)", () => {
-  // The browser harness caught "Cannot access 'ready' before initialization": the effect sits
-  // above the early return, so it may only depend on state that exists there.
-  assert.match(client, /\}, \[state\.status, promptMode, promptPages, promptPageIndex, promptLanguage\]\);/);
-  assert.equal(client.includes("[ready, promptMode, promptPages"), false);
+check("the page never writes the URL and reads no extra bridge route", () => {
+  assert.equal(client.includes("location.hash ="), false);
+  assert.equal(client.includes("bridgePromptPreview"), false);
 });
 
 console.log(`OK: ${checks} rail-section checks passed`);
