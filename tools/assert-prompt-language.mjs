@@ -49,10 +49,9 @@ check("both languages keep the identifiers that must not be translated", () => {
     const system = systemCopy(lang);
     const all = [
       system.heading,
-      system.tools,
-      system.github,
       system.engineControl,
       system.searchVsFetch,
+      ...Object.values(system.toolLines),
       toolDescription(lang, "domain_search"),
       toolParam(lang, "advanced_search", "engine", { ids: "ddg, bing" }),
       toolParam(lang, "domain_search", "engine", { ids: "pypi, arxiv" }),
