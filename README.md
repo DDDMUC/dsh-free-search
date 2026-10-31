@@ -37,7 +37,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 
 设置页第七段「提示词」分成三段：状态、工具、约束。每段都有自己的翻页器，页 1 是内置英文、页 2 是内置中文，都按当前配置实时生成，不入盘，不能删也不能改；页 3 起是你自己加的页。发送时每段取你当前停的那一页，拼起来就是注入内容；三段都空则整段不注入。
 
-「工具」那一段是九个工具各一行：前面的勾选框决定这个工具给不给模型，后面的框里是写给模型的那句话，只读，跟插件更新走，不能改。这一段的右上角有中英切换，一下切换全部工具，还有「全选」和「全不选」两个按钮。取消勾选的工具不再交给模型，工具说明也一并从请求里去掉，那一段里也不会再列出它。想加自己的要求，写在「约束」那一段的自定义页里。
+「工具」那一段是九个工具各一行：前面的勾选框决定这个工具给不给模型，后面的框里是写给模型的那句话，只读，跟插件更新走，不能改。这一段的右上角有中英切换，一下切换全部工具；工具列表最上面是一个「全选」勾选框，勾上就是全部交给模型，取消就是全部不交，只勾一部分时它显示为半选。取消勾选的工具不再交给模型，工具说明也一并从请求里去掉，那一段里也不会再列出它。想加自己的要求，写在「约束」那一段的自定义页里。
 
 ### 分区链接契约（与 dsh-url-router 对接）
 
@@ -618,7 +618,7 @@ This plugin provides multiple free search engines with automatic fallback, compl
 
 The seventh section is split into state, tools and constraints. Each has its own pager: page 1 is the built-in English page and page 2 the built-in Chinese one, both generated from the current config, never stored, and neither deletable nor editable; page 3 onwards is yours. What gets sent is the current page of each segment, joined; when all three are empty nothing is injected.
 
-The tools segment is one row per tool: the checkbox decides whether the tool is handed to the model, and the box next to it shows the line written for that tool. Those lines are read only and follow plugin updates, and The controls at the top right are a Chinese/English switch that flips every tool at once, plus All and None to check or clear the whole list. An unchecked tool is not handed to the model, its tool description leaves the request too, and the segment stops listing it. Put your own requirements on a custom page of the constraints segment.
+The tools segment is one row per tool: the checkbox decides whether the tool is handed to the model, and the box next to it shows the line written for that tool. Those lines are read only and follow plugin updates, and The top right has a Chinese/English switch that flips every tool at once, and the list starts with a Select all checkbox: check it to hand every tool to the model, clear it to hand none, and it shows the half state when only some are checked. An unchecked tool is not handed to the model, its tool description leaves the request too, and the segment stops listing it. Put your own requirements on a custom page of the constraints segment.
 
 ### Section-link contract (with dsh-url-router)
 

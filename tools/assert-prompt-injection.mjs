@@ -120,10 +120,12 @@ check("the panel renders three segments with the same rules, and asks the server
   assert.match(client, /const renderToolsSegment = \(\) =>/);
   assert.match(client, /children: "中" \}, "zh"\)/);
   assert.match(client, /children: "EN" \}, "en"\)/);
-  assert.match(client, /onClick: \(\) => \{ setDisabledTools\(\[\]\);/);
-  assert.match(client, /onClick: \(\) => \{ setDisabledTools\(TOOL_TOGGLES\.slice\(\)\);/);
+  assert.match(client, /className: "dshfs-platform dshfs-selectAll",/);
+  assert.match(client, /checked: disabledTools\.length === 0,/);
+  assert.match(client, /node\.indeterminate = disabledTools\.length > 0 && disabledTools\.length < TOOL_TOGGLES\.length;/);
+  assert.match(client, /setDisabledTools\(disabledTools\.length === 0 \? TOOL_TOGGLES\.slice\(\) : \[\]\);/);
   assert.match(client, /toolSelectAll: "全选",/);
-  assert.match(client, /toolSelectNone: "全不选",/);
+  assert.equal(client.includes("toolSelectNone"), false);
   assert.match(client, /renderPromptSegment\(promptSegments\[0\]\)/);
   assert.match(client, /renderPromptSegment\(promptSegments\[1\]\)/);
   assert.match(client, /const renderPromptSegment = \(segment\) => \{/);
@@ -162,7 +164,7 @@ check("each segment has a title, a pager, two read-only built-in pages and its o
 });
 
 check("the nine tool switches live inside the tools segment, not in a block of their own", () => {
-  assert.match(client, /segment\.key === "tools"/);
+  assert.match(client, /const renderToolsSegment = \(\) =>/);
   assert.match(client, /className: "dshfs-platforms",/);
   assert.match(client, /\.\.\.TOOL_TOGGLES\.map\(renderToolRow\),/);
   assert.equal(client.includes("dshfs-divider"), false);
