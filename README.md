@@ -524,7 +524,7 @@ Search engine test:
 
 #### 离线自检断言（tools/）
 
-仓库自带 **35 个**零依赖断言脚本（合计 **649 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑：
+仓库自带 **35 个**零依赖断言脚本（合计 **653 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑：
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -550,7 +550,7 @@ Search engine test:
 | `assert-prompt-language.mjs` | 提示词语言（en/zh）：语言回退、9 个工具双语文案、标识符不被翻译、占位符插值、切换时只重注册一次 | `node tools/assert-prompt-language.mjs`（7） |
 | `assert-tool-schema-size.mjs` | 工具 schema 体积（#94）：共享引擎 id 常量、`domain_search` 不内嵌逐引擎句子、三处合计 < 1.6k 字符 | `node tools/assert-tool-schema-size.mjs`（5） |
 | `assert-config-seat.mjs` | 配置入口（#101）：卡片同时挂在 `plugins.bundle.config`（key = 包名，渲染在包页）与 `plugins.row.config`（老入口），两者共用同一渲染器 | `node tools/assert-config-seat.mjs`（4） |
-| `assert-prompt-injection.mjs` | 提示词分页（#102）：两页内置在前、自定义页在后、当前页即注入、空页不注入、内置页分状态/工具/约束三块、内置随 describe 下发不再单独请求、工具开关落到每个注册点、第七段 UI | `node tools/assert-prompt-injection.mjs`（11） |
+| `assert-prompt-injection.mjs` | 提示词分页（#102）：两页内置在前、自定义页在后、当前页即注入、空页不注入、内置页分状态/工具/约束三块、内置随 describe 下发不再单独请求、工具开关落到每个注册点、第七段 UI | `node tools/assert-prompt-injection.mjs`（15） |
 | `assert-rail-section.mjs` | 页内目录的机器可读当前段：卡片根 `data-dsh-fs-section` 与 `railActive` 绑定、六段 id 固定、滚动监听仍在更新 | `node tools/assert-rail-section.mjs`（4） |
 | `assert-package-files.mjs` | 发布清单闸门（#97）：`files` 展开后必须覆盖被引用的本地模块、入口点与 `cordis.patch.yml`，并确认 `prepack` 守卫生效 | `node tools/assert-package-files.mjs`（4） |
 | `assert-key-rotation.mjs` | 多 key 轮换（#96）：round-robin 与 peek、单 key 不推进、配额优先于 429 的分类、轮换候选集合、`multi` 模式内重试与预检不消耗 key | `node tools/assert-key-rotation.mjs`（7） |
@@ -1106,7 +1106,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Thirty-five** zero-dependency assertion scripts ship with the repo (**649 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20:
+**Thirty-five** zero-dependency assertion scripts ship with the repo (**653 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20:
 
 | Script | Covers | Run (count) |
 |---|---|---|
@@ -1132,7 +1132,7 @@ Restart `dsh web` after switching to apply changes.
 | `assert-prompt-language.mjs` | Prompt language (en/zh): fallback rules, bilingual copy for all 9 tools, identifiers left untranslated, placeholder interpolation, and one re-registration per language change | `node tools/assert-prompt-language.mjs` (7) |
 | `assert-tool-schema-size.mjs` | Tool schema budget (#94): one shared engine-id constant, no per-engine sentences in `domain_search`, the three schemas under 1.6k chars combined | `node tools/assert-tool-schema-size.mjs` (5) |
 | `assert-config-seat.mjs` | Config entry point (#101): the card is registered on `plugins.bundle.config` (keyed by the package name, rendered on the bundle page) and on `plugins.row.config` (older entry), both sharing one renderer | `node tools/assert-config-seat.mjs` (4) |
-| `assert-prompt-injection.mjs` | Paged prompt (#102): two built-in pages first, user pages after, the current page is what gets injected, an empty page injects nothing, the generated page split into State/Tools/Constraints blocks, built-ins delivered with describe instead of a second request, tool switches wired into every registrar, and the seventh section UI | `node tools/assert-prompt-injection.mjs` (11) |
+| `assert-prompt-injection.mjs` | Paged prompt (#102): two built-in pages first, user pages after, the current page is what gets injected, an empty page injects nothing, the generated page split into State/Tools/Constraints blocks, built-ins delivered with describe instead of a second request, tool switches wired into every registrar, and the seventh section UI | `node tools/assert-prompt-injection.mjs` (15) |
 | `assert-rail-section.mjs` | Machine-readable active section for the in-page rail: the card root's `data-dsh-fs-section` tracks `railActive`, the six section ids are fixed, and the scroll spy still updates it | `node tools/assert-rail-section.mjs` (4) |
 | `assert-package-files.mjs` | Packaging gate (#97): after expanding `files`, every imported local module, the entry points and `cordis.patch.yml` must be published, and the `prepack` guard must be wired | `node tools/assert-package-files.mjs` (4) |
 | `assert-key-rotation.mjs` | Multi-key rotation (#96): round-robin and peek, single keys never advancing, quota classification ahead of 429, the rotation-candidate set, and in-engine retries that keep multi-mode preflight from consuming keys | `node tools/assert-key-rotation.mjs` (7) |
