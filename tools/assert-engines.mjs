@@ -205,6 +205,75 @@ assert(!ALL_ENGINES.includes("deepseek-tool"), "没有拼写漂移的 deepseek-t
   assert(/"deepseek-tools"\s*:\s*2000/.test(capLine), "SNIPPET_MAX_BY_ENGINE 为 deepseek-tools 放宽到 2000（否则 summary 被截半）");
 }
 
+// ---------- K. outcrawl 注册点与请求形状 ----------
+// 与 serply 同一契约：需 key 的引擎，无 key 跳过；POST /v1/search + Bearer，返回 hits[]。
+section("K. outcrawl 注册点");
+assert(ALL_ENGINES.includes("outcrawl"), "ALL_ENGINES 含 outcrawl");
+assert(
+  DEFAULT_FALLBACK_ORDER.indexOf("outcrawl") === DEFAULT_FALLBACK_ORDER.indexOf("serply") + 1,
+  "回退链里 outcrawl 紧跟 serply（不抢已有引擎的优先级）"
+);
+assert(!FREE_ENGINES.includes("outcrawl"), "outcrawl 需要 key，不得进入 FREE_ENGINES");
+assert(!TIME_ENGINES.includes("outcrawl"), "outcrawl 没有时间过滤参数，不进 TIME_ENGINES");
+assert(
+  !!REQUIRED_CREDENTIALS.outcrawl?.some((r) => r.env === "OUTCRAWL_API_KEY" && r.settings === "outcrawlApiKey"),
+  "REQUIRED_CREDENTIALS 声明 OUTCRAWL_API_KEY"
+);
+{
+  const { readFileSync } = await import("node:fs");
+  const { fileURLToPath } = await import("node:url");
+  const path = await import("node:path");
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const src = readFileSync(path.join(here, "..", "lib", "index.js"), "utf8");
+  const client = readFileSync(path.join(here, "..", "lib", "client.js"), "utf8");
+  assert(/engine === "outcrawl"/.test(src), "provider 主循环里有 outcrawl 分支");
+  assert(/case "outcrawl":/.test(src), "runEngineTest 的 switch 里有 outcrawl 分支");
+  assert(/outcrawlApiKey: "OUTCRAWL_API_KEY"/.test(src), "KEY_REF_MAP 映射 outcrawlApiKey");
+  assert(/outcrawlApiKey: z\.string\(\)\.role\("secret"\)/.test(src), "Config 里 outcrawlApiKey 为 secret");
+  assert(/\{ id: "outcrawl", label: "Outcrawl"/.test(client), "设置页引擎列表含 Outcrawl");
+  assert(/\["outcrawlApiKey", outcrawlKey\]/.test(client), "设置页保存 outcrawlApiKey");
+}
+{
+  const { searchOutcrawl } = await import("../lib/index.js");
+  const realFetch = globalThis.fetch;
+  let captured;
+  globalThis.fetch = async (url, init) => {
+    captured = { url: String(url), init };
+    return new Response(JSON.stringify({
+      hits: [
+        { url: "https://a.com/x", title: "A", snippet: "sa", rank: 1 },
+        { url: "", title: "no url", rank: 2 },
+        { url: "https://b.com/y", title: "B", rank: 3 },
+      ],
+      usage: { credits: "0.5" },
+    }), { status: 200, headers: { "content-type": "application/json" } });
+  };
+  try {
+    const result = await searchOutcrawl("outcrawl test", 50, "oc-test-key");
+    const body = JSON.parse(captured.init.body);
+    assert(captured.url === "https://api.outcrawl.ai/v1/search" && captured.init.method === "POST", "POST 到 api.outcrawl.ai/v1/search");
+    assert(captured.init.headers.authorization === "Bearer oc-test-key", "key 走 Bearer 头，不进 URL");
+    assert(body.query === "outcrawl test" && body.limit === 20, "limit 夹到 1..20");
+    assert(
+      JSON.stringify(result.sources) === JSON.stringify([
+        { url: "https://a.com/x", title: "A", snippet: "sa" },
+        { url: "https://b.com/y", title: "B" },
+      ]),
+      "hits 映射为 sources，丢弃无 url 的条目"
+    );
+    globalThis.fetch = async () => new Response('{"error":"invalid key"}', { status: 401 });
+    const err401 = await searchOutcrawl("q", 5, "bad").catch((e) => e);
+    assert(/Outcrawl API key is invalid \(HTTP 401\)/.test(err401?.message ?? ""), "401 报 key 无效（classifyFailure 归为 auth）");
+    globalThis.fetch = async () => new Response('{"error":"out of credits"}', { status: 402 });
+    const err402 = await searchOutcrawl("q", 5, "k").catch((e) => e);
+    assert(/Outcrawl API error \(HTTP 402\)/.test(err402?.message ?? ""), "402 保留状态码（classifyFailure 归为 quota）");
+    const errNoKey = await searchOutcrawl("q", 5, "").catch((e) => e);
+    assert(/requires OUTCRAWL_API_KEY/.test(errNoKey?.message ?? ""), "无 key 直接报错，不发请求");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+}
+
 console.log("");
 if (failures.length === 0) {
   console.log(`OK: ${pass} assertions passed`);
