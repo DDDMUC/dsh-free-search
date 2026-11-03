@@ -80,7 +80,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 | `auto` | Auto 智能路由 | 动态 | **根据查询语言/时间条件自动选路**（含中文优先 Bing/Baidu/Aliyun/AnySearch，英文优先 Bing/Exa/Tavily；时间过滤优先支持引擎），末尾全量回退 |
 | `ddg` | DuckDuckGo HTML | 免费 | 偶发限流（反爬），解封自动恢复 |
 | `ddg-lite` | DuckDuckGo Lite | 免费 | 轻量版，同上 |
-| `bing` | Bing | 免费 | **默认引擎**，最稳定，中文优化（zh-CN） |
+| `bing` | Bing | 免费 | 免 key，中文优化（zh-CN）；中国出口的自动默认 |
 | `anysearch` | AnySearch AI | 免费 | AI 搜索，无 key（匿名额度） |
 | `searxng` | SearXNG 元搜索 | 免费 | 多实例自动切换，支持自定义实例 |
 | `degoog` | Degoog（自建聚合器） | 免费 | 需要自己的实例（`degoogInstances`），免 key；实例开启 API Key 时用 `degoogApiKey`（Bearer） |
@@ -114,7 +114,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 | `wechat` | 微信文章（搜狗） | 免费 | 公众号文章；签名链**单次有效**，预取会跳反爬页，因此保留原链不解包 |
 | `toutiao` | 今日头条 | 免费 | 走页面内嵌 JSON 的 `article_url`；聚合内容多，建议对结论做二次核对 |
 
-- **默认引擎为 `bing`**（免费且最稳定），安装后开箱即用。
+- **默认引擎自动选**：`provider` 留空时按出口地区选一次——中国大陆出口用 `bing`（不依赖代理），其它地区用 `parallel`（免 key 的官方 MCP，官方文档命中率更高）；探测失败一律退回 `bing`。也可用 `DSH_FREE_SEARCH_DEFAULT=bing` 或 `=parallel` 指定，设置页选过引擎则以你的选择为准。
 - **自动回退**：任何引擎失败（免费限流/反爬，付费缺 key/无效/网络错误）都会自动轮流尝试下一个引擎——先试其他已配 key 的付费引擎，再试免费引擎（Bing/AnySearch 等），并在结果中附带回退提示——搜索不会因引擎问题直接失败。
 - **设置页有官网链接**：免费引擎显示"访问官网 →"，付费引擎显示"获取 API Key →"（新标签页打开）：
   - Exa：<https://dashboard.exa.ai/api-keys>
@@ -330,7 +330,7 @@ DSH 0.1.7-rc.1 起，配置跟随 profile 的插件条目保存：设置页与 `
 
 ```yaml
 # profiles/<profile>/cordis.patch.yml 中该条目的 config：
-provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / parallel / perplexity / serpbase / serply / outcrawl / deepseek-official / deepseek-tools / you / baidu / kimi / aliyun / doubao / zhihu_global / zhihu_site / openai / gemini / claude / auto / multi
+provider:                   # 留空 = 自动（中国出口 bing，其它 parallel）；也可写 ddg / bing / auto / multi 等
 fallbackOn: [quota, auth, bot-wall, transient, invalid-response, unknown]   # 允许触发回退的失败类别；[] = 任何失败都立即中止（默认全部）
 lang: zh                    # 搜索语言池/本地化（zh / en / ru …，不再被设置页强行改写）
 #   lang 决定：Bing 的 mkt/Accept-Language、Wikipedia 子域（ja → ja.wikipedia.org）、地理编码语言；
@@ -533,10 +533,11 @@ Search engine test:
 
 #### 离线自检断言（tools/）
 
-仓库自带 **36 个**零依赖断言脚本（合计 **707 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑：
+仓库自带 **37 个**零依赖断言脚本（合计 **714 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑：
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
+| `assert-auto-default.mjs` | 自动默认引擎：`provider` 留空时的地区判定（CN → bing、其它 → parallel）、探测失败回落 bing、`DSH_FREE_SEARCH_DEFAULT` 覆盖、提示词跟随、`effectiveProvider` 下发 | `node tools/assert-auto-default.mjs`（7） |
 | `assert-serp-engines.mjs` | HTML 搜索页家族：注册表不变式、时间过滤声明、默认不进 auto 与回退链、显式入池才生效、四个解析器的内联 fixture、反爬识别与文本清洗 | `node tools/assert-serp-engines.mjs`（32） |
 | `assert-engines.mjs` | 引擎清单 / 免费引擎口径 / 语言分池路由 / 池配置字段 / 知乎 URL 剥 utm / `deepseek-tools` 接线与 snippetCap 放宽 | `node tools/assert-engines.mjs`（41） |
 | `assert-blocked-domains.mjs` | 域名黑名单：解析、匹配、收口，且前后端清洗同口径 | `node tools/assert-blocked-domains.mjs`（69） |
@@ -671,7 +672,7 @@ If this plugin has been helpful, a ⭐ on [GitHub](https://github.com/DDDMUC/dsh
 | `auto` | Auto Smart Routing | Dynamic | **Smartly routes engines based on query language/time filter** (Chinese queries prioritize Bing/Baidu/Aliyun/AnySearch, English queries prioritize Bing/Exa/Tavily; time filters prioritize time-capable engines), with full fallback |
 | `ddg` | DuckDuckGo HTML | Free | Occasional rate limits (anti-bot challenges); recovers automatically |
 | `ddg-lite` | DuckDuckGo Lite | Free | Lightweight version; same rate-limit behavior as above |
-| `bing` | Bing | Free | **Default engine**, most stable, optimized for Chinese (`zh-CN`) |
+| `bing` | Bing | Free | No key, optimized for Chinese (`zh-CN`); the automatic default on a mainland egress |
 | `anysearch` | AnySearch AI | Free | AI search, no key needed (anonymous quota) |
 | `searxng` | SearXNG Meta Search | Free | Multi-instance automatic failover; supports custom instances |
 | `degoog` | Degoog (self-hosted aggregator) | Free | Needs your own instance (`degoogInstances`), no key; `degoogApiKey` (Bearer) only if the instance enables API keys |
@@ -705,7 +706,7 @@ If this plugin has been helpful, a ⭐ on [GitHub](https://github.com/DDDMUC/dsh
 | `wechat` | WeChat articles (Sogou) | Free | Public-account articles; the signed link is **single-use**, so prefetching burns it and lands on the anti-bot page — the original link is kept as-is |
 | `toutiao` | Toutiao | Free | Reads `article_url` out of the embedded JSON; heavily aggregated, so verify conclusions a second time |
 
-- **Default engine is `bing`** (free and most stable), ready to use out of the box after installation.
+- **The default engine is picked automatically**: when `provider` is left empty the plugin probes the egress region once - mainland China gets `bing` (no proxy needed), everywhere else gets `parallel` (the keyless official MCP, which hits official documentation more often). A failed probe falls back to `bing`. Set `DSH_FREE_SEARCH_DEFAULT=bing` or `=parallel` to override, and any engine picked in the settings page wins.
 - **Auto-failover**: any engine failure (rate-limited free engine, or missing/invalid paid key, network error) automatically tries the next engine — the configured engine first, then other engines (exa/tavily/keenable/firecrawl/parallel/you are tried even without a key because they have built-in keyless quota), then the remaining free engines (Bing/AnySearch etc.) — with a note attached to the results naming the engine that actually served them (e.g. `Note: perplexity unavailable or failed, using exa.`). Search never fails outright because of engine issues.
 - **Official Links in Settings**: Free engines display "Visit Website →", while paid engines display "Get API Key →" (opens in a new tab):
   - Exa: <https://dashboard.exa.ai/api-keys>
@@ -922,7 +923,7 @@ The old `free-search:` section of `~/.dsh/settings.yaml` is **not** imported by 
 
 ```yaml
 # config of that entry in profiles/<profile>/cordis.patch.yml:
-provider: bing              # ddg / ddg-lite / bing / searxng / anysearch / exa / tavily / keenable / firecrawl / parallel / perplexity / serpbase / serply / outcrawl / deepseek-official / deepseek-tools / you / baidu / kimi / aliyun / doubao / zhihu_global / zhihu_site / openai / gemini / claude / auto / multi
+provider:                   # empty = auto (bing on a mainland egress, parallel elsewhere); or ddg / bing / auto / multi
 fallbackOn: [quota, auth, bot-wall, transient, invalid-response, unknown]   # failure classes allowed to trigger fallback; [] = abort on any failure (default: all)
 lang: zh                    # search language pools / localization (zh / en / ru …; no longer rewritten by the settings page)
 #   lang drives Bing's mkt/Accept-Language, the Wikipedia subdomain (ja → ja.wikipedia.org) and the geocoding language;
@@ -1125,10 +1126,11 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Thirty-six** zero-dependency assertion scripts ship with the repo (**707 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20:
+**Thirty-seven** zero-dependency assertion scripts ship with the repo (**714 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20:
 
 | Script | Covers | Run (count) |
 |---|---|---|
+| `assert-auto-default.mjs` | Automatic default engine: the region decision when `provider` is empty (CN to bing, anything else to parallel), falling back to bing on a failed probe, the `DSH_FREE_SEARCH_DEFAULT` override, the prompt following it, and `effectiveProvider` reaching the panel | `node tools/assert-auto-default.mjs` (7) |
 | `assert-serp-engines.mjs` | HTML SERP family: registry invariants, time-filter declarations, staying out of auto routing and the fallback chain, only joining when named in a pool, inline fixtures for the four parsers, anti-bot detection and text cleanup | `node tools/assert-serp-engines.mjs` (32) |
 | `assert-engines.mjs` | engine registry / free-engine rule / language-pool routing / pool config fields / Zhihu URL utm stripping / `deepseek-tools` wiring and snippetCap widening | `node tools/assert-engines.mjs` (41) |
 | `assert-blocked-domains.mjs` | domain blocklist: parsing, matching, choke points, and byte-identical front/back-end sanitizing | `node tools/assert-blocked-domains.mjs` (69) |
