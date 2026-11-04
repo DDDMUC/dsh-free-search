@@ -160,6 +160,7 @@ try {
   globalThis.fetch = async (url, options) => {
     assert.equal(url, "https://api.parallel.ai/v1/search");
     assert.equal(options.headers["x-api-key"], "configured-test-key");
+    assert.equal(options.headers["user-agent"], "dsh-free-search (+https://github.com/DDDMUC/dsh-free-search)");
     const body = JSON.parse(options.body);
     assert.equal(body.mode, "fast");
     assert.deepEqual(body.advanced_settings.source_policy, { after_date: "2026-10-01" });
