@@ -32,6 +32,7 @@ dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`
 - **多引擎可选**：DuckDuckGo（html/lite）、Bing、SearXNG（元搜索，支持自定义实例）、AnySearch、Exa、Tavily、Keenable、Firecrawl、Parallel、Perplexity、SerpBase、Serply、Outcrawl、DeepSeek 官方、DeepSeek 原生搜索 API、You.com、百度千帆、Kimi、阿里云百炼、火山联网搜索（豆包搜索）、知乎全网/站内（`zhihu_global`/`zhihu_site`，经知乎开放平台 MCP）、Antigravity CLI 搜索（`agy`，需本机安装）、OpenAI / Gemini / Claude 模型内置搜索
 - **5 个 HTML 搜索页引擎（默认关闭）** —— 把传统搜索页并入同一套引擎 / 回退 / 冷却 / 设置体系：`baidu-html`（百度网页）、`so360`、`sogou`、`wechat`（微信文章）、`toutiao`。免 key、免额度，代价是抓页面：验证码/反爬按 `bot-wall` 归类并让整个家族冷却 10 分钟（整段出口 IP 都会被打标），结果也没有 API 摘要。它们默认不进 auto / 回退链 / 语言池，只在显式 `engine=` 或加入语言池时运行。
 - **按 key 冷却与诊断** —— 429 与额度错误按 key 分别冷却，同一引擎的其他 key 不受牵连；冷却状态写入磁盘，重启后仍在；失败信息和日志里的 key 一律打码；设置页底部的「诊断」按钮列出每个引擎当前为什么不可用、冷却还剩多久
+- **引擎白名单** —— 设置页「只使用勾选的引擎」开启后，只有勾选的引擎可用，升级新增的引擎默认不启用；配置里对应 `allowedEngines`（非空时等价于把其余引擎全部禁用）
 - **网页设置页** —— 引擎切换 + API key 配置（UI 中 key 脱敏显示"已配置"）+ 中英文切换；入口在左侧「插件」页的组件行配置（`plugins.row.config`，DSH 0.1.7-rc.1+）。远程访问（VPS / 反向代理 / 自定义域名）下也能用：桥接接口沿用宿主的 Host 围栏，`--trusted-host` 与 `--public-url` 声明的地址会放行（#84）
 - **右侧浮动目录** —— 卡片右侧的页面留白里浮出「引擎 / 回退 / 语言池 / 搜索行为 / 抓取 / 性能 / 提示词管理」七个快捷跳转，滚动自动高亮当前项、点击平滑跳转；不占用正文宽度（正文布局与 0.9.6 一致），右侧留白不足时自动隐藏；每项都是真链接（`#/panel/plugins/dsh-free-search/<分区>`），可复制、可开新标签，见下方「分区链接契约」
 
@@ -363,6 +364,7 @@ degoogApiKey: ...           # 可选：实例开启 API Key 时使用的 Bearer 
 safeSearch: off              # 安全搜索：off（默认）/ moderate / strict，作用于 bing / ddg / ddg-lite
 blockedDomains:              # 域名黑名单（可选）：命中的域名不会进入结果
   - spam-example.com
+allowedEngines: []           # 白名单（可选）：非空时只有这些引擎可用，其余全部禁用
 multiMaxEngines: 0           # multi 并发上限（0 = 不限，跑完整语言池）；设置页有 Fast/Balanced/Deep 档位
 multiMinSources: 1           # multi 目标成功源数（只用于触发补跑，不是硬下限）
 exaApiKey: ...              # 或通过设置页填写
@@ -535,7 +537,7 @@ Search engine test:
 
 #### 离线自检断言（tools/）
 
-仓库自带 **41 个**零依赖断言脚本（合计 **735 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑：
+仓库自带 **42 个**零依赖断言脚本（合计 **744 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑：
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -572,6 +574,7 @@ Search engine test:
 | `assert-redact.mjs` | 错误脱敏：已登记 key 全量替换、`sk-` / Bearer / api_key / x-api-key 形态无需登记也能打码、普通文本与短值不动、环境变量按名称收集 | `node tools/assert-redact.mjs`（4） |
 | `assert-doctor.mjs` | 诊断报告：时长格式化、头部版本 / Node / DSH 主目录 / 生效默认 / 提示词字数、每个引擎的标记与原因、冷却原因去重列出、提示词未注入的提示 | `node tools/assert-doctor.mjs`（5） |
 | `assert-agy.mjs` | Antigravity CLI：提示词查询 / 条数 / JSON 契约、structuredOutput 与 response 两种信封、非 SUCCESS 透出上游原因、URL 过滤与截断、CLI 参数、注入 runner 跳过 PATH 检查 | `node tools/assert-agy.mjs`（6） |
+| `assert-allowed-engines.mjs` | 引擎白名单（#106）：条目归一化、空名单保持原状、非空时禁用其余全部（含未来新增）、显式禁用优先、错拼不锁死搜索、白名单内引擎可入链（HTML 家族 / 按次计费）、auto 只路由白名单、内置提示词只列白名单且回退为 none、schema 默认空 | `node tools/assert-allowed-engines.mjs`（9） |
 | `assert-degoog.mjs` | degoog 自建实例（#85）：`/api/search` URL 规范化、查询编码、`time`/`lang` 参数、注册表位置、无需凭据 | `node tools/assert-degoog.mjs`（7） |
 | `assert-multikey.mjs` | 多 key 字段：单 key 不变、逗号/分号/换行分隔、空白项丢弃、空输入为空数组 | `node tools/assert-multikey.mjs`（3） |
 | `assert-firecrawl-keyless.mjs` | Firecrawl keyless 出口判定：403 + VPN/proxy 文案才算拒绝、普通 403 与 401/429/500 不算、冷却初始未触发 | `node tools/assert-firecrawl-keyless.mjs`（5） |
@@ -630,6 +633,7 @@ This plugin provides multiple free search engines with automatic fallback, compl
 - **Multi-Engine Support** — DuckDuckGo (HTML / Lite), Bing, AnySearch AI, SearXNG (meta-search with custom instances), Exa, Tavily, Keenable, Firecrawl, Parallel, Perplexity, SerpBase, Serply, Outcrawl, DeepSeek Official, You.com, Baidu Qianfan, Kimi, Aliyun Bailian, Volcano Doubao, Zhihu web-wide/site search (`zhihu_global`/`zhihu_site`, via the Zhihu open-platform MCP), Antigravity CLI search (`agy`, requires the local CLI), and the model-based OpenAI / Gemini / Claude searches
 - **5 HTML SERP engines (off by default)** — Traditional result pages join the same engine / fallback / cooldown / settings machinery: `baidu-html` (Baidu web), `so360`, `sogou`, `wechat` (WeChat articles) and `toutiao`. No key, no quota — the trade-off is scraping: captcha/anti-bot pages are classified as `bot-wall` and cool the whole family down for 10 minutes (the egress IP gets flagged as a whole), and results carry no API snippets. They never join auto routing, the fallback chain or the language pools; they only run when named via `engine=` or added to a pool.
 - **Per-key cooldowns and diagnostics** — a 429 or quota error cools the key that hit it, not every other key of the same engine; the state is written to disk and survives a restart; keys are masked in failure text and logs; the Diagnose button at the bottom of the settings page lists why each engine is currently unavailable and how long its cooldown has left
+- **Engine whitelist** — turn on Use only the checked engines and only those engines stay usable; engines added by later versions stay off. It maps to `allowedEngines` in the config (a non-empty list is equivalent to disabling every other engine)
 - **Web Settings UI** — Engine switching, API key configuration (keys masked as "configured" in the UI), and a Chinese/English toggle; the entry is the component-row config (`plugins.row.config`) on the sidebar Plugins page (DSH 0.1.7-rc.1+). Remote access (VPS, reverse proxy, custom domain) works too: the bridge reuses the host's own Host fence, so addresses declared with `--trusted-host` or `--public-url` are accepted (#84)
 - **Right-hand section rail** — A floating list (Engines / Fallback / Language pools / Search behaviour / Fetch / Performance / Prompts) sits in the page margin to the right of the card: it highlights the section you are in while scrolling and jumps smoothly on click. It is rendered in a portal and never narrows the card, so the body layout is unchanged; it hides itself when the margin is too tight. Every entry is a real link (`#/panel/plugins/dsh-free-search/<section>`), so it can be copied or opened in a tab - see the section-link contract below.
 
@@ -962,6 +966,7 @@ degoogApiKey: ...          # Optional: bearer key, only when your instance enabl
 safeSearch: off              # Safe search: off (default) / moderate / strict; applies to bing / ddg / ddg-lite
 blockedDomains:              # Domain blocklist (optional): matching domains never enter the results
   - spam-example.com
+allowedEngines: []           # Whitelist (optional): when non-empty only these engines are usable
 multiMaxEngines: 0           # multi concurrency cap (0 = unlimited, whole language pool); the settings UI has Fast/Balanced/Deep presets
 multiMinSources: 1           # multi target source count (only triggers top-up runs; not a hard minimum)
 exaApiKey: ...              # Or configure via the web settings UI
@@ -1134,7 +1139,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Forty-one** zero-dependency assertion scripts ship with the repo (**735 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20:
+**Forty-two** zero-dependency assertion scripts ship with the repo (**744 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20:
 
 | Script | Covers | Run (count) |
 |---|---|---|
@@ -1171,6 +1176,7 @@ Restart `dsh web` after switching to apply changes.
 | `assert-redact.mjs` | Error redaction: registered keys are scrubbed everywhere, `sk-` / Bearer / api_key / x-api-key shapes need no registration, ordinary text and short values are untouched, environment secrets are collected by name | `node tools/assert-redact.mjs` (4) |
 | `assert-doctor.mjs` | Doctor report: duration formatting, version / Node / DSH home / effective default / prompt size header, a mark and reason per engine, cooldown reasons listed once, a warning when the prompt is not injected | `node tools/assert-doctor.mjs` (5) |
 | `assert-agy.mjs` | Antigravity CLI: query / cap / JSON contract in the prompt, structuredOutput and response envelopes, upstream reason on non-SUCCESS, URL filtering and truncation, CLI flags, injected runner skips the PATH check | `node tools/assert-agy.mjs` (6) |
+| `assert-allowed-engines.mjs` | Engine whitelist (#106): entries normalised, an empty list changes nothing, a non-empty list disables everything else (including future engines), explicit disables win, a typo does not brick search, whitelisted engines join the chain (HTML family / billed), Auto only routes allowed engines, the built-in prompt lists only them with a none fallback, and the schema defaults to empty | `node tools/assert-allowed-engines.mjs` (9) |
 | `assert-degoog.mjs` | degoog self-hosted instance (#85): `/api/search` URL normalisation, query encoding, `time`/`lang` parameters, registry placement, no credentials needed | `node tools/assert-degoog.mjs` (7) |
 | `assert-multikey.mjs` | multi-key fields: a single key is unchanged, comma/semicolon/newline separate keys, blank entries are dropped, empty input yields none | `node tools/assert-multikey.mjs` (3) |
 | `assert-firecrawl-keyless.mjs` | Firecrawl keyless egress refusal: only a 403 with the VPN/proxy wording counts, plain 403 and 401/429/500 do not, and the cooldown starts inactive | `node tools/assert-firecrawl-keyless.mjs` (5) |
