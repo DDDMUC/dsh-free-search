@@ -124,7 +124,7 @@ section("H. Bing 不重试（防回退到加重限流的写法）");
   const { fileURLToPath } = await import("node:url");
   const path = await import("node:path");
   const here = path.dirname(fileURLToPath(import.meta.url));
-  const src = readFileSync(path.join(here, "..", "lib", "engines", "free.js"), "utf8");
+  const src = readFileSync(path.join(here, "..", "lib", "engines", "bing.js"), "utf8");
   const start = src.indexOf("async function searchBing(");
   const end = src.indexOf("//#region searxng");
   const body = start >= 0 && end > start ? src.slice(start, end) : "";
@@ -188,14 +188,14 @@ assert(!ALL_ENGINES.includes("deepseek-tool"), "没有拼写漂移的 deepseek-t
   const path = await import("node:path");
   const here = path.dirname(fileURLToPath(import.meta.url));
   const src = readFileSync(path.join(here, "..", "lib", "index.js"), "utf8");
-  const engines = readFileSync(path.join(here, "..", "lib", "engines", "keyed.js"), "utf8");
+  const engines = readFileSync(path.join(here, "..", "lib", "engines", "deepseek-tools.js"), "utf8");
   const shared = readFileSync(path.join(here, "..", "lib", "engines", "shared.js"), "utf8");
   // 两处分派必须都在：provider 主循环 + runEngineTest（缺后者则 free_search_test 测不到它）
   const dispatch = src.match(/"deepseek-tools": async/g) ?? [];
   assert(dispatch.length >= 1, "provider registry has a deepseek-tools runner");
   assert(/case "deepseek-tools":/.test(src), "runEngineTest 的 switch 里有 deepseek-tools 分支");
   const factory = engines.indexOf("async function searchDeepSeekTools(");
-  const end = engines.indexOf("// SerpBase:", factory);
+  const end = engines.length;
   const body = factory >= 0 && end > factory ? engines.slice(factory, end) : "";
   assert(body.length > 0, "能定位 searchDeepSeekTools 函数体");
   assert(/\/v1\/tools\/search/.test(engines), "走原生 /v1/tools/search 端点");
