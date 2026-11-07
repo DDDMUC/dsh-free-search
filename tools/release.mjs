@@ -93,8 +93,9 @@ git("push", "origin", tag);
 run(npm, ["publish", "--registry", "https://registry.npmjs.org"]);
 
 console.log("\n== GitHub release");
-const releaseArgs = ["release", "create", tag, "--title", `${version}`, "--generate-notes"];
-if (notesFile) releaseArgs.splice(4, 0, "--notes-file", notesFile);
+const releaseArgs = ["release", "create", tag, "--title", `${version}`];
+if (notesFile) releaseArgs.push("--notes-file", notesFile);
+else releaseArgs.push("--generate-notes");
 const gh = spawnSync("gh", releaseArgs, { cwd: root, stdio: "inherit", shell: process.platform === "win32" });
 if (gh.status !== 0) {
   console.warn("gh release create failed; create the release manually.");
