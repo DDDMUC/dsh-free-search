@@ -188,6 +188,7 @@ assert(!ALL_ENGINES.includes("deepseek-tool"), "没有拼写漂移的 deepseek-t
   const path = await import("node:path");
   const here = path.dirname(fileURLToPath(import.meta.url));
   const src = readFileSync(path.join(here, "..", "lib", "index.js"), "utf8");
+  const shared = readFileSync(path.join(here, "..", "lib", "engines", "shared.js"), "utf8");
   // 两处分派必须都在：provider 主循环 + runEngineTest（缺后者则 free_search_test 测不到它）
   const dispatch = src.match(/engine === "deepseek-tools"/g) ?? [];
   assert(dispatch.length >= 1, "provider 主循环里有 deepseek-tools 分支");
@@ -200,8 +201,8 @@ assert(!ALL_ENGINES.includes("deepseek-tool"), "没有拼写漂移的 deepseek-t
   assert(/summary/.test(body), "优先取 summary（600~800 字，面向模型）而非 snippet（100~200 字）");
   assert(!/tools\/fetch/.test(body), "搜索函数不掺 Fetch 端点");
   // 摘要上限：新引擎的 summary 若按默认 300 截断会被拦腰砍断
-  const cap = src.indexOf("SNIPPET_MAX_BY_ENGINE");
-  const capLine = src.slice(cap, src.indexOf("\n", src.indexOf("{", cap)));
+  const cap = shared.indexOf("SNIPPET_MAX_BY_ENGINE");
+  const capLine = shared.slice(cap, shared.indexOf("\n", shared.indexOf("{", cap)));
   assert(/"deepseek-tools"\s*:\s*2000/.test(capLine), "SNIPPET_MAX_BY_ENGINE 为 deepseek-tools 放宽到 2000（否则 summary 被截半）");
 }
 

@@ -18,6 +18,7 @@ const { cleanSnippet } = await import(new URL("lib/index.js", root));
 
 const LONE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
 const index = fs.readFileSync(new URL("lib/index.js", root), "utf8");
+const shared = fs.readFileSync(new URL("lib/engines/shared.js", root), "utf8");
 const serp = fs.readFileSync(new URL("lib/serp_engines.js", root), "utf8");
 
 let checks = 0;
@@ -90,8 +91,8 @@ check("errors are sanitized before they reach the history", () => {
 });
 
 check("the truncation and exit guards are wired in the source", () => {
-  assert.match(index, /return truncateText\(cleaned, max\);/);
-  assert.match(index, /return out\.map\(sanitizeSource\);/);
+  assert.match(shared, /return truncateText\(cleaned, max\);/);
+  assert.match(shared, /return out\.map\(sanitizeSource\);/);
   assert.match(index, /return sanitizeSearchResult\(await provider\.searchOnce\(request, signal\)\);/);
   assert.match(index, /throw sanitizeError\(error\);/);
   assert.match(index, /stripLoneSurrogates\(typeof text === "string"/);
