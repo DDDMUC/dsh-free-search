@@ -188,16 +188,17 @@ assert(!ALL_ENGINES.includes("deepseek-tool"), "没有拼写漂移的 deepseek-t
   const path = await import("node:path");
   const here = path.dirname(fileURLToPath(import.meta.url));
   const src = readFileSync(path.join(here, "..", "lib", "index.js"), "utf8");
+  const engines = readFileSync(path.join(here, "..", "lib", "engines", "keyed.js"), "utf8");
   const shared = readFileSync(path.join(here, "..", "lib", "engines", "shared.js"), "utf8");
   // 两处分派必须都在：provider 主循环 + runEngineTest（缺后者则 free_search_test 测不到它）
   const dispatch = src.match(/engine === "deepseek-tools"/g) ?? [];
   assert(dispatch.length >= 1, "provider 主循环里有 deepseek-tools 分支");
   assert(/case "deepseek-tools":/.test(src), "runEngineTest 的 switch 里有 deepseek-tools 分支");
-  const factory = src.indexOf("async function searchDeepSeekTools(");
-  const end = src.indexOf("// SerpBase:", factory);
-  const body = factory >= 0 && end > factory ? src.slice(factory, end) : "";
+  const factory = engines.indexOf("async function searchDeepSeekTools(");
+  const end = engines.indexOf("// SerpBase:", factory);
+  const body = factory >= 0 && end > factory ? engines.slice(factory, end) : "";
   assert(body.length > 0, "能定位 searchDeepSeekTools 函数体");
-  assert(/\/v1\/tools\/search/.test(src), "走原生 /v1/tools/search 端点");
+  assert(/\/v1\/tools\/search/.test(engines), "走原生 /v1/tools/search 端点");
   assert(/summary/.test(body), "优先取 summary（600~800 字，面向模型）而非 snippet（100~200 字）");
   assert(!/tools\/fetch/.test(body), "搜索函数不掺 Fetch 端点");
   // 摘要上限：新引擎的 summary 若按默认 300 截断会被拦腰砍断
