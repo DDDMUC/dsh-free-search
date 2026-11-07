@@ -1,0 +1,36 @@
+name: ci
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  assertions:
+    name: assertions (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run offline assertions
+        run: |
+          fail=0
+          count=0
+          for file in tools/assert-*.mjs; do
+            count=$((count + 1))
+            echo "=== $file"
+            node "$file" || fail=1
+          done
+          echo "ran $count assertion scripts"
+          exit $fail
+      - name: Packaging gate
+        run: npm pack --dry-run
