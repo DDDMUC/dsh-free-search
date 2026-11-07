@@ -27,7 +27,12 @@ if (!version) {
 
 const run = (command, commandArgs, options = {}) => {
   console.log(`\n$ ${command} ${commandArgs.join(" ")}`);
-  execFileSync(command, commandArgs, { cwd: root, stdio: "inherit", ...options });
+  execFileSync(command, commandArgs, {
+    cwd: root,
+    stdio: "inherit",
+    shell: process.platform === "win32" && /\.cmd$/i.test(command),
+    ...options,
+  });
 };
 
 const git = (...commandArgs) => run("git", commandArgs);
