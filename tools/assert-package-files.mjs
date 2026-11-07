@@ -14,11 +14,19 @@ assert(patterns.length > 0, "package.json has no files allowlist");
 
 // expand the allowlist: "lib/" means every lib/*.js, other entries are literal
 const covered = new Set();
+const collect = (relative) => {
+  const dir = path.join(root, relative);
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const child = path.posix.join(relative, entry.name);
+    if (entry.isDirectory()) collect(child);
+    else covered.add(child);
+  }
+};
 for (const entry of patterns) {
   if (entry.endsWith("/")) {
     const dir = path.join(root, entry);
     assert(fs.existsSync(dir), `files entry "${entry}" does not exist`);
-    for (const name of fs.readdirSync(dir)) covered.add(path.posix.join(entry.replace(/\/$/, ""), name));
+    collect(entry.replace(/\/$/, ""));
   } else {
     assert(fs.existsSync(path.join(root, entry)), `files entry "${entry}" does not exist`);
     covered.add(entry);
