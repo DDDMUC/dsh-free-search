@@ -16,17 +16,16 @@
   <sub>▲ 设置页总览</sub>
 </div>
 
-### 为什么需要它
+### 谁需要它
 
-dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`）。
 如果你：
-- 没有（或不想用）DeepSeek 官方 key，
-- 用的是 opencode-go 这类网关（其 OpenAI 兼容端点不支持 `web_search` 工具），
-- 就是不想花钱。
 
-……那么内置搜索必然失败，agent 会告诉你"无法联网"。
+- 没有（或不想）配置 DeepSeek 官方 key，用第三方模型供应商发现无法搜索
+- 虽然配置了官 key，但用的明明是第三方模型供应商，结果 DeepSeek 账户却依旧扣费
 
-这个插件提供多个免费引擎 + 自动回退，彻底摆脱对 DeepSeek 官方 key 的依赖。
+这一切都是因为 dsh 默认的搜索 provider 依赖 DeepSeek 官方 API key（`DEEPSEEK_API_KEY`）。没有配置官 key，内置搜索就会失败；配置了官 key，即使用第三方模型供应商，搜索时也会使用官方渠道，产生隐形扣费。
+
+这个插件就是来解决这些问题的：它提供多个免费引擎 + 自动回退，让 DSH 彻底摆脱 DeepSeek 官方 key 的依赖。
 
 ### 特性
 
@@ -661,15 +660,16 @@ Windows 用户：桌面快捷方式已内置此配置（`set NODE_USE_ENV_PROXY=
   <sub>▲ Settings overview</sub>
 </div>
 
-### Why You Need It
+### Who Needs It
 
-dsh's default search provider relies on the official DeepSeek API key (`DEEPSEEK_API_KEY`). If you:
-- Do not have (or prefer not to use) an official DeepSeek key,
-- Use a gateway like opencode-go (whose OpenAI-compatible endpoint does not support the `web_search` tool),
+If you:
 
-...then the built-in search will inevitably fail, and the agent will tell you "I cannot access the internet."
+- do not have (or do not want) an official DeepSeek key and found that search fails while you use a third-party model provider
+- did configure an official key, yet you clearly use a third-party model provider and the DeepSeek account is still billed for searches
 
-This plugin provides multiple free search engines with automatic fallback, completely freeing you from relying on DeepSeek's official key.
+All of this happens because dsh's default search provider depends on the official DeepSeek API key (`DEEPSEEK_API_KEY`). Without the official key, built-in search fails; with it, even when you use a third-party model provider, searches go through the official channel and quietly bill the DeepSeek account.
+
+This plugin solves exactly that: multiple free engines plus automatic fallback, so DSH no longer depends on the DeepSeek official key.
 
 ### Features
 
