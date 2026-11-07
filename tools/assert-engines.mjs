@@ -124,7 +124,7 @@ section("H. Bing 不重试（防回退到加重限流的写法）");
   const { fileURLToPath } = await import("node:url");
   const path = await import("node:path");
   const here = path.dirname(fileURLToPath(import.meta.url));
-  const src = readFileSync(path.join(here, "..", "lib", "index.js"), "utf8");
+  const src = readFileSync(path.join(here, "..", "lib", "engines", "free.js"), "utf8");
   const start = src.indexOf("async function searchBing(");
   const end = src.indexOf("//#region searxng");
   const body = start >= 0 && end > start ? src.slice(start, end) : "";
