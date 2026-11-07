@@ -191,8 +191,8 @@ assert(!ALL_ENGINES.includes("deepseek-tool"), "没有拼写漂移的 deepseek-t
   const engines = readFileSync(path.join(here, "..", "lib", "engines", "keyed.js"), "utf8");
   const shared = readFileSync(path.join(here, "..", "lib", "engines", "shared.js"), "utf8");
   // 两处分派必须都在：provider 主循环 + runEngineTest（缺后者则 free_search_test 测不到它）
-  const dispatch = src.match(/engine === "deepseek-tools"/g) ?? [];
-  assert(dispatch.length >= 1, "provider 主循环里有 deepseek-tools 分支");
+  const dispatch = src.match(/"deepseek-tools": async/g) ?? [];
+  assert(dispatch.length >= 1, "provider registry has a deepseek-tools runner");
   assert(/case "deepseek-tools":/.test(src), "runEngineTest 的 switch 里有 deepseek-tools 分支");
   const factory = engines.indexOf("async function searchDeepSeekTools(");
   const end = engines.indexOf("// SerpBase:", factory);
@@ -228,7 +228,7 @@ assert(
   const here = path.dirname(fileURLToPath(import.meta.url));
   const src = readFileSync(path.join(here, "..", "lib", "index.js"), "utf8");
   const client = readFileSync(path.join(here, "..", "lib", "client.js"), "utf8");
-  assert(/engine === "outcrawl"/.test(src), "provider 主循环里有 outcrawl 分支");
+  assert(/outcrawl: async/.test(src), "provider registry has an outcrawl runner");
   assert(/case "outcrawl":/.test(src), "runEngineTest 的 switch 里有 outcrawl 分支");
   assert(/outcrawlApiKey: "OUTCRAWL_API_KEY"/.test(src), "KEY_REF_MAP 映射 outcrawlApiKey");
   assert(/outcrawlApiKey: z\.string\(\)\.role\("secret"\)/.test(src), "Config 里 outcrawlApiKey 为 secret");
