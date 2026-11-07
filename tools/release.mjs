@@ -78,10 +78,19 @@ if (nextClient === client) {
   process.exit(1);
 }
 fs.writeFileSync(clientPath, nextClient);
+
+const lockPath = path.join(root, "package-lock.json");
+const hasLock = fs.existsSync(lockPath);
+if (hasLock) {
+  const lock = JSON.parse(fs.readFileSync(lockPath, "utf8"));
+  lock.version = version;
+  if (lock.packages?.[""]) lock.packages[""].version = version;
+  fs.writeFileSync(lockPath, JSON.stringify(lock, null, 2) + "\n");
+}
 console.log(`version -> ${version}`);
 
 console.log("\n== commit and tag");
-git("add", "package.json", "lib/client.js");
+git("add", "package.json", "lib/client.js", ...(hasLock ? ["package-lock.json"] : []));
 git("commit", "-m", `release ${version}`);
 git("tag", tag);
 

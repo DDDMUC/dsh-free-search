@@ -57,8 +57,6 @@
   "engines": {
     "node": ">=20"
   },
-  "dependencies": {
-  },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
     "@deepseek-ai/dsh-client-ui-commands": "^0.1.7-rc.1 || ^0.2.0-rc.1",
@@ -97,7 +95,8 @@
   },
   "devDependencies": {
     "@deepseek-ai/dsh-settings": "^0.1.7-rc.1",
-    "@deepseek-ai/dsh-tools": "^0.1.7-rc.1"
+    "@deepseek-ai/dsh-tools": "^0.1.7-rc.1",
+    "@deepseek-ai/schemastery": ">=3.18.4 <4"
   },
   "dsh": {
     "bundle": {
