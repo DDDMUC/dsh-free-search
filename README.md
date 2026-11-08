@@ -93,7 +93,7 @@
 
 #### 设置页与目录
 
-- **网页设置页** —— 引擎切换 + API key 配置（UI 中 key 脱敏显示「已配置」）+ 中英文切换；入口在左侧「插件」页的组件行配置（`plugins.row.config`，DSH 0.1.7-rc.1+）。远程访问（VPS / 反向代理 / 自定义域名）下也能用：桥接接口沿用宿主的 Host 围栏，`--trusted-host` 与 `--public-url` 声明的地址会放行（#84）。
+- **网页设置页** —— 引擎切换 + API key 配置（UI 中 key 脱敏显示「已配置」）+ 中英文切换；入口在左侧「插件」页的组件行配置（`plugins.row.config`，DSH 0.2.1-rc.2+）。远程访问（VPS / 反向代理 / 自定义域名）下也能用：桥接接口沿用宿主的 Host 围栏，`--trusted-host` 与 `--public-url` 声明的地址会放行（#84）。
 
 <img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/ui-apikeys.png" alt="全局回退优先级与每引擎 API key" width="100%" />
 <sub>▲ 全局回退优先级：每行一个引擎，右侧填该引擎的 API key（已配置会脱敏显示）</sub>
@@ -207,6 +207,8 @@
 
 ### 安装
 
+需要 **DSH 0.2.1-rc.2 或更新的 0.2.x**；更早的 0.1.x 宿主不满足 `engines.dsh`，插件管理器会拒绝安装。
+
 ```sh
 git clone https://github.com/DDDMUC/dsh-free-search.git
 dsh plugin --profile web add /path/to/dsh-free-search
@@ -268,7 +270,7 @@ DSH 0.2.1 设置 → 网页搜索 → **DeepSeek 搜索 API** 开关会和本插
 
 #### 网页设置（推荐）
 
-安装后打开配置页（DSH 0.1.7-rc.1+）：
+安装后打开配置页（DSH 0.2.1-rc.2+）：
 
 - 左侧 **插件** 页 → **已安装** 分组 → `free-search` → 点击组件行 `web-search-free`（行内"配置"入口）
 
@@ -367,7 +369,7 @@ DSH 0.2.1 设置 → 网页搜索 → **DeepSeek 搜索 API** 开关会和本插
 
 #### 配置文件
 
-DSH 0.1.7-rc.1 起，配置跟随 profile 的插件条目保存：设置页与 `/free-search-engine` 都会写入当前 profile 的 `cordis.patch.yml` 中 `web-search-free`（`dsh-free-search`）条目的 `config`。
+从 DSH 0.1.7-rc.1 起（当前版本要求 0.2.1-rc.2+），配置跟随 profile 的插件条目保存：设置页与 `/free-search-engine` 都会写入当前 profile 的 `cordis.patch.yml` 中 `web-search-free`（`dsh-free-search`）条目的 `config`。
 
 旧版 `~/.dsh/settings.yaml` 的 `free-search:` 段**不会被 DSH 核心自动导入**（核心的 `importLegacyDocument` 只为 `ui-developer-tools` / `ui-onboarding` / `shell` 三个段提供了映射），原文件在导入其它段后会被改名为 `settings.yaml.imported`，该段的值只留在那里。插件会在启动时检测 `settings.yaml.imported`（或仍存在的 `settings.yaml`）中的 `free-search:` 段，把可识别的字段**一次性补种**进当前 profile 的条目 `config`（写一次后不再重复，可在启动日志看到 `free-search: migrated N field(s)…`）。如果你想手动处理，也可以照着 `settings.yaml.imported` 里的值在插件页行配置中填一遍。
 
@@ -742,7 +744,7 @@ This plugin solves exactly that: multiple free engines plus automatic fallback, 
 
 #### Settings and rail
 
-- **Web Settings UI** — Engine switching, API key configuration (keys masked as "configured" in the UI), and a Chinese/English toggle; the entry is the component-row config (`plugins.row.config`) on the sidebar Plugins page (DSH 0.1.7-rc.1+). Remote access (VPS, reverse proxy, custom domain) works too: the bridge reuses the host's own Host fence, so addresses declared with `--trusted-host` or `--public-url` are accepted (#84).
+- **Web Settings UI** — Engine switching, API key configuration (keys masked as "configured" in the UI), and a Chinese/English toggle; the entry is the component-row config (`plugins.row.config`) on the sidebar Plugins page (DSH 0.2.1-rc.2+). Remote access (VPS, reverse proxy, custom domain) works too: the bridge reuses the host's own Host fence, so addresses declared with `--trusted-host` or `--public-url` are accepted (#84).
 
 <img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/ui-apikeys.png" alt="Global fallback priority and per-engine API keys" width="100%" />
 <sub>▲ Global fallback priority: one engine per row, its API key on the right (configured keys are masked)</sub>
@@ -858,6 +860,8 @@ Rule of thumb for a default pool: **① as the floor + ③ as the workhorse**; �
 
 ### Installation
 
+Requires **DSH 0.2.1-rc.2 or a newer 0.2.x**; older 0.1.x hosts do not satisfy `engines.dsh` and the plugin manager will refuse the install.
+
 ```sh
 git clone https://github.com/DDDMUC/dsh-free-search.git
 dsh plugin --profile web add /path/to/dsh-free-search
@@ -919,7 +923,7 @@ This plugin intentionally specifies `@deepseek-ai/dsh-settings` and `@deepseek-a
 
 #### Web Settings (Recommended)
 
-After installation, open the config page (DSH 0.1.7-rc.1+):
+After installation, open the config page (DSH 0.2.1-rc.2+):
 
 - Sidebar **Plugins** page → **Installed** group → `free-search` → click the `web-search-free` component row (the row's "configure" entry)
 
@@ -1018,7 +1022,7 @@ If you deliberately pinned `fetchProvider: http` (you only want the built-in fet
 
 #### Configuration File
 
-Since DSH 0.1.7-rc.1 the configuration is stored with the profile's plugin entry: the settings page and `/free-search-engine` both write the `config` of the `web-search-free` (`dsh-free-search`) entry in the active profile's `cordis.patch.yml`.
+Since DSH 0.1.7-rc.1 (the current release line requires 0.2.1-rc.2+) the configuration is stored with the profile's plugin entry: the settings page and `/free-search-engine` both write the `config` of the `web-search-free` (`dsh-free-search`) entry in the active profile's `cordis.patch.yml`.
 
 The old `free-search:` section of `~/.dsh/settings.yaml` is **not** imported by the DSH core (`importLegacyDocument` only maps `ui-developer-tools` / `ui-onboarding` / `shell`); the file is renamed to `settings.yaml.imported` after the other sections are imported, and the section's values stay there. The plugin detects that section in `settings.yaml.imported` (or in a still-present `settings.yaml`) at startup and seeds the recognized fields into this entry's `config` **once** (watch for `free-search: migrated N field(s)…` in the startup log). You can also migrate manually by copying the values from `settings.yaml.imported` into the plugin row config.
 
