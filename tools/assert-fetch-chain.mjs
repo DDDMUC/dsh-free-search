@@ -17,6 +17,8 @@ const keys = { EXA_API_KEY: "k", FIRECRAWL_API_KEY: "k", CRAWL4AI_API_KEY: "k" }
 const provider = createFetchProvider({
   resolveApiKey: async (env) => keys[env],
   logger: { info() {}, warn() {}, error() {}, debug() {} },
+  // Exercise the tier order offline: the real guard rejects 127.0.0.1 by design.
+  validateUrl: async () => {},
 });
 
 section("A. 契约");
