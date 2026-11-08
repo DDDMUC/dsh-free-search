@@ -20,7 +20,7 @@ check("the engine modules exist and are imported by the plugin", () => {
     "shared.js",
     "ddg.js", "ddg-lite.js", "bing.js", "searxng.js", "degoog.js", "anysearch.js",
     "exa.js", "tavily.js", "firecrawl.js", "parallel.js", "keenable.js", "perplexity.js",
-    "deepseek-official.js", "deepseek-tools.js", "serpbase.js", "serply.js", "outcrawl.js", "you.js",
+    "deepseek-official.js", "deepseek-tools.js", "serpbase.js", "serply.js", "outcrawl.js", "google.js", "you.js",
     "tinyfish.js", "jina.js", "baidu.js", "kimi.js", "aliyun.js", "doubao.js",
     "zhihu_shared.js", "zhihu_global.js", "zhihu_site.js",
     "openai.js", "gemini.js", "claude.js",
@@ -49,7 +49,7 @@ check("the settings client lists exactly the server engine ids", () => {
 });
 
 check("the catalog covers every wired engine", () => {
-  assert.equal(meta.ALL_ENGINES.length, 35);
+  assert.equal(meta.ALL_ENGINES.length, 36);
   assert.equal(meta.FREE_ENGINES.length, 6);
   assert.deepEqual(meta.EXPLICIT_ONLY_ENGINES, ["openai", "gemini", "claude"]);
   assert.equal(new Set(meta.ALL_ENGINES).size, meta.ALL_ENGINES.length);
