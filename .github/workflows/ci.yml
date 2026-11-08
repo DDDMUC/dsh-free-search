@@ -22,15 +22,6 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: Run offline assertions
-        run: |
-          fail=0
-          count=0
-          for file in tools/assert-*.mjs; do
-            count=$((count + 1))
-            echo "=== $file"
-            node "$file" || fail=1
-          done
-          echo "ran $count assertion scripts"
-          exit $fail
+        run: npm test
       - name: Packaging gate
         run: npm pack --dry-run

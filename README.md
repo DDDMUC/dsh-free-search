@@ -585,7 +585,7 @@ Search engine test:
 
 #### 离线自检断言（tools/）
 
-仓库自带 **50 个**零依赖断言脚本（合计 **796 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑：
+仓库自带 **50 个**零依赖断言脚本（合计 **797 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -1243,7 +1243,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Fifty** zero-dependency assertion scripts ship with the repo (**796 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20:
+**Fifty** zero-dependency assertion scripts ship with the repo (**797 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
 
 | Script | Covers | Run (count) |
 |---|---|---|

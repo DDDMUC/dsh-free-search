@@ -17,8 +17,15 @@ const check = (name, fn) => {
 check("CI runs every assertion script on the supported Node lines", () => {
   const workflow = fs.readFileSync(new URL(".github/workflows/ci.yml", root), "utf8");
   assert.match(workflow, /node: \[20, 22, 24\]/);
-  assert.match(workflow, /tools\/assert-\*\.mjs/);
+  assert.match(workflow, /npm test/);
   assert.match(workflow, /npm pack --dry-run/);
+});
+
+check("npm test runs the whole offline suite", () => {
+  const pkg = JSON.parse(fs.readFileSync(new URL("package.json", root), "utf8"));
+  assert.equal(pkg.scripts?.test, "node tools/run-assertions.mjs");
+  const runner = fs.readFileSync(new URL("tools/run-assertions.mjs", root), "utf8");
+  assert.match(runner, /assert-.*\.mjs/);
 });
 
 check("the release script bumps, verifies and can publish", () => {
