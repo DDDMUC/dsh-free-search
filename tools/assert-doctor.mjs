@@ -24,7 +24,7 @@ const report = buildDoctorReport({
   toolsKnown: ["free_search_test", "domain_search"],
   now: NOW,
   engines: [
-    { id: "bing", disabled: false, credential: { required: false, configured: true, envs: [] }, cooling: null },
+    { id: "bing", disabled: false, credential: { required: false, configured: true, envs: [] }, cooling: null, stats: { calls: 4, ok: 3, empty: 1, fail: 0, avgMs: 250, lastErrorClass: "" } },
     { id: "exa", disabled: false, credential: { required: true, configured: true, envs: ["EXA_API_KEY"] }, cooling: null },
     { id: "tavily", disabled: false, credential: { required: true, configured: false, envs: ["TAVILY_API_KEY"] }, cooling: null },
     { id: "parallel", disabled: false, credential: { required: false, configured: true, envs: [] }, cooling: { remainingMs: 12 * 60_000, cls: "quota", reason: "quota exceeded" } },
@@ -49,6 +49,7 @@ check("the header names the version, node, home and the resolved default", () =>
 
 check("each engine gets a mark and a reason", () => {
   assert.match(report, /^  \* bing +ready$/m);
+  assert.match(report, /calls 4 · ok 3 · empty 1 · fail 0 · avg 250ms/);
   assert.match(report, /^  \* exa +key ok \(EXA_API_KEY\)$/m);
   assert.match(report, /^ +tavily +needs TAVILY_API_KEY$/m);
   assert.match(report, /^ +parallel +cooling 12m \[quota\]$/m);
