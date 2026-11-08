@@ -37,6 +37,18 @@ const run = (command, commandArgs, options = {}) => {
 
 const git = (...commandArgs) => run("git", commandArgs);
 
+const gitRetry = (...commandArgs) => {
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      run("git", commandArgs);
+      return;
+    } catch (error) {
+      if (attempt === 3) throw error;
+      console.warn(`git ${commandArgs.join(" ")} failed (attempt ${attempt}/3), retrying...`);
+    }
+  }
+};
+
 const status = execFileSync("git", ["status", "--porcelain"], { cwd: root }).toString("utf8");
 const dirtyTracked = status
   .split(/\r?\n/)
@@ -102,8 +114,8 @@ if (!publish) {
 }
 
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
-git("push", "origin", "master");
-git("push", "origin", tag);
+gitRetry("push", "origin", "master");
+gitRetry("push", "origin", tag);
 run(npm, ["publish", "--registry", "https://registry.npmjs.org"]);
 
 console.log("\n== GitHub release");
