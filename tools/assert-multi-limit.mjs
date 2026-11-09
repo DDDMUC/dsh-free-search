@@ -55,7 +55,13 @@ check("the built-in prompt states the configured ceiling", () => {
 check("the server uses the helper and exposes the setting", () => {
   assert.match(index, /const limit = multiResultLimit\(maxResults, current\(\)\.multiMaxResults\);/);
   assert.match(index, /multiMaxResults: z\.number\(\)\.default\(20\)\.volatile\(\)/);
-  assert.match(index, /maximum: MULTI_RESULTS_MAX/);
+  // The ceiling used to be pinned here as `maximum: MULTI_RESULTS_MAX` on the
+  // maxResults schema. The host's value schema DSL refuses `minimum`/`maximum`
+  // on a scalar node and then declines to register the whole tool, so the bound
+  // moved into multiResultLimit() and the range is stated in the description.
+  // Assert that split instead of the removed keyword.
+  assert.doesNotMatch(index, /\bmaximum:\s*MULTI_RESULTS_MAX/);
+  assert.match(index, /limit: normalizeMultiMaxResults\(current\(\)\.multiMaxResults\)/);
 });
 
 check("the settings UI edits and saves the ceiling", () => {
