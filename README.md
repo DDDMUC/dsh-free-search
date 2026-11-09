@@ -48,7 +48,7 @@
 
 - **统一引擎回退** —— 任何引擎失败（付费/免费，缺 key/401/限流/网络）自动轮流尝试下一个引擎：首选引擎 → 其他引擎（exa/tavily/keenable/firecrawl/parallel/you 无 key 也会尝试，因为它们自带 keyless 免费额度）→ 剩余免费引擎，搜索永不直接失败；结果顶部注明实际生效的引擎（如 `Note: perplexity unavailable or failed, using exa.`）；失败按类别处理：额度/鉴权失败 → 本会话冷却该引擎，反爬 → 短退避，超时/5xx/限流 → 同引擎重试一次，解析失败/0 结果 → 不冷却（详见下文「失败分类与引擎冷却」）。
 - **多 key 轮换** —— 任何 key 字段（或对应环境变量）都可以用逗号 / 分号 / 换行分隔多把 key；平时按请求轮流使用（round-robin，避免单 key 撞 QPS/RPM 风控），遇到 401/402/429（鉴权失败、额度耗尽、限流）先轮换同一引擎的下一把，再走引擎回退；`multi` 模式同样生效（#96）。
-- **按 key 冷却与诊断** —— 429 与额度错误按 key 分别冷却，同一引擎的其他 key 不受牵连；冷却状态写入磁盘，重启后仍在；失败信息和日志里的 key 一律打码；设置页底部的「诊断」按钮列出每个引擎当前为什么不可用、冷却还剩多久，以及本次进程内的调用次数、成功/空/失败和平均耗时；同一引擎并发超过 2 会排队（HTML SERP 为 1），避免免费引擎被同时打爆。
+- **按 key 冷却与诊断** —— 429 与额度错误按 key 分别冷却，同一引擎的其他 key 不受牵连；冷却状态写入磁盘，重启后仍在；失败信息和日志里的 key 一律打码；设置页底部的「诊断」按钮列出每个引擎当前为什么不可用、冷却还剩多久，以及本次进程内的调用次数、成功/空/失败和平均耗时；同一引擎并发超过 2 会排队（HTML SERP 为 1），避免免费引擎被同时打爆；诊断还会标注当前 web search/fetch provider，被其他插件接管时给出互斥警告。
 - **自带更新** —— 卡片底部显示当前版本和「检查更新」；npm 安装的版本可一键升级到 latest，本地 link 开发模式改为跳转 npm 页面并提示 `git pull`。
 - **引擎测试** —— `free_search_test` 工具让 agent 一键测试所有引擎；设置页也有「测试引擎」按钮（直测当前引擎，不走回退链，付费引擎无 key 会明确报错）。
 - **截断安全** —— 标题和摘要按码点截断，搜索结果、工具输出和 `web_fetch` 正文在离开插件前统一清除孤立代理；含 emoji 的结果不会再让会话历史出现无法序列化的字符（#108）。
@@ -58,7 +58,8 @@
 
 #### Multi 与语言池
 
-- **Multi 模式** —— 可把搜索引擎设为 `Multi Search`：`web_search` 按查询语言并发**对应语言池的全部**已启用引擎（不再是前 3 个；中文/英文池可在设置页编辑，每池最低 2 个引擎）、按 URL 合并去重（同站判定用 **eTLD+1**）、跨源命中的结果优先；设置页有 **Fast / Balanced / Deep** 三档强度，也可手填并发上限与目标成功源数；整轮检索共享 **30 秒总预算**，到点返回已有结果；合并结果的条数上限可在设置页调整（对应 `multiMaxResults`，默认 20，最大 100，单次 `maxResults` 只能要得更少）。代价是成倍消耗额度；multi 失败会自动退回单引擎回退链。
+- **Multi 模式** —— 可把搜索引擎设为 `Multi Search`：`web_search` 按查询语言并发**对应语言池的全部**已启用引擎（不再是前 3 个；中文/英文池可在设置页编辑，每池最低 2 个引擎）、按 URL 合并去重（同站判定用 **eTLD+1**）、跨源命中的结果优先；设置页有 **Fast / Balanced / Deep** 三档强度，也可手填并发上限与目标成功源数；整轮检索共享 **30 秒总预算**，到点返回已有结果；合并结果的条数上限可在设置页调整（对应 `multiMaxResults`，默认 20，最大 100，单次 `maxResults` 只能要得更少）。合并结果会用 MinHash 去掉近重复来源。代价是成倍消耗额度；multi 失败会自动退回单引擎回退链。
+- **按意图路由** —— Auto 在未自定义回退顺序时，按查询领域（金融 / 学术 / 代码 / 新闻 / 购物）重排当前语言池；只调整已有引擎的先后，不新增引擎、不改回退集合。
 
 <img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/ui-performance.png" alt="性能：缓存与 Multi 档位" width="100%" />
 <sub>▲ 性能：结果缓存时长与 Multi 的 Fast / Balanced / Deep 档位</sub>
@@ -84,7 +85,7 @@
 - **平台搜索（platform_search）** —— 搜 GitHub / V2EX / B站 / Reddit / Hacker News / Stack Overflow / 维基百科 / npm / YouTube / Vimeo / 掘金 / 豆瓣 / Qiita（公开 API 或免 key 抓取，零依赖）；X (Twitter) 经本地 Grok Build CLI（需 SuperGrok / X Premium 登录）。
 - **垂直领域直查（domain_search）** —— 41 个免 key 垂直源直查：包/版本（PyPI、crates、GitHub releases、endoflife…）、学术（arXiv、Crossref、OpenAlex、Semantic Scholar、PubMed、dblp、Zenodo…）、安全（NVD、OSV、CISA KEV）、金融（SEC EDGAR、IMF、World Bank、CFETS、Yahoo Finance、CoinGecko…）、法律（US Federal Register、US CourtListener、openlegaldata、UK legislation）、新闻（Google News、GDELT）等。
 - **视频搜索（video_search）** —— 跨站找视频：Bing Videos + DuckDuckGo Videos（免 key，失败互相回退），返回视频链接、标题与来源/时长等元信息。
-- **一次调用完成研究（research）** —— 多引擎并发搜索 → 候选重排 → 分层抓取正文 → 段落选窗 → 带出处的 Markdown 证据包；模型组件（重排/嵌入/决策模型）全部可选，缺失或失败时静默回退规则路径。
+- **一次调用完成研究（research）** —— 多引擎并发搜索 → 候选重排 → 分层抓取正文 → 段落选窗 → 带出处的 Markdown 证据包；模型组件（重排/嵌入/决策模型）全部可选，缺失或失败时静默回退规则路径；输出附带证据质量闸门（high / medium / low 与结论上限），证据不足时明确提示先核验再下结论。
 - **检索正文缓存（cache_search）** —— 全文检索 `research` 抓过的正文（`node:sqlite` 持久缓存，存储 7 天；`node:sqlite` 不可用时自动降级为 no-op，免 flag 需 ≥ 22.13，22.5–22.12 需 `--experimental-sqlite`）。
 - **干净集成** —— 实现官方 `WebSearchProvider` seam 接口，与官方插件共存。
 - **时间过滤** —— `advanced_search` 工具支持 `timeRange`：固定档、自定义相对值、绝对日期三种形式（详见下方逻辑说明）。
@@ -585,7 +586,7 @@ Search engine test:
 
 #### 离线自检断言（tools/）
 
-仓库自带 **51 个**零依赖断言脚本（合计 **805 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
+仓库自带 **55 个**零依赖断言脚本（合计 **827 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -598,6 +599,9 @@ Search engine test:
 | `assert-maintenance.mjs` | 维护面：CI 在 Node 20/22/24 跑全部断言并过打包闸门、发布脚本会 bump / 校验 / 打 tag / 可发布、恢复官方 provider 的桥接与设置页按钮 | `node tools/assert-maintenance.mjs`（4） |
 | `assert-engine-modules.mjs` | 引擎分层：实现文件存在且被 index 引用、引擎函数已迁出 index、设置页引擎 id 与服务端清单一致、清单覆盖 36 个引擎且免费/按次标记正确、index 不引用引擎私有名 | `node tools/assert-engine-modules.mjs`（6） |
 | `assert-bing-relevance.mjs` | Bing 相关性（#112）：单字中文 token 被剔除、无关替代 SERP 被拒、真正相关的结果通过、只命中通用引擎名的整批被拒、单一 token 覆盖一半时放行、单字/纯数字查询的显式行为 | `node tools/assert-bing-relevance.mjs`（6） |
+| `assert-quality.mjs` | 研究证据闸门：8 源 / 3 域 / 3 正文 / 2 日期为 high，3 源 / 2 域 / 1 正文为 medium，单源与失败注记为 low，空包为 low，research 的 schema/输出/brief 接线 | `node tools/assert-quality.mjs`（6） |
+| `assert-dedupe.mjs` | 近重复去重：MinHash 同文本同签名、同 URL 去重、跨站转载去重、不同文章保留且顺序不变、阈值可调、provider 与 multi 两条路径接线 | `node tools/assert-dedupe.mjs`（6） |
+| `assert-intent-routing.mjs` | 意图路由：五类领域与 general 分类、偏好重排稳定、Auto 头部按领域、自定义回退顺序不被重排、时间过滤仍生效、接线 | `node tools/assert-intent-routing.mjs`（6） |
 | `assert-result-ranking.mjs` | 合并排序：**eTLD+1 同域判定** / 域名轮转 / `seenIn` 降为末位 / 时效仅带时间过滤时生效 | `node tools/assert-result-ranking.mjs`（31） |
 | `assert-url-norm.mjs` | URL 规范化：只剔已审计的 tracking 参数，保留可能区分资源的参数 | `node tools/assert-url-norm.mjs`（72） |
 | `assert-prompt-contract.mjs` | 系统提示词契约：**检索≠抓取**、不可信边界、模型内置搜索只在显式选中时运行 | `node tools/assert-prompt-contract.mjs`（9） |
@@ -705,7 +709,7 @@ This plugin solves exactly that: multiple free engines plus automatic fallback, 
 
 - **Unified Engine Fallback** — Any engine failure (paid or free, missing key, 401, rate limit, network error) automatically tries the next engine: the configured engine first, then other engines (exa/tavily/keenable/firecrawl/parallel/you are tried even without a key because they have built-in keyless quota), then the remaining free engines (Bing/AnySearch etc.) — with a note attached to the results naming the engine that actually served them (e.g. `Note: perplexity unavailable or failed, using exa.`). Failures are classified: quota/auth failures cool the engine down for the session, anti-bot walls back off briefly, timeout/5xx/rate-limit failures retry the same engine once, and parse errors / 0 results are reported without cooling it down. Search never fails outright.
 - **Multi-key rotation** — Any key field (or its env var) accepts several keys separated by commas, semicolons or newlines. Keys are used round-robin per request, and on 401/402/429 the same engine retries with the next key before the engine-level fallback runs. This also applies inside `multi` mode (#96).
-- **Per-key cooldowns and diagnostics** — a 429 or quota error cools the key that hit it, not every other key of the same engine; the state is written to disk and survives a restart; keys are masked in failure text and logs; the Diagnose button at the bottom of the settings page lists why each engine is currently unavailable, how long its cooldown has left, and the in-process call count, success/empty/failure split and average latency; concurrent calls to one engine queue beyond 2 (1 for HTML SERP), so a free engine is not hammered in the same second.
+- **Per-key cooldowns and diagnostics** — a 429 or quota error cools the key that hit it, not every other key of the same engine; the state is written to disk and survives a restart; keys are masked in failure text and logs; the Diagnose button at the bottom of the settings page lists why each engine is currently unavailable, how long its cooldown has left, and the in-process call count, success/empty/failure split and average latency; concurrent calls to one engine queue beyond 2 (1 for HTML SERP), so a free engine is not hammered in the same second; the doctor also reports the active web search/fetch provider and warns when another plugin owns it (providers are mutually exclusive).
 - **Built-in updater** — the card footer shows the version and a Check update button; npm installs upgrade to latest in one click, while a local link install links to the npm page and points at git pull instead.
 - **Engine Testing** — `free_search_test` for the agent to check all engines in one call; the settings UI also has a "Test engine" button that tests the selected engine directly (no fallback chain; paid engines without a key report an explicit error).
 - **Truncation safety** — titles and snippets are cut by code point, and search results, tool output and web_fetch bodies are stripped of lone surrogates before leaving the plugin; an emoji can no longer make history unserializable (#108).
@@ -715,7 +719,8 @@ This plugin solves exactly that: multiple free engines plus automatic fallback, 
 
 #### Multi and language pools
 
-- **Multi mode** — pick `Multi Search` as the engine: web_search queries **every enabled engine of the query's language pool** concurrently (no longer top 3; zh/en pools editable in the settings UI, minimum 2 engines each), merges/deduplicates URLs (same-site detection via **eTLD+1**) and prioritizes cross-source hits; the settings UI offers **Fast / Balanced / Deep** presets or your own cap and target numbers; the whole run shares one **30-second budget** and returns whatever it already has when time is up; the final unique-result ceiling is configurable in Settings (`multiMaxResults`, default 20, max 100, while a per-call `maxResults` can only ask for fewer). This costs more quota; a failed multi run automatically falls back to the single-engine chain.
+- **Multi mode** — pick `Multi Search` as the engine: web_search queries **every enabled engine of the query's language pool** concurrently (no longer top 3; zh/en pools editable in the settings UI, minimum 2 engines each), merges/deduplicates URLs (same-site detection via **eTLD+1**) and prioritizes cross-source hits; the settings UI offers **Fast / Balanced / Deep** presets or your own cap and target numbers; the whole run shares one **30-second budget** and returns whatever it already has when time is up; the final unique-result ceiling is configurable in Settings (`multiMaxResults`, default 20, max 100, while a per-call `maxResults` can only ask for fewer). Merged results are de-duplicated with MinHash. This costs more quota; a failed multi run automatically falls back to the single-engine chain.
+- **Intent routing** — when no custom fallback order is set, Auto reorders the current language pool by query domain (finance / academic / code / news / shopping); it only changes the order of engines already selected, never adds engines or changes the fallback set.
 
 <img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/ui-performance.png" alt="Performance: cache and Multi presets" width="100%" />
 <sub>▲ Performance: result cache TTL and the Fast / Balanced / Deep Multi presets</sub>
@@ -741,7 +746,7 @@ This plugin solves exactly that: multiple free engines plus automatic fallback, 
 - **Platform Search (`platform_search`)** — Search GitHub / V2EX / Bilibili / Reddit / Hacker News / Stack Overflow / Wikipedia / npm / YouTube / Vimeo / Juejin / Douban / Qiita (public APIs or keyless scraping, zero extra dependencies); X (Twitter) goes through the local Grok Build CLI (SuperGrok / X Premium sign-in).
 - **Vertical Lookups (`domain_search`)** — Direct lookup in 41 keyless vertical sources: packages/versions (PyPI, crates, GitHub releases, endoflife…), academia (arXiv, Crossref, OpenAlex, Semantic Scholar, PubMed, dblp, Zenodo…), security (NVD, OSV, CISA KEV), finance (SEC EDGAR, IMF, World Bank, CFETS, Yahoo Finance, CoinGecko…), law (US Federal Register, US CourtListener, openlegaldata, UK legislation), news (Google News, GDELT) and more.
 - **Video Search (`video_search`)** — Find videos across the web via Bing Videos + DuckDuckGo Videos (keyless, mutual fallback), returning video links with titles and publisher/duration metadata.
-- **One-Call Research (`research`)** — Concurrent multi-engine search → candidate rerank → tiered body fetch → window selection → an evidence pack with provenance as Markdown; every model component (rerank / embedding / decision model) is optional and silently falls back to the rule path when missing or failing.
+- **One-Call Research (`research`)** — Concurrent multi-engine search → candidate rerank → tiered body fetch → window selection → an evidence pack with provenance as Markdown; every model component (rerank / embedding / decision model) is optional and silently falls back to the rule path when missing or failing; the output carries an evidence quality gate (high / medium / low with a conclusion cap) and says so when the evidence is too thin.
 - **Search Fetched Bodies (`cache_search`)** — Full-text search over the bodies `research` already fetched (`node:sqlite` persistent cache, 7-day retention; degrades to a no-op whenever `node:sqlite` is unavailable — unflagged from 22.13, while 22.5–22.12 needs `--experimental-sqlite`).
 - **Clean Integration** — Implements the official `WebSearchProvider` seam interface, coexisting seamlessly with official plugins.
 - **Time Filtering** — The `advanced_search` tool supports `timeRange`: fixed tiers, custom relative values, or an absolute date (details below).
@@ -1244,7 +1249,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Fifty-one** zero-dependency assertion scripts ship with the repo (**805 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
+**Fifty-five** zero-dependency assertion scripts ship with the repo (**827 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
 
 | Script | Covers | Run (count) |
 |---|---|---|
@@ -1257,6 +1262,9 @@ Restart `dsh web` after switching to apply changes.
 | `assert-maintenance.mjs` | Maintenance surface: CI runs every assertion on Node 20/22/24 plus the packaging gate, the release script bumps / verifies / tags / can publish, and the restore-official-provider bridge and settings button are wired | `node tools/assert-maintenance.mjs` (4) |
 | `assert-engine-modules.mjs` | Engine layout: module files exist and are imported, implementations have left index.js, the client engine ids match the server catalog, the catalog covers 36 engines with the right free/explicit flags, and index never reads an engine-private name | `node tools/assert-engine-modules.mjs` (6) |
 | `assert-bing-relevance.mjs` | Bing relevance (#112): single-character CJK tokens removed, an unrelated substituted SERP rejected, genuinely relevant results accepted, a batch matching only a generic engine name rejected, one distinctive token covering half the query accepted, and explicit single-character/numeric behaviour | `node tools/assert-bing-relevance.mjs` (6) |
+| `assert-quality.mjs` | Research evidence gate: 8 sources / 3 domains / 3 bodies / 2 dates is high, 3 / 2 / 1 is medium, a single source or a degraded note is low, an empty package is low, and research wires the gate into schema, output and brief | `node tools/assert-quality.mjs` (6) |
+| `assert-dedupe.mjs` | Near-duplicate removal: identical text shares a MinHash signature, exact URLs and cross-site copies are dropped, different articles survive in order, the threshold is configurable, and both the provider and multi paths run it | `node tools/assert-dedupe.mjs` (6) |
+| `assert-intent-routing.mjs` | Intent routing: the five domains plus general, stable preference reordering, Auto head follows the domain, a custom fallback order is never reordered, time filtering still applies, and the wiring | `node tools/assert-intent-routing.mjs` (6) |
 | `assert-result-ranking.mjs` | merged ranking: **eTLD+1 same-site detection** / domain round-robin / `seenIn` demoted / freshness only under a time filter | `node tools/assert-result-ranking.mjs` (31) |
 | `assert-url-norm.mjs` | URL normalization: strips only audited tracking params, keeps params that may identify different resources | `node tools/assert-url-norm.mjs` (72) |
 | `assert-prompt-contract.mjs` | system-prompt contract: **search ≠ fetch**, untrusted-data boundary, model engines only when explicitly selected | `node tools/assert-prompt-contract.mjs` (9) |
