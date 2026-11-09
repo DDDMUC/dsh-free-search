@@ -55,4 +55,33 @@ check("the catalog covers every wired engine", () => {
   assert.equal(new Set(meta.ALL_ENGINES).size, meta.ALL_ENGINES.length);
 });
 
+check("index never touches engine-private names", () => {
+  const declared = new Set();
+  for (const m of index.matchAll(/^(?:export )?(?:async )?(?:const|let|function|class) ([A-Za-z0-9_$]+)/gm)) declared.add(m[1]);
+  for (const m of index.matchAll(/import \{([^}]+)\} from/gm)) {
+    for (const name of m[1].split(",")) declared.add(name.trim());
+  }
+  for (const m of index.matchAll(/export \{([^}]+)\} from/gm)) {
+    for (const name of m[1].split(",")) declared.add(name.trim());
+  }
+  const dir = new URL("lib/engines/", root);
+  const leaked = [];
+  for (const file of fs.readdirSync(dir).filter((name) => name.endsWith(".js"))) {
+    const source = fs.readFileSync(new URL(file, dir), "utf8");
+    for (const m of source.matchAll(/^(?:export )?(?:async )?(?:const|let|function|class) ([A-Za-z0-9_$]+)/gm)) {
+      const name = m[1];
+      if (declared.has(name)) continue;
+      if (new RegExp(`\\b${name}\\b`).test(index)) leaked.push(name);
+    }
+  }
+  assert.deepEqual(leaked, [], `index references engine-private names: ${leaked.join(", ")}`);
+});
+
+check("the AnySearch key reset stays inside its module", () => {
+  const anysearch = fs.readFileSync(new URL("lib/engines/anysearch.js", root), "utf8");
+  assert.match(anysearch, /export function resetIgnoredAnysearchKey\(\)/);
+  assert.match(index, /resetIgnoredAnysearchKey/);
+  assert.equal(/ignoredAnysearchKey\s*=/.test(index), false);
+});
+
 console.log(`OK: ${checks} engine-module checks passed`);
