@@ -93,7 +93,7 @@ check("errors are sanitized before they reach the history", () => {
 check("the truncation and exit guards are wired in the source", () => {
   assert.match(shared, /return truncateText\(cleaned, max\);/);
   assert.match(shared, /return out\.map\(sanitizeSource\);/);
-  assert.match(index, /return sanitizeSearchResult\(await provider\.searchOnce\(request, signal\)\);/);
+  assert.match(index, /const safe = sanitizeSearchResult\(await provider\.searchOnce\(request, signal\)\);/);
   assert.match(index, /throw sanitizeError\(error\);/);
   assert.match(index, /stripLoneSurrogates\(typeof text === "string"/);
   assert.match(serp, /import \{ truncateText, stripLoneSurrogates, sliceByCodePoint \} from "\.\/safe_text\.js";/);

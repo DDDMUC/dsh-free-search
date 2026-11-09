@@ -17,6 +17,8 @@ const report = buildDoctorReport({
   dshHome: "C:/home/.dsh",
   provider: "",
   effectiveProvider: "parallel",
+  searchProvider: "ddg",
+  fetchProvider: "fs-quality-fetch",
   promptLanguage: "zh",
   promptChars: 1951,
   promptInjected: true,
@@ -58,6 +60,12 @@ check("each engine gets a mark and a reason", () => {
 
 check("cooldown reasons are listed once", () => {
   assert.match(report, /cooldown reasons:\n {2}parallel: quota exceeded/);
+});
+
+check("foreign providers are reported as a warning", () => {
+  const warned = buildDoctorReport({ version: "1", nodeVersion: "24", searchProvider: "argo", fetchProvider: "other" });
+  assert.match(warned, /providers: search=argo · fetch=other/);
+  assert.match(warned, /mutually exclusive/);
 });
 
 check("a missing prompt section is called out", () => {
