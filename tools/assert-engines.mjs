@@ -276,6 +276,81 @@ assert(
   }
 }
 
+// ---------- L. specstream 注册点与请求形状 ----------
+// 与 outcrawl 同一契约：需 key 的引擎，无 key 跳过；GET /v1/web-search + Bearer，返回 data.sources[]。
+section("L. specstream 注册点");
+assert(ALL_ENGINES.includes("specstream"), "ALL_ENGINES 含 specstream");
+assert(
+  DEFAULT_FALLBACK_ORDER.indexOf("specstream") === DEFAULT_FALLBACK_ORDER.indexOf("outcrawl") + 1,
+  "回退链里 specstream 紧跟 outcrawl（不抢已有引擎的优先级）"
+);
+assert(!FREE_ENGINES.includes("specstream"), "specstream 需要 key，不得进入 FREE_ENGINES");
+assert(!TIME_ENGINES.includes("specstream"), "specstream 不接 timeRange，不进 TIME_ENGINES");
+assert(
+  !!REQUIRED_CREDENTIALS.specstream?.some((r) => r.env === "SPECSTREAM_API_KEY" && r.settings === "specstreamApiKey"),
+  "REQUIRED_CREDENTIALS 声明 SPECSTREAM_API_KEY"
+);
+{
+  const { readFileSync } = await import("node:fs");
+  const { fileURLToPath } = await import("node:url");
+  const path = await import("node:path");
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const src = readFileSync(path.join(here, "..", "lib", "index.js"), "utf8");
+  const client = readFileSync(path.join(here, "..", "lib", "client.js"), "utf8");
+  assert(/specstream: async/.test(src), "provider registry has a specstream runner");
+  assert(/case "specstream":/.test(src), "runEngineTest 的 switch 里有 specstream 分支");
+  assert(/specstreamApiKey: "SPECSTREAM_API_KEY"/.test(src), "KEY_REF_MAP 映射 specstreamApiKey");
+  assert(/specstreamApiKey: z\.string\(\)\.role\("secret"\)/.test(src), "Config 里 specstreamApiKey 为 secret");
+  assert(/\{ id: "specstream", label: "SpecStream"/.test(client), "设置页引擎列表含 SpecStream");
+  assert(/\["specstreamApiKey", specstreamKey\]/.test(client), "设置页保存 specstreamApiKey");
+}
+{
+  const { searchSpecStream } = await import("../lib/index.js");
+  const realFetch = globalThis.fetch;
+  let captured;
+  globalThis.fetch = async (url, init) => {
+    captured = { url: String(url), init };
+    return new Response(JSON.stringify({
+      data: {
+        request_id: "r1", query: "specstream test", kind: "fact", columns: [], answer: null, rows: [],
+        handoff: null, took_ms: 900, price_usd: 0.005,
+        sources: [
+          { url: "https://a.com/x", title: "A", site: "a.com", snippet: "sa", cited: true, published: "2026-10-01T08:00:00Z" },
+          { url: "", title: "no url", site: "", snippet: "", cited: false },
+          { url: "https://b.com/y", title: "B", site: "b.com", snippet: "", cited: false },
+        ],
+      },
+    }), { status: 200, headers: { "content-type": "application/json" } });
+  };
+  try {
+    const result = await searchSpecStream("specstream test", 50, "ss-test-key");
+    const sent = new URL(captured.url);
+    assert(sent.origin + sent.pathname === "https://api.specstream.ai/v1/web-search" && captured.init.method === "GET", "GET 到 api.specstream.ai/v1/web-search");
+    assert(captured.init.headers.authorization === "Bearer ss-test-key" && !captured.url.includes("ss-test-key"), "key 走 Bearer 头，不进 URL");
+    assert(sent.searchParams.get("q") === "specstream test" && sent.searchParams.get("num") === "10", "num 夹到 1..10");
+    assert(
+      JSON.stringify(result.sources) === JSON.stringify([
+        { url: "https://a.com/x", title: "A", snippet: "sa", publishedAt: "2026-10-01" },
+        { url: "https://b.com/y", title: "B" },
+      ]),
+      "data.sources 映射为 sources（含发布日期），丢弃无 url 的条目"
+    );
+    globalThis.fetch = async () => new Response('{"error":{"code":"invalid_token","message":"invalid key"}}', { status: 401 });
+    const err401 = await searchSpecStream("q", 5, "bad").catch((e) => e);
+    assert(/SpecStream API key is invalid \(HTTP 401\)/.test(err401?.message ?? ""), "401 报 key 无效（classifyFailure 归为 auth）");
+    globalThis.fetch = async () => new Response('{"error":{"code":"insufficient_balance","message":"balance is empty"}}', { status: 402 });
+    const err402 = await searchSpecStream("q", 5, "k").catch((e) => e);
+    assert(/insufficient balance \(HTTP 402\)/.test(err402?.message ?? ""), "402 保留状态码（classifyFailure 归为 quota）");
+    globalThis.fetch = async () => new Response('{"error":{"code":"capacity","message":"search is busy"}}', { status: 503, headers: { "retry-after": "5" } });
+    const err503 = await searchSpecStream("q", 5, "k").catch((e) => e);
+    assert(/SpecStream API error \(HTTP 503\): search is busy/.test(err503?.message ?? ""), "503 保留状态码与上游消息（classifyFailure 归为 transient）");
+    const errNoKey = await searchSpecStream("q", 5, "").catch((e) => e);
+    assert(/requires SPECSTREAM_API_KEY/.test(errNoKey?.message ?? ""), "无 key 直接报错，不发请求");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+}
+
 console.log("");
 if (failures.length === 0) {
   console.log(`OK: ${pass} assertions passed`);

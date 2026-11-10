@@ -97,7 +97,7 @@ await check("upstream and Response.Error failures are reported", async () => {
 
 await check("the engine is registered everywhere and stays explicit-only", async () => {
   const meta = await import("../lib/engine_meta.js");
-  assert.equal(meta.ALL_ENGINES.length, 39);
+  assert.equal(meta.ALL_ENGINES.length, 40);
   assert.equal(meta.ALL_ENGINES.includes("yuanbao"), true);
   assert.equal(meta.TIME_ENGINES.includes("yuanbao"), true);
   assert.equal(meta.DEFAULT_FALLBACK_ORDER.includes("yuanbao"), false);
