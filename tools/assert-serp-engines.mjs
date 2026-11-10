@@ -92,7 +92,7 @@ try {
 }
 if (host !== null) {
   const { ALL_ENGINES, normalizeFallbackOrder, routeEngines } = host;
-  assert(ALL_ENGINES.length === 36, `ALL_ENGINES 31 + 5 SERP = 36（实际 ${ALL_ENGINES.length}）`);
+  assert(ALL_ENGINES.length === 37, `ALL_ENGINES 32 + 5 SERP = 37（实际 ${ALL_ENGINES.length}）`);
   assert(new Set(ALL_ENGINES).size === ALL_ENGINES.length, "ALL_ENGINES 合并后无重复 id");
   assert(EXPECTED_IDS.every((id) => ALL_ENGINES.includes(id)), "家族全部并入 ALL_ENGINES");
   assert(!EXPECTED_IDS.includes("baidu"), "HTML 版百度改名为 baidu-html，不与 API 版 baidu 撞 id");
