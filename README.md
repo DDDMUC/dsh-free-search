@@ -77,7 +77,7 @@
 
 #### 抓取与工具
 
-- **网页抓取（web_fetch）** —— 让 agent 抓取网页内容（官方 `dsh-web-fetch-http` provider，纯 JS，零额外依赖），可自动接管 `web.fetchProvider` 为插件的直连 → 浏览器渲染 → exa / firecrawl → crawl4ai 质量链。T1.5 浏览器渲染可在设置页关闭，exa 与 firecrawl 的先后顺序也可切换；私网、回环和云元数据地址一律拒绝（SSRF 防护）。
+- **网页抓取（web_fetch）** —— 让 agent 抓取网页内容（官方 `dsh-web-fetch-http` provider，纯 JS，零额外依赖），可自动接管 `web.fetchProvider` 为插件的直连 → 浏览器渲染 → exa / firecrawl → crawl4ai 质量链。T1.5 浏览器渲染可在设置页关闭，exa 与 firecrawl 的先后顺序也可切换；私网、回环和云元数据地址一律拒绝（SSRF 防护）。Clash / mihomo TUN 的 fake-ip 网段（常见 198.18.0.0/15）可在「额外允许的网段」里显式放行，否则系统 DNS 返回的占位地址会被当成私网拒绝。
 
 <img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/ui-fetch.png" alt="抓取与平台：web_fetch 接管、Key 存储位置与平台搜索开关" width="100%" />
 <sub>▲ 抓取：自动接管 web_fetch、Key 存储位置与平台搜索开关</sub>
@@ -399,6 +399,7 @@ disabledTools: []           # 关掉的工具不再注册（例如 [domain_searc
 bingMarket: zh-CN           # Bing 市场；留空 = 自动（不发送 mkt）
 fetchProviderTakeover: true # false = 保留你显式 pin 的 fetchProvider: http
 browserFetch: true           # 直连失败时用系统浏览器无头渲染
+allowFakeIpCidrs: []          # 显式放行的保留网段，例如 Clash/mihomo fake-ip 的 198.18.0.0/15
 fetchPrefer: exa             # exa | firecrawl —— 两者都失败后先试哪个 keyed 抓取层
 region: cn-zh               # DuckDuckGo 区域（可选）
 searxngInstances:           # 自定义 SearXNG 实例（可选）
@@ -512,7 +513,7 @@ Search engine test:
 
 - 自动跟随重定向、解码正文（HTML 转文本）
 - 支持超时和大小限制
-- ⚠️ 注意：`web_fetch` 无 SSRF 防护，agent 理论上可访问内网地址——按需使用
+- ⚠️ 注意：`web_fetch` 默认拒绝回环、私网、链路本地和云元数据地址。若使用 Clash / mihomo TUN 的 fake-ip DNS，请把对应网段（常见 `198.18.0.0/15`）加入设置页的「额外允许的网段」，否则所有被代理域名都会被判成私网而抓取失败；只放行 fake-ip 保留段，不要放行 RFC1918。
 
 #### 平台搜索（platform_search）
 
@@ -586,7 +587,7 @@ Search engine test:
 
 #### 离线自检断言（tools/）
 
-仓库自带 **55 个**零依赖断言脚本（合计 **827 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
+仓库自带 **55 个**零依赖断言脚本（合计 **829 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -608,7 +609,7 @@ Search engine test:
 | `assert-research-degradation.mjs` | research 无 key 全降级、`node:sqlite` no-op、90s 预算隔离、缓存目录可配置、`budget.exhausted` 契约名 | `node tools/assert-research-degradation.mjs`（19） |
 | `assert-research-call-wrappers.mjs` | research 四个 `call*` 包装层的替身/底层透传（#75 回归） | `node tools/assert-research-call-wrappers.mjs`（23） |
 | `assert-fetch-chain.mjs` | `fs-quality-fetch` 四层链序、任一层命中即停、exa 失败静默降级 firecrawl、全层失败聚合报错 | `node tools/assert-fetch-chain.mjs`（8） |
-| `assert-fetch-ssrf.mjs` | 抓取 SSRF 防护：公网/私网/保留地址判定、DNS 解析到私网拒绝、localhost 与 IP 字面量拒绝、非 HTTPS 与带凭据 URL 拒绝、provider 接线与设置项 | `node tools/assert-fetch-ssrf.mjs`（6） |
+| `assert-fetch-ssrf.mjs` | 抓取 SSRF 防护：公网/私网/保留地址判定、DNS 解析到私网拒绝、localhost 与 IP 字面量拒绝、非 HTTPS 与带凭据 URL 拒绝、fake-ip 网段默认拒绝且仅按配置放行、放行后仍拒绝回环/私网、provider 接线与设置项 | `node tools/assert-fetch-ssrf.mjs`（8） |
 | `assert-google-cse.mjs` | Google Custom Search：key+ID 必填、请求参数（q/num/start/hl/safe/dateRestrict）、结果映射与发布日期、超过 10 条分页、403/429/400 错误分类、时间档映射、全链路注册 | `node tools/assert-google-cse.mjs`（6） |
 | `assert-engine-runtime.mjs` | 引擎运行时：按引擎并发上限（普通 2 / HTML SERP 1）、排队与 abort 清理、成功/空/失败/平均耗时统计、provider 与 runEngineTest 两条路径接线、诊断报告带 stats | `node tools/assert-engine-runtime.mjs`（4） |
 | `assert-single-fetch-layer.mjs` | 抓取层全库只有一份实现、依赖单向、替身键不串层 | `node tools/assert-single-fetch-layer.mjs`（22） |
@@ -738,7 +739,7 @@ This plugin solves exactly that: multiple free engines plus automatic fallback, 
 
 #### Fetch and tools
 
-- **Webpage Fetching (`web_fetch`)** — Allows the agent to read full webpage contents (official `dsh-web-fetch-http` provider, pure JS, zero extra dependencies); it can take over `web.fetchProvider` with the plugin's direct → browser render → exa / firecrawl → crawl4ai quality chain. The headless browser tier can be switched off in Settings and the exa/firecrawl order is configurable; loopback, private-network and cloud-metadata addresses are rejected (SSRF guard).
+- **Webpage Fetching (`web_fetch`)** — Allows the agent to read full webpage contents (official `dsh-web-fetch-http` provider, pure JS, zero extra dependencies); it can take over `web.fetchProvider` with the plugin's direct → browser render → exa / firecrawl → crawl4ai quality chain. The headless browser tier can be switched off in Settings and the exa/firecrawl order is configurable; loopback, private-network and cloud-metadata addresses are rejected (SSRF guard). Clash / mihomo TUN fake-ip ranges (usually 198.18.0.0/15) can be allowed explicitly under extra allowed networks, otherwise the placeholder addresses returned by system DNS are rejected as private.
 
 <img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/ui-fetch.png" alt="Fetch and platforms: web_fetch takeover, key storage and platform switches" width="100%" />
 <sub>▲ Fetch: web_fetch takeover, key storage location and platform search switches</sub>
@@ -1062,6 +1063,7 @@ disabledTools: []           # tools that are not registered at all (e.g. [domain
 bingMarket: zh-CN           # Bing market; empty = automatic (no mkt sent)
 fetchProviderTakeover: true # false = keep the fetchProvider: http you pinned yourself
 browserFetch: true           # use the system browser headless renderer when direct fetch fails
+allowFakeIpCidrs: []          # reserved ranges to allow explicitly, e.g. 198.18.0.0/15 for Clash/mihomo fake-ip
 fetchPrefer: exa             # exa | firecrawl — which keyed fetch tier to try first
 region: cn-zh               # DuckDuckGo region (optional)
 searxngInstances:           # Custom SearXNG instances (optional)
@@ -1175,7 +1177,7 @@ After searching, the agent can **read full webpage content** (e.g., *"Open the f
 
 - Automatically follows redirects and decodes HTML to plain text.
 - Supports timeout and response size limits.
-- ⚠️ Note: `web_fetch` does not have SSRF protection; the agent could theoretically access internal network addresses. Use as needed.
+- ⚠️ Note: `web_fetch` rejects loopback, private, link-local and cloud-metadata addresses by default. Under Clash / mihomo TUN fake-ip DNS, add the fake-ip range (usually `198.18.0.0/15`) to extra allowed networks in Settings, otherwise every proxied host resolves to a placeholder address and is rejected; only allow fake-ip reserved ranges, never RFC1918.
 
 #### Platform Search (`platform_search`)
 
@@ -1249,7 +1251,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Fifty-five** zero-dependency assertion scripts ship with the repo (**827 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
+**Fifty-five** zero-dependency assertion scripts ship with the repo (**829 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
 
 | Script | Covers | Run (count) |
 |---|---|---|
@@ -1271,7 +1273,7 @@ Restart `dsh web` after switching to apply changes.
 | `assert-research-degradation.mjs` | research degrades fully without keys, `node:sqlite` no-op, 90s budget isolation, configurable cache dir, `budget.exhausted` contract names | `node tools/assert-research-degradation.mjs` (19) |
 | `assert-research-call-wrappers.mjs` | the four research `call*` wrappers proxy to stubs / the real layer (#75 regression) | `node tools/assert-research-call-wrappers.mjs` (23) |
 | `assert-fetch-chain.mjs` | `fs-quality-fetch` tier ordering, stop-on-first-success, silent firecrawl degradation, aggregated all-tiers failure | `node tools/assert-fetch-chain.mjs` (8) |
-| `assert-fetch-ssrf.mjs` | Fetch SSRF guard: public/private/reserved address classification, DNS resolving to a private address rejected, localhost and IP literals rejected, non-HTTPS and credential URLs rejected, provider wiring and settings | `node tools/assert-fetch-ssrf.mjs` (6) |
+| `assert-fetch-ssrf.mjs` | Fetch SSRF guard: public/private/reserved address classification, DNS resolving to a private address rejected, localhost and IP literals rejected, non-HTTPS and credential URLs rejected, fake-ip ranges blocked by default and allowed only when configured, loopback/RFC1918 still blocked after opt-in, provider wiring and settings | `node tools/assert-fetch-ssrf.mjs` (8) |
 | `assert-google-cse.mjs` | Google Custom Search: key + ID required, request params (q/num/start/hl/safe/dateRestrict), result mapping with dates, pagination past ten results, 403/429/400 classification, time-range mapping, full registration | `node tools/assert-google-cse.mjs` (6) |
 | `assert-engine-runtime.mjs` | Engine runtime: per-engine concurrency caps (2 normally, 1 for HTML SERP), queueing with abort cleanup, ok/empty/fail/average-latency stats, wiring on both the provider and runEngineTest paths, and stats in the doctor report | `node tools/assert-engine-runtime.mjs` (4) |
 | `assert-single-fetch-layer.mjs` | exactly one fetch implementation repo-wide, one-way deps, seams owned by the right layer | `node tools/assert-single-fetch-layer.mjs` (22) |
