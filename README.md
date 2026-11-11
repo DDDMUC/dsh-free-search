@@ -522,6 +522,30 @@ Search engine test:
 - 支持超时和大小限制
 - ⚠️ 注意：`web_fetch` 默认拒绝回环、私网、链路本地和云元数据地址。若使用 Clash / mihomo TUN 的 fake-ip DNS，请把对应网段（常见 `198.18.0.0/15`）加入设置页的「额外允许的网段」，否则所有被代理域名都会被判成私网而抓取失败；只放行 fake-ip 保留段，不要放行 RFC1918。
 
+#### MCP server（stdio）
+
+同仓库带一个独立的 stdio MCP server，供 Claude Desktop、Cursor、Codex 等 MCP 客户端使用，不依赖 DSH 运行时：
+
+```bash
+npx -y -p dsh-free-search dsh-free-search-mcp
+```
+
+第一版只暴露 `web_search`（Bing / DuckDuckGo，免 key）和 `web_fetch`（直连 / 浏览器 / Exa / Firecrawl）；不暴露付费引擎、`research`、`multi_search`，也不监听端口。Claude Desktop 配置示例：
+
+```json
+{
+  "mcpServers": {
+    "dsh-free-search": {
+      "command": "npx",
+      "args": ["-y", "-p", "dsh-free-search", "dsh-free-search-mcp"],
+      "env": { "MCP_LANG": "zh", "MCP_SEARCH_ENGINE": "auto" }
+    }
+  }
+}
+```
+
+环境变量：`MCP_SEARCH_ENGINE`（auto / bing / ddg / ddg-lite）、`MCP_MAX_RESULTS`、`MCP_SAFE_SEARCH`、`MCP_LANG`、`MCP_BING_MARKET`、`MCP_BROWSER_FETCH`、`MCP_ALLOW_FAKE_IP_CIDRS`；抓取层可用 `EXA_API_KEY` / `FIRECRAWL_API_KEY`。
+
 #### 平台搜索（platform_search）
 
 让 agent 搜特定平台，如"在 GitHub 上搜 deepseek harness"、"看看 B站有什么相关视频"、"V2EX 上关于 dsh 的讨论"。`platform_search` 工具支持：
@@ -594,7 +618,7 @@ Search engine test:
 
 #### 离线自检断言（tools/）
 
-仓库自带 **57 个**零依赖断言脚本（合计 **851 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
+仓库自带 **58 个**零依赖断言脚本（合计 **857 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -617,6 +641,8 @@ Search engine test:
 | `assert-research-call-wrappers.mjs` | research 四个 `call*` 包装层的替身/底层透传（#75 回归） | `node tools/assert-research-call-wrappers.mjs`（23） |
 | `assert-fetch-chain.mjs` | `fs-quality-fetch` 四层链序、任一层命中即停、exa 失败静默降级 firecrawl、全层失败聚合报错 | `node tools/assert-fetch-chain.mjs`（8） |
 | `assert-fetch-ssrf.mjs` | 抓取 SSRF 防护：公网/私网/保留地址判定、DNS 解析到私网拒绝、localhost 与 IP 字面量拒绝、非 HTTPS 与带凭据 URL 拒绝、fake-ip 网段默认拒绝且仅按配置放行、放行后仍拒绝回环/私网、provider 接线与设置项 | `node tools/assert-fetch-ssrf.mjs`（8） |
+| `assert-mcp.mjs` | MCP stdio 面：initialize 协议协商、tools/list 的 JSON Schema、tools/call 文本结果、工具错误与 JSON-RPC 错误区分、必填参数校验、bin/files 打包 | `node tools/assert-mcp.mjs`（6） |
+| `assert-mcp.mjs` | MCP stdio surface: initialize negotiation, tools/list JSON Schema, tools/call text results, tool errors vs JSON-RPC errors, required arguments, bin/files packaging | `node tools/assert-mcp.mjs` (6) |
 | `assert-yandex.mjs` | Yandex Search：key+folder 必填、Api-Key/请求体/分组、searchType 与 period/family 映射、Base64 XML 解析与日期、错误分类、注册与显式专用 | `node tools/assert-yandex.mjs`（6） |
 | `assert-metaso.mjs` | 秘塔搜索：key 必填、请求体（q/scope/size/summary/raw/concise）、摘要与日期映射、文库数组、size 上限、无效 scope 回退、401/402/429/400 错误分类、注册与默认回退排除 | `node tools/assert-metaso.mjs`（6） |
 | `assert-google-cse.mjs` | Google Custom Search：key+ID 必填、请求参数（q/num/start/hl/safe/dateRestrict）、结果映射与发布日期、超过 10 条分页、403/429/400 错误分类、时间档映射、全链路注册 | `node tools/assert-google-cse.mjs`（6） |
@@ -1195,6 +1221,30 @@ After searching, the agent can **read full webpage content** (e.g., *"Open the f
 - Supports timeout and response size limits.
 - ⚠️ Note: `web_fetch` rejects loopback, private, link-local and cloud-metadata addresses by default. Under Clash / mihomo TUN fake-ip DNS, add the fake-ip range (usually `198.18.0.0/15`) to extra allowed networks in Settings, otherwise every proxied host resolves to a placeholder address and is rejected; only allow fake-ip reserved ranges, never RFC1918.
 
+#### MCP server (stdio)
+
+The repo also ships a standalone stdio MCP server for Claude Desktop, Cursor, Codex and other MCP clients; it does not need the DSH runtime:
+
+```bash
+npx -y -p dsh-free-search dsh-free-search-mcp
+```
+
+The first version exposes `web_search` (Bing / DuckDuckGo, no key) and `web_fetch` (direct / browser / Exa / Firecrawl). It does not expose paid engines, `research` or `multi_search`, and it does not listen on a port. Claude Desktop example:
+
+```json
+{
+  "mcpServers": {
+    "dsh-free-search": {
+      "command": "npx",
+      "args": ["-y", "-p", "dsh-free-search", "dsh-free-search-mcp"],
+      "env": { "MCP_LANG": "zh", "MCP_SEARCH_ENGINE": "auto" }
+    }
+  }
+}
+```
+
+Environment: `MCP_SEARCH_ENGINE` (auto / bing / ddg / ddg-lite), `MCP_MAX_RESULTS`, `MCP_SAFE_SEARCH`, `MCP_LANG`, `MCP_BING_MARKET`, `MCP_BROWSER_FETCH`, `MCP_ALLOW_FAKE_IP_CIDRS`; the fetch tiers can use `EXA_API_KEY` / `FIRECRAWL_API_KEY`.
+
 #### Platform Search (`platform_search`)
 
 Ask the agent to search specific platforms (e.g., *"Search GitHub for deepseek harness"*, *"Find related videos on Bilibili"*, or *"Discussions about dsh on V2EX"*). The `platform_search` tool supports:
@@ -1267,7 +1317,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Fifty-seven** zero-dependency assertion scripts ship with the repo (**851 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
+**Fifty-eight** zero-dependency assertion scripts ship with the repo (**857 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
 
 | Script | Covers | Run (count) |
 |---|---|---|
