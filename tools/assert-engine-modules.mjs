@@ -49,9 +49,9 @@ check("the settings client lists exactly the server engine ids", () => {
 });
 
 check("the catalog covers every wired engine", () => {
-  assert.equal(meta.ALL_ENGINES.length, 37);
+  assert.equal(meta.ALL_ENGINES.length, 38);
   assert.equal(meta.FREE_ENGINES.length, 6);
-  assert.deepEqual(meta.EXPLICIT_ONLY_ENGINES, ["metaso", "openai", "gemini", "claude"]);
+  assert.deepEqual(meta.EXPLICIT_ONLY_ENGINES, ["metaso", "yandex", "openai", "gemini", "claude"]);
   assert.equal(new Set(meta.ALL_ENGINES).size, meta.ALL_ENGINES.length);
 });
 

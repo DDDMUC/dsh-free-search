@@ -34,7 +34,7 @@
 #### 引擎与切换
 
 - **零成本** —— 多个免费引擎，无需 key、无需注册
-- **37 个引擎可选**：DuckDuckGo（html/lite）、Bing、SearXNG（元搜索，支持自定义实例）、AnySearch、Exa、Tavily、Keenable、Firecrawl、Parallel、Perplexity、SerpBase、Serply、Outcrawl、Google 自定义搜索（`google`，需 API key + CSE ID）、秘塔搜索（`metaso`，官方 API，按点数计费）、DeepSeek 官方、DeepSeek 原生搜索 API、You.com、百度千帆、Kimi、阿里云百炼、火山联网搜索（豆包搜索）、知乎全网/站内（`zhihu_global`/`zhihu_site`，经知乎开放平台 MCP）、Antigravity CLI 搜索（`agy`，需本机安装）、OpenAI / Gemini / Claude 模型内置搜索。默认自动回退链覆盖其中 28 个；5 个 HTML SERP 引擎默认不参与，OpenAI / Gemini / Claude 三个模型引擎和 Metaso 都只在显式点名时运行。
+- **38 个引擎可选**：DuckDuckGo（html/lite）、Bing、SearXNG（元搜索，支持自定义实例）、AnySearch、Exa、Tavily、Keenable、Firecrawl、Parallel、Perplexity、SerpBase、Serply、Outcrawl、Google 自定义搜索（`google`，需 API key + CSE ID）、秘塔搜索（`metaso`，官方 API，按点数计费）、Yandex 搜索（`yandex`，官方 API，按请求计费，需 folder ID）、DeepSeek 官方、DeepSeek 原生搜索 API、You.com、百度千帆、Kimi、阿里云百炼、火山联网搜索（豆包搜索）、知乎全网/站内（`zhihu_global`/`zhihu_site`，经知乎开放平台 MCP）、Antigravity CLI 搜索（`agy`，需本机安装）、OpenAI / Gemini / Claude 模型内置搜索。默认自动回退链覆盖其中 28 个；5 个 HTML SERP 引擎默认不参与，OpenAI / Gemini / Claude 三个模型引擎、Metaso 和 Yandex 都只在显式点名时运行。
 - **5 个 HTML 搜索页引擎（默认关闭）** —— 把传统搜索页并入同一套引擎 / 回退 / 冷却 / 设置体系：`baidu-html`（百度网页）、`so360`、`sogou`、`wechat`（微信文章）、`toutiao`。免 key、免额度，代价是抓页面：验证码/反爬按 `bot-wall` 归类并让整个家族冷却 10 分钟（整段出口 IP 都会被打标），结果也没有 API 摘要。它们默认不进 auto / 回退链 / 语言池，只在显式 `engine=` 或加入语言池时运行。
 - **引擎白名单** —— 设置页「只使用勾选的引擎」开启后，只有勾选的引擎可用，升级新增的引擎默认不启用；配置里对应 `allowedEngines`（非空时等价于把其余引擎全部禁用）。
 - **全局引擎开关与回退优先级** —— 设置页可勾选/取消引擎（取消后全局生效：普通搜索 / Auto / `advanced_search` / `multi_search` / 引擎测试都不再用它），并可用 ↑↓ 调整全局回退顺序（一键恢复默认）。
@@ -150,6 +150,7 @@
 | `outcrawl` | Outcrawl | 付费 | 需 `OUTCRAWL_API_KEY`（outcrawl.ai，每月 1,000 credits 免费额度）；网页搜索结果（标题/链接/摘要），单次最多 20 条 |
 | `google` | Google 自定义搜索 | 免费额度 | 需 `GOOGLE_CSE_API_KEY` 和 Programmable Search Engine ID（`googleCseId` / cx）；Google 官方 Custom Search JSON API，每天 100 次免费，按次计费超额；支持 `hl`、安全搜索和 `dateRestrict` 时间过滤 |
 | `metaso` | 秘塔搜索 | 付费（点数） | 需 `METASO_API_KEY`（metaso.cn/api）；官方 AI 搜索 API，按点数计费（约 0.03 元/次，新用户有体验额度）；支持网页 / 文库 / 学术三种 `scope`，返回摘要和来源；不在默认回退顺序里，配 key 后显式选用 |
+| `yandex` | Yandex 搜索 | 付费 | 需 `YANDEX_API_KEY` 和 `yandexFolderId`（AI Studio，按请求计费，需 billing account）；官方 Search API，`searchType` 支持 RU/TR/COM/KK/BE/UZ，响应为 Base64 XML；支持 day / 2 weeks / month 时间过滤；显式专用 |
 | `deepseek-official` | DeepSeek 官方 | 付费 | 需 `DEEPSEEK_API_KEY`；走 Anthropic 兼容的 `web_search` 服务端工具，每次搜索是一整个模型轮次（慢、耗 token） |
 | `deepseek-tools` | DeepSeek 原生搜索 API | 付费 | 需 `DEEPSEEK_API_KEY`（与上一档共用）；直接 `POST /v1/tools/search`，无模型参与，返回结构化 `results[]`（`title`/`url`/`summary`/`date`），同 query 实测 ~0.3s vs 上一档 ~5-6s |
 | `baidu` | 百度千帆 AI 搜索 | 额度 | 需 `BAIDU_API_KEY`（千帆 AI 搜索，每日赠 50 次，超额按量后付费）；中文全网，支持时间过滤 |
@@ -280,7 +281,7 @@ DSH 0.2.1 设置 → 网页搜索 → **DeepSeek 搜索 API** 开关会和本插
 配置页提供：
 
 - **Search engine**：下拉框切换引擎，保存即生效
-- **API keys**：为 Exa / Tavily / Keenable / Firecrawl / Parallel / Perplexity / DeepSeek / SerpBase / Serply / Outcrawl / Google CSE / Metaso / You.com 填写 key（密码框，保存后只显示"已配置"；Exa / Tavily / Keenable / Firecrawl / Parallel / You.com 不填也可免 key 使用）
+- **API keys**：为 Exa / Tavily / Keenable / Firecrawl / Parallel / Perplexity / DeepSeek / SerpBase / Serply / Outcrawl / Google CSE / Metaso / Yandex / You.com 填写 key（密码框，保存后只显示"已配置"；Exa / Tavily / Keenable / Firecrawl / Parallel / You.com 不填也可免 key 使用）
   - **推荐**：付费引擎 key 建议写入 harness 凭据中心 `~/.dsh/.credentials.yaml`（如 `DEEPSEEK_API_KEY: sk-...`，与官方 LLM provider 一致，一处管理所有 key）。插件读取优先级：凭据中心 > 设置页 > 环境变量，设置页填的 key 仅作为遗留兼容。
 - **Test engine**：直测当前引擎可用性（不走回退链，付费引擎无 key 会明确报错）
 - **Use Bing default**：把当前搜索引擎切回稳定的免费 Bing；`Discard` 只撤销尚未保存的编辑
@@ -429,6 +430,9 @@ googleCseApiKey: ...        # Google Custom Search API key
 googleCseId: "..."         # Programmable Search Engine 的 cx
 metasoApiKey: ...          # Metaso API key (metaso.cn/api)
 metasoScope: webpage       # webpage | document | scholar
+yandexApiKey: ...          # Yandex Search API key (AI Studio)
+yandexFolderId: "..."      # folder the key was created in
+yandexSearchType: auto     # auto | ru | tr | com | kk | be | uz
 deepseekApiKey: ...
 ```
 
@@ -590,7 +594,7 @@ Search engine test:
 
 #### 离线自检断言（tools/）
 
-仓库自带 **56 个**零依赖断言脚本（合计 **841 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
+仓库自带 **57 个**零依赖断言脚本（合计 **851 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -601,7 +605,7 @@ Search engine test:
 | `assert-multi-policy.mjs` | multi 执行策略：并发上限是天花板 / 目标成功源非硬下限 / 凭据资格在上限之前分流 / **Fast·Balanced·Deep 档位** | `node tools/assert-multi-policy.mjs`（146） |
 | `assert-multi-limit.mjs` | multi 结果上限（#109）：默认 20 / 硬上限 100 / 配置归一化、单次 maxResults 受上限约束、工具参数与本段提示词写明生效上限、设置页字段与保存 | `node tools/assert-multi-limit.mjs`（6） |
 | `assert-maintenance.mjs` | 维护面：CI 在 Node 20/22/24 跑全部断言并过打包闸门、发布脚本会 bump / 校验 / 打 tag / 可发布、恢复官方 provider 的桥接与设置页按钮 | `node tools/assert-maintenance.mjs`（4） |
-| `assert-engine-modules.mjs` | 引擎分层：实现文件存在且被 index 引用、引擎函数已迁出 index、设置页引擎 id 与服务端清单一致、清单覆盖 37 个引擎且免费/按次标记正确、index 不引用引擎私有名 | `node tools/assert-engine-modules.mjs`（6） |
+| `assert-engine-modules.mjs` | 引擎分层：实现文件存在且被 index 引用、引擎函数已迁出 index、设置页引擎 id 与服务端清单一致、清单覆盖 38 个引擎且免费/按次标记正确、index 不引用引擎私有名 | `node tools/assert-engine-modules.mjs`（6） |
 | `assert-bing-relevance.mjs` | Bing 相关性（#112）：单字中文 token 被剔除、无关替代 SERP 被拒、真正相关的结果通过、只命中通用引擎名的整批被拒、单一 token 覆盖一半时放行、单字/纯数字查询的显式行为 | `node tools/assert-bing-relevance.mjs`（6） |
 | `assert-quality.mjs` | 研究证据闸门：8 源 / 3 域 / 3 正文 / 2 日期为 high，3 源 / 2 域 / 1 正文为 medium，单源与失败注记为 low，空包为 low，research 的 schema/输出/brief 接线 | `node tools/assert-quality.mjs`（6） |
 | `assert-dedupe.mjs` | 近重复去重：MinHash 同文本同签名、同 URL 去重、跨站转载去重、不同文章保留且顺序不变、阈值可调、provider 与 multi 两条路径接线 | `node tools/assert-dedupe.mjs`（6） |
@@ -613,6 +617,7 @@ Search engine test:
 | `assert-research-call-wrappers.mjs` | research 四个 `call*` 包装层的替身/底层透传（#75 回归） | `node tools/assert-research-call-wrappers.mjs`（23） |
 | `assert-fetch-chain.mjs` | `fs-quality-fetch` 四层链序、任一层命中即停、exa 失败静默降级 firecrawl、全层失败聚合报错 | `node tools/assert-fetch-chain.mjs`（8） |
 | `assert-fetch-ssrf.mjs` | 抓取 SSRF 防护：公网/私网/保留地址判定、DNS 解析到私网拒绝、localhost 与 IP 字面量拒绝、非 HTTPS 与带凭据 URL 拒绝、fake-ip 网段默认拒绝且仅按配置放行、放行后仍拒绝回环/私网、provider 接线与设置项 | `node tools/assert-fetch-ssrf.mjs`（8） |
+| `assert-yandex.mjs` | Yandex Search：key+folder 必填、Api-Key/请求体/分组、searchType 与 period/family 映射、Base64 XML 解析与日期、错误分类、注册与显式专用 | `node tools/assert-yandex.mjs`（6） |
 | `assert-metaso.mjs` | 秘塔搜索：key 必填、请求体（q/scope/size/summary/raw/concise）、摘要与日期映射、文库数组、size 上限、无效 scope 回退、401/402/429/400 错误分类、注册与默认回退排除 | `node tools/assert-metaso.mjs`（6） |
 | `assert-google-cse.mjs` | Google Custom Search：key+ID 必填、请求参数（q/num/start/hl/safe/dateRestrict）、结果映射与发布日期、超过 10 条分页、403/429/400 错误分类、时间档映射、全链路注册 | `node tools/assert-google-cse.mjs`（6） |
 | `assert-engine-runtime.mjs` | 引擎运行时：按引擎并发上限（普通 2 / HTML SERP 1）、排队与 abort 清理、成功/空/失败/平均耗时统计、provider 与 runEngineTest 两条路径接线、诊断报告带 stats | `node tools/assert-engine-runtime.mjs`（4） |
@@ -700,7 +705,7 @@ This plugin solves exactly that: multiple free engines plus automatic fallback, 
 #### Engines and switching
 
 - **Zero Cost** — Multiple free engines with no API key or registration required
-- **37 engines available** — DuckDuckGo (HTML / Lite), Bing, AnySearch AI, SearXNG (meta-search with custom instances), Exa, Tavily, Keenable, Firecrawl, Parallel, Perplexity, SerpBase, Serply, Outcrawl, Google Programmable Search (`google`, needs an API key plus a CSE ID), Metaso (秘塔搜索, official API, billed per call), DeepSeek Official, DeepSeek Native Search API, You.com, Baidu Qianfan, Kimi, Aliyun Bailian, Volcano Doubao, Zhihu web-wide/site search (`zhihu_global`/`zhihu_site`, via the Zhihu open-platform MCP), Antigravity CLI search (`agy`, requires the local CLI), and the model-based OpenAI / Gemini / Claude searches. The default auto-fallback chain covers 28 of them; the 5 HTML SERP engines stay out by default and the per-call billed OpenAI / Gemini / Claude engines and Metaso run only when explicitly named.
+- **38 engines available** — DuckDuckGo (HTML / Lite), Bing, AnySearch AI, SearXNG (meta-search with custom instances), Exa, Tavily, Keenable, Firecrawl, Parallel, Perplexity, SerpBase, Serply, Outcrawl, Google Programmable Search (`google`, needs an API key plus a CSE ID), Metaso (秘塔搜索, official API, billed per call), Yandex Search (official API, billed per request, folder ID required), DeepSeek Official, DeepSeek Native Search API, You.com, Baidu Qianfan, Kimi, Aliyun Bailian, Volcano Doubao, Zhihu web-wide/site search (`zhihu_global`/`zhihu_site`, via the Zhihu open-platform MCP), Antigravity CLI search (`agy`, requires the local CLI), and the model-based OpenAI / Gemini / Claude searches. The default auto-fallback chain covers 28 of them; the 5 HTML SERP engines stay out by default and the per-call billed OpenAI / Gemini / Claude engines, Metaso and Yandex run only when explicitly named.
 - **5 HTML SERP engines (off by default)** — Traditional result pages join the same engine / fallback / cooldown / settings machinery: `baidu-html` (Baidu web), `so360`, `sogou`, `wechat` (WeChat articles) and `toutiao`. No key, no quota — the trade-off is scraping: captcha/anti-bot pages are classified as `bot-wall` and cool the whole family down for 10 minutes (the egress IP gets flagged as a whole), and results carry no API snippets. They never join auto routing, the fallback chain or the language pools; they only run when named via `engine=` or added to a pool.
 - **Engine whitelist** — turn on Use only the checked engines and only those engines stay usable; engines added by later versions stay off. It maps to `allowedEngines` in the config (a non-empty list is equivalent to disabling every other engine).
 - **Global engine enable/disable & fallback priority** — uncheck engines you never want (applies everywhere: web_search fallback, Auto routing, advanced_search, multi_search, engine tests) and reorder the global fallback chain with ↑↓ (one-click reset).
@@ -817,6 +822,7 @@ If this plugin has been helpful, a ⭐ on [GitHub](https://github.com/DDDMUC/dsh
 | `outcrawl` | Outcrawl | Paid | Requires `OUTCRAWL_API_KEY` (outcrawl.ai, free tier of 1,000 credits a month); web results with title, URL and snippet, up to 20 per search |
 | `google` | Google Programmable Search | Free quota | Requires `GOOGLE_CSE_API_KEY` and a Programmable Search Engine ID (`googleCseId` / cx); official Custom Search JSON API, 100 free queries/day then billed; supports `hl`, safe search and `dateRestrict` time filtering |
 | `metaso` | Metaso (秘塔搜索) | Paid (credits) | Requires `METASO_API_KEY` (metaso.cn/api); official AI search API billed per call (about ¥0.03/query, trial credits for new accounts); supports webpage / document / scholar scopes and returns summaries with sources; not in the default fallback order, use it explicitly after configuring a key |
+| `yandex` | Yandex Search | Paid | Requires `YANDEX_API_KEY` and `yandexFolderId` (AI Studio; billed per request to a billing account); official Search API with RU/TR/COM/KK/BE/UZ search types and Base64 XML responses; supports day / 2 weeks / month time filters; explicit-only |
 | `deepseek-official` | DeepSeek Official | Paid | Requires `DEEPSEEK_API_KEY`; uses the Anthropic-compatible `web_search` server tool, so every search is a full model turn (slow, token-billed) |
 | `deepseek-tools` | DeepSeek Native Search API | Paid | Requires `DEEPSEEK_API_KEY` (shared with the row above); calls `POST /v1/tools/search` directly, no model involved, returns structured `results[]` (`title`/`url`/`summary`/`date`) — measured ~0.3s vs ~5-6s for the row above on the same query |
 | `baidu` | Baidu Qianfan AI Search | Quota | Requires `BAIDU_API_KEY` (Qianfan AI Search, 50 free calls/day then pay-as-you-go); Chinese web-wide, supports time filtering |
@@ -948,7 +954,7 @@ After installation, open the config page (DSH 0.2.1-rc.2+):
 The config page provides:
 
 - **Search engine**: Select an engine from the dropdown; changes take effect immediately upon saving.
-- **API keys**: Enter keys for Exa / Tavily / Keenable / Firecrawl / Parallel / Perplexity / DeepSeek / Google CSE / Metaso / You.com (password fields; displayed as "configured" once saved; Exa / Tavily / Keenable / Firecrawl / Parallel / You.com work without a key too).
+- **API keys**: Enter keys for Exa / Tavily / Keenable / Firecrawl / Parallel / Perplexity / DeepSeek / Google CSE / Metaso / Yandex / You.com (password fields; displayed as "configured" once saved; Exa / Tavily / Keenable / Firecrawl / Parallel / You.com work without a key too).
   - **Recommended**: store paid-engine keys in the harness credential center `~/.dsh/.credentials.yaml` (e.g. `DEEPSEEK_API_KEY: sk-...`, same as the official LLM providers — one place for all keys). Resolution order: credentials center > settings page > environment variable; the settings-page fields remain for backward compatibility.
 - **Test engine**: Tests the selected engine directly (no fallback chain; paid engines without a key report an explicit error).
 - **Use Bing default**: stage a switch back to the stable free Bing engine; `Discard` only cancels unsaved edits
@@ -1097,6 +1103,9 @@ googleCseApiKey: ...        # Google Custom Search API key
 googleCseId: "..."         # Programmable Search Engine cx
 metasoApiKey: ...          # Metaso API key (metaso.cn/api)
 metasoScope: webpage       # webpage | document | scholar
+yandexApiKey: ...          # Yandex Search API key (AI Studio)
+yandexFolderId: "..."      # folder the key was created in
+yandexSearchType: auto     # auto | ru | tr | com | kk | be | uz
 deepseekApiKey: ...
 ```
 
@@ -1258,7 +1267,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Fifty-six** zero-dependency assertion scripts ship with the repo (**841 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
+**Fifty-seven** zero-dependency assertion scripts ship with the repo (**851 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
 
 | Script | Covers | Run (count) |
 |---|---|---|
@@ -1269,7 +1278,7 @@ Restart `dsh web` after switching to apply changes.
 | `assert-multi-policy.mjs` | multi execution policy: ceiling semantics / target-is-not-a-hard-minimum / credential eligibility before the ceiling / **Fast·Balanced·Deep presets** | `node tools/assert-multi-policy.mjs` (146) |
 | `assert-multi-limit.mjs` | Multi result ceiling (#109): default 20 / hard max 100 / config normalisation, per-call maxResults clamped to the ceiling, tool copy and prompt state name the effective limit, settings field and save path | `node tools/assert-multi-limit.mjs` (6) |
 | `assert-maintenance.mjs` | Maintenance surface: CI runs every assertion on Node 20/22/24 plus the packaging gate, the release script bumps / verifies / tags / can publish, and the restore-official-provider bridge and settings button are wired | `node tools/assert-maintenance.mjs` (4) |
-| `assert-engine-modules.mjs` | Engine layout: module files exist and are imported, implementations have left index.js, the client engine ids match the server catalog, the catalog covers 37 engines with the right free/explicit flags, and index never reads an engine-private name | `node tools/assert-engine-modules.mjs` (6) |
+| `assert-engine-modules.mjs` | Engine layout: module files exist and are imported, implementations have left index.js, the client engine ids match the server catalog, the catalog covers 38 engines with the right free/explicit flags, and index never reads an engine-private name | `node tools/assert-engine-modules.mjs` (6) |
 | `assert-bing-relevance.mjs` | Bing relevance (#112): single-character CJK tokens removed, an unrelated substituted SERP rejected, genuinely relevant results accepted, a batch matching only a generic engine name rejected, one distinctive token covering half the query accepted, and explicit single-character/numeric behaviour | `node tools/assert-bing-relevance.mjs` (6) |
 | `assert-quality.mjs` | Research evidence gate: 8 sources / 3 domains / 3 bodies / 2 dates is high, 3 / 2 / 1 is medium, a single source or a degraded note is low, an empty package is low, and research wires the gate into schema, output and brief | `node tools/assert-quality.mjs` (6) |
 | `assert-dedupe.mjs` | Near-duplicate removal: identical text shares a MinHash signature, exact URLs and cross-site copies are dropped, different articles survive in order, the threshold is configurable, and both the provider and multi paths run it | `node tools/assert-dedupe.mjs` (6) |
@@ -1281,6 +1290,7 @@ Restart `dsh web` after switching to apply changes.
 | `assert-research-call-wrappers.mjs` | the four research `call*` wrappers proxy to stubs / the real layer (#75 regression) | `node tools/assert-research-call-wrappers.mjs` (23) |
 | `assert-fetch-chain.mjs` | `fs-quality-fetch` tier ordering, stop-on-first-success, silent firecrawl degradation, aggregated all-tiers failure | `node tools/assert-fetch-chain.mjs` (8) |
 | `assert-fetch-ssrf.mjs` | Fetch SSRF guard: public/private/reserved address classification, DNS resolving to a private address rejected, localhost and IP literals rejected, non-HTTPS and credential URLs rejected, fake-ip ranges blocked by default and allowed only when configured, loopback/RFC1918 still blocked after opt-in, provider wiring and settings | `node tools/assert-fetch-ssrf.mjs` (8) |
+| `assert-yandex.mjs` | Yandex Search: key + folder required, Api-Key/body/grouping, searchType and period/family mapping, Base64 XML parsing and dates, error classes, registration and explicit-only | `node tools/assert-yandex.mjs` (6) |
 | `assert-metaso.mjs` | Metaso search: key required, request body (q/scope/size/summary/raw/concise), summary and date mapping, document array, size clamp, invalid scope fallback, 401/402/429/400 error classes, registration and default-chain exclusion | `node tools/assert-metaso.mjs` (6) |
 | `assert-google-cse.mjs` | Google Custom Search: key + ID required, request params (q/num/start/hl/safe/dateRestrict), result mapping with dates, pagination past ten results, 403/429/400 classification, time-range mapping, full registration | `node tools/assert-google-cse.mjs` (6) |
 | `assert-engine-runtime.mjs` | Engine runtime: per-engine concurrency caps (2 normally, 1 for HTML SERP), queueing with abort cleanup, ok/empty/fail/average-latency stats, wiring on both the provider and runEngineTest paths, and stats in the doctor report | `node tools/assert-engine-runtime.mjs` (4) |
