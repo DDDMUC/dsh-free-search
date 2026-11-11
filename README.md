@@ -184,7 +184,7 @@
   - SerpBase：<https://serpbase.dev>
   - Serply：<https://serply.io>（API 文档：<https://serply.io/docs>）
   - Outcrawl：<https://outcrawl.ai>（API 文档：<https://outcrawl.ai/docs>）
-  - SpecStream：<https://specstream.ai/search-api>（API 文档：<https://specstream.ai/agents.md>）
+  - SpecStream：<https://specstream.ai/signup?src=dsh-free-search>（API 文档：<https://specstream.ai/agents.md>）
   - DeepSeek：<https://platform.deepseek.com/api_keys>
   - 豆包搜索（火山联网搜索）：<https://console.volcengine.com/search-infinity/web-search>
   - You.com：<https://you.com/platform/api-keys>
@@ -891,7 +891,7 @@ If this plugin has been helpful, a ⭐ on [GitHub](https://github.com/DDDMUC/dsh
   - SerpBase: <https://serpbase.dev>
   - Serply: <https://serply.io> (API docs: <https://serply.io/docs>)
   - Outcrawl: <https://outcrawl.ai> (API docs: <https://outcrawl.ai/docs>)
-  - SpecStream: <https://specstream.ai/search-api> (API docs: <https://specstream.ai/agents.md>)
+  - SpecStream: <https://specstream.ai/signup?src=dsh-free-search> (API docs: <https://specstream.ai/agents.md>)
   - DeepSeek: <https://platform.deepseek.com/api_keys>
   - Doubao / Volcano Web Search: <https://console.volcengine.com/search-infinity/web-search>
   - You.com: <https://you.com/platform/api-keys>
