@@ -211,7 +211,7 @@
 
 ### 安装
 
-需要 **DSH 0.2.1-rc.2 或更新的 0.2.x**；更早的 0.1.x 宿主不满足 `engines.dsh`，插件管理器会拒绝安装。
+需要 **DSH 0.2.1-rc.2 或更新的 0.2.x**；更早的 0.1.x 宿主不满足 `engines.dsh`，插件管理器会拒绝安装。DSH 0.2.2-rc.2 移除了 `@deepseek-ai/dsh-web-search-exa` 和 `@deepseek-ai/dsh-web-search-perplexity`；profile 里如果还手工挂着这两行，请删掉，本插件不依赖它们。
 
 ```sh
 git clone https://github.com/DDDMUC/dsh-free-search.git
@@ -228,7 +228,7 @@ dsh web
 
 插件加载后**自动接管搜索**：
 
-- `web.searchProvider` 未设置，或仍是 DSH 出厂默认的官方搜索 `deepseek-official` 时，自动切换为本插件的 provider（id 固定为 `ddg`）；
+- `web.searchProvider` 未设置，或仍是当前版本的官方搜索默认（0.2.2-rc.2 起是 `deepseek-search-api`，旧版是 `deepseek-official`）时，自动切换为本插件的 provider（id 固定为 `ddg`）；
 - 如果（你或别的插件）已显式选择其他 provider，本插件不抢占，只在启动日志输出 WARN 与切换用的 YAML。
 
 **接管会写进 profile（DSH 0.2.x）**：从 `0.2.0-rc.2` 起 provider 选择存放在 config 的 volatile ref 里，只能经 `settings.mutate("web", …)` 写入，落盘结果就是 `profiles/<profile>/cordis.patch.yml` 多出：
@@ -255,8 +255,8 @@ DSH 0.2.1 设置 → 网页搜索 → **DeepSeek 搜索 API** 开关会和本插
 | 操作 | 结果 |
 |---|---|
 | 打开开关 | `web.searchProvider` 写成 `deepseek-search-api`（属于「显式选择其他 provider」），**本插件主动让路**，搜索走官方直连 API；抓取同时变成 `deepseek-fetch-api` |
-| 关闭开关 | DSH 会把整行 `- id: web` 删掉，provider 回到出厂默认 `deepseek-official` —— 这是**模型搜索**（一次完整 aux 请求，实测 ~12s、按 token 计费），不是免费引擎 |
-| 关闭后 | **0.9.8 起**：插件检测到 `deepseek-official` 会在运行时补一次接管（日志 `DSH's search switch put the web providers back to the official defaults — re-took …`），通常几秒内恢复免费链路；若没恢复，完整重启 DSH |
+| 关闭开关 | DSH 会把整行 `- id: web` 删掉，provider 回到当前版本的官方默认：0.2.2-rc.2 起是 `deepseek-search-api`（按 Search API 计费），旧版是 `deepseek-official`（模型搜索，一次完整 aux 请求，按 token 计费）；都不是免费引擎 |
+| 关闭后 | **0.9.8 起**：插件检测到任一官方默认会在运行时补一次接管（日志 `DSH's search switch put the web providers back to the official defaults — re-took …`），通常几秒内恢复免费链路；若没恢复，完整重启 DSH |
 
 想换引擎请用 `/free-search-engine` 或本插件设置页，**不要动那个开关**。打开开关再关掉，官方直连会退回模型搜索，直到插件重新接管或重启。
 
@@ -369,7 +369,7 @@ DSH 0.2.1 设置 → 网页搜索 → **DeepSeek 搜索 API** 开关会和本插
 
 如果你**特意** pin 了 `fetchProvider: http`（只想要内置抓取），把 `fetchProviderTakeover` 设为 `false` 即可：本插件不再把 `http` 当成「出厂默认」去接管，但仍会在完全未设置时补上。
 
-`searchProvider` 的规则相同：未设置或仍是 `deepseek-official` 时接管，显式指定其它 provider 时不抢占。
+`searchProvider` 的规则相同：未设置或仍是当前版本的官方默认（`deepseek-search-api` / `deepseek-official`）时接管，显式指定其它 provider 时不抢占。
 
 #### 配置文件
 
@@ -618,7 +618,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **59 个**零依赖断言脚本（合计 **863 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
+仓库自带 **59 个**零依赖断言脚本（合计 **867 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -680,7 +680,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-fetch-charset.mjs` | 抓取编码（#88）：`charset=gbk` / `gb2312` 按声明解码、无声明时嗅探 `<meta charset>` 与 http-equiv 形式、默认 UTF-8、未知 label 兜底 UTF-8 不抛错 | `node tools/assert-fetch-charset.mjs`（6） |
 | `assert-fetch-abort.mjs` | 抓取中断（#87）：压缩响应中途断连必须 reject（不再永久 pending）、明文断连同样 reject、abort 能打断停滞的 gzip 流、complete 响应与重定向仍正常 | `node tools/assert-fetch-abort.mjs`（6） |
 | `assert-bridge-access.mjs` | 桥接 Host 围栏（#84）：loopback 放行、remote peer 打 loopback Host 拒绝、`--trusted-host`（无端口匹配任意端口 / 带端口精确匹配）、`--public-url`、绑定地址、跨站与异源拒绝、connection 鉴权委托与 fail-closed | `node tools/assert-bridge-access.mjs`（13） |
-| `assert-provider-takeover.mjs` | provider 接管：旧属性 API 与 rc.2 的 `config.*` ref 两套兼容、`settings.mutate(web)` 单批写入、显式指定的 provider 不被抢占、`fetchProviderTakeover: false` 时保留显式 `http`、describe 噪声不误报、嵌套 config 变化与 web 重建分别成行、关闭 DSH 搜索开关后重新接管且不抢 `deepseek-search-api`、apply 重入/重复注册不再中断、重复日志去重 | `node tools/assert-provider-takeover.mjs`（16） |
+| `assert-provider-takeover.mjs` | provider 接管：旧属性 API 与 rc.2 的 `config.*` ref 两套兼容、`settings.mutate(web)` 单批写入、显式指定的 provider 不被抢占、`fetchProviderTakeover: false` 时保留显式 `http`、describe 噪声不误报、嵌套 config 变化与 web 重建分别成行、关闭 DSH 搜索开关后重新接管（`deepseek-search-api` / `deepseek-official` 均视为官方默认）、打开 DeepSeek 开关（`deepseek-fetch-api`）时让路、apply 重入/重复注册不再中断、重复日志去重 | `node tools/assert-provider-takeover.mjs`（20） |
 
 任何一个失败会以非 0 退出码结束并列出失败项；把某个旧版本文件路径作为参数传进去，可以看到修复前必红（用来证明断言不是空转）。改动发布相关逻辑后建议先跑一遍再发版。
 
@@ -911,7 +911,7 @@ Rule of thumb for a default pool: **① as the floor + ③ as the workhorse**; �
 
 ### Installation
 
-Requires **DSH 0.2.1-rc.2 or a newer 0.2.x**; older 0.1.x hosts do not satisfy `engines.dsh` and the plugin manager will refuse the install.
+Requires **DSH 0.2.1-rc.2 or a newer 0.2.x**; older 0.1.x hosts do not satisfy `engines.dsh` and the plugin manager will refuse the install. DSH 0.2.2-rc.2 removes `@deepseek-ai/dsh-web-search-exa` and `@deepseek-ai/dsh-web-search-perplexity`; delete those rows from a hand-maintained profile if present — this plugin does not depend on them.
 
 ```sh
 git clone https://github.com/DDDMUC/dsh-free-search.git
@@ -928,7 +928,7 @@ dsh web
 
 The plugin **takes over search** once loaded:
 
-- When `web.searchProvider` is unset, or still the shipped default `deepseek-official`, it switches to this plugin's provider (id: `ddg`);
+- When `web.searchProvider` is unset, or still the shipped default for the running DSH (`deepseek-search-api` since 0.2.2-rc.2, `deepseek-official` on older hosts), it switches to this plugin's provider (id: `ddg`);
 - If you (or another plugin) explicitly selected a different provider, it does not steal it — it only logs a WARN with a copy-pasteable YAML snippet.
 
 **The takeover is persisted into the profile (DSH 0.2.x).** Since `0.2.0-rc.2` the provider selection lives in volatile config refs and can only be written through `settings.mutate("web", …)`, which lands in `profiles/<profile>/cordis.patch.yml` as:
@@ -955,8 +955,8 @@ DSH 0.2.1 has Settings → Web search → **DeepSeek search API**, which interac
 | Action | Result |
 |---|---|
 | Turn the switch on | `web.searchProvider` becomes `deepseek-search-api` (an explicit choice), so **this plugin steps aside** and search goes through the official direct API; fetch becomes `deepseek-fetch-api` as well |
-| Turn the switch off | DSH deletes the whole `- id: web` row, so the provider falls back to the shipped default `deepseek-official` — that is **model search** (a full auxiliary request, ~12 s in practice, billed per token), not the free engines |
-| After turning it off | **Since 0.9.8**: the plugin notices `deepseek-official` and re-takes at runtime (log line `DSH's search switch put the web providers back to the official defaults — re-took …`), normally within seconds; if it does not, restart DSH |
+| Turn the switch off | DSH deletes the whole `- id: web` row, so the provider falls back to the shipped default for the running DSH: `deepseek-search-api` since 0.2.2-rc.2 (billed per Search API call), or `deepseek-official` on older hosts (model search: a full auxiliary request, billed per token). Neither is a free engine |
+| After turning it off | **Since 0.9.8**: the plugin notices either official default and re-takes at runtime (log line `DSH's search switch put the web providers back to the official defaults — re-took …`), normally within seconds; if it does not, restart DSH |
 
 Use `/free-search-engine` or this plugin's settings page to change engines, **not that switch**. Turning it on and then off drops you from the official direct API back to model search until the plugin re-takes over or DSH restarts.
 
@@ -1069,7 +1069,7 @@ Otherwise startup can loop on "write the `web` config → the web service rebuil
 
 If you deliberately pinned `fetchProvider: http` (you only want the built-in fetcher), set `fetchProviderTakeover: false`: `http` is no longer treated as the factory default, while a completely unset provider is still filled in.
 
-`searchProvider` follows the same rule: taken over when unset or still `deepseek-official`, never when explicitly pointed elsewhere.
+`searchProvider` follows the same rule: taken over when unset or still the running host's official default (`deepseek-search-api` / `deepseek-official`), never when explicitly pointed elsewhere.
 
 #### Configuration File
 
@@ -1318,7 +1318,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Fifty-nine** zero-dependency assertion scripts ship with the repo (**863 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
+**Fifty-nine** zero-dependency assertion scripts ship with the repo (**867 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
 
 | Script | Covers | Run (count) |
 |---|---|---|
@@ -1378,7 +1378,7 @@ Restart `dsh web` after switching to apply changes.
 | `assert-fetch-charset.mjs` | fetch encoding (#88): `charset=gbk` / `gb2312` decoded as declared, `<meta charset>` and the http-equiv form sniffed when the header omits it, UTF-8 by default, and an unknown label falls back to UTF-8 instead of throwing | `node tools/assert-fetch-charset.mjs` (6) |
 | `assert-fetch-abort.mjs` | fetch interruption (#87): a compressed response cut mid-body rejects instead of hanging forever, identity truncation rejects too, abort breaks a stalled gzip stream, and complete responses plus redirects still work | `node tools/assert-fetch-abort.mjs` (6) |
 | `assert-bridge-access.mjs` | bridge Host fence (#84): loopback allowed, a remote peer behind a loopback Host refused, `--trusted-host` (port-less matches any port, explicit port matches exactly), `--public-url`, the bind address, cross-site and foreign-Origin refused, connection-auth delegation and fail-closed behavior | `node tools/assert-bridge-access.mjs` (13) |
-| `assert-provider-takeover.mjs` | provider takeover: both the legacy property API and the rc.2 `config.*` refs, a single batched `settings.mutate(web)`, explicit foreign providers left untouched, an explicit `http` kept when `fetchProviderTakeover` is off, describe()-triggered events ignored when nothing changed, nested config changes and web rebuilds reported separately, re-takeover after DSH's search switch is turned off without fighting an explicit `deepseek-search-api`, apply re-entry / duplicate registrations tolerated, and repeated logs deduplicated | `node tools/assert-provider-takeover.mjs` (16) |
+| `assert-provider-takeover.mjs` | provider takeover: both the legacy property API and the rc.2 `config.*` refs, a single batched `settings.mutate(web)`, explicit foreign providers left untouched, an explicit `http` kept when `fetchProviderTakeover` is off, describe()-triggered events ignored when nothing changed, nested config changes and web rebuilds reported separately, re-takeover after DSH's search switch is turned off (both `deepseek-search-api` and `deepseek-official` count as the factory default), stepping aside for the explicit `deepseek-fetch-api` switch, apply re-entry / duplicate registrations tolerated, and repeated logs deduplicated | `node tools/assert-provider-takeover.mjs` (20) |
 
 Any failure exits non-zero with the failing items listed. Passing the path of an older file shows the pre-fix failures (proving the assertions are not vacuous). Worth running before a release.
 
