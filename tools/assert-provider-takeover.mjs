@@ -75,6 +75,18 @@ check("legacy API: the factory default deepseek-official is replaced", () => {
   assert.equal(web.fetchProviderId, "fs-quality-fetch");
 });
 
+check("legacy API: the 0.2.2-rc.2 default deepseek-search-api is replaced", () => {
+  const { web } = run({ searchProvider: "deepseek-search-api", fetchProvider: "http" });
+  assert.equal(web.searchProviderId, "ddg");
+  assert.equal(web.fetchProviderId, "fs-quality-fetch");
+});
+
+check("legacy API: DSH's explicit DeepSeek switch (deepseek-fetch-api) is left alone", () => {
+  const { web } = run({ searchProvider: "deepseek-search-api", fetchProvider: "deepseek-fetch-api" });
+  assert.equal(web.searchProviderId, "deepseek-search-api");
+  assert.equal(web.fetchProviderId, "deepseek-fetch-api");
+});
+
 check("legacy API: an explicit foreign provider is left alone", () => {
   const { web } = run({ searchProvider: "someone-else", fetchProvider: "someone-else" });
   assert.equal(web.searchProviderId, "someone-else");
@@ -88,6 +100,20 @@ check("rc.2 API: the takeover goes through a single settings.mutate(web)", () =>
     { op: "set", path: ["fetchProvider"], value: "fs-quality-fetch" },
     { op: "set", path: ["searchProvider"], value: "ddg" },
   ]);
+});
+
+check("rc.2 API: deepseek-search-api is treated as the factory default", () => {
+  const { mutations } = run({ searchProvider: "deepseek-search-api", fetchProvider: "http", hasConfigRefs: true });
+  assert.equal(mutations.length, 1);
+  assert.deepEqual(mutations[0].ops, [
+    { op: "set", path: ["fetchProvider"], value: "fs-quality-fetch" },
+    { op: "set", path: ["searchProvider"], value: "ddg" },
+  ]);
+});
+
+check("rc.2 API: the explicit DeepSeek switch is not rewritten", () => {
+  const { mutations } = run({ searchProvider: "deepseek-search-api", fetchProvider: "deepseek-fetch-api", hasConfigRefs: true });
+  assert.equal(mutations.length, 0);
 });
 
 check("rc.2 API: no takeover when a foreign provider is selected", () => {
@@ -214,7 +240,7 @@ await checkAsync("#86 reclaims the shipped default after DSH's search switch is 
   assert.equal(ops.find((op) => op.path?.[0] === "fetchProvider")?.value, "fs-quality-fetch");
 });
 
-await checkAsync("#86 never fights an explicit deepseek-search-api choice", async () => {
+await checkAsync("#86 reclaims the 0.2.2-rc.2 deepseek-search-api default after the switch is turned off", async () => {
   const { ctx, handlers, described, mutations } = makeCtx({
     searchProvider: "ddg",
     fetchProvider: "fs-quality-fetch",
@@ -225,11 +251,13 @@ await checkAsync("#86 never fights an explicit deepseek-search-api choice", asyn
   apply(ctx, baseConfig());
   handlers["settings/document-updated"]("web");
   await tick();
-  described.value = { searchProvider: "deepseek-search-api", fetchProvider: "deepseek-fetch-api" };
+  described.value = { searchProvider: "deepseek-search-api", fetchProvider: "http" };
   handlers["settings/document-updated"]("web");
   await tick();
   await tick();
-  assert.equal(mutations.filter((entry) => entry.ns === "web").length, 0);
+  const ops = mutations.filter((entry) => entry.ns === "web").flatMap((entry) => entry.ops);
+  assert.equal(ops.find((op) => op.path?.[0] === "searchProvider")?.value, "ddg");
+  assert.equal(ops.find((op) => op.path?.[0] === "fetchProvider")?.value, "fs-quality-fetch");
 });
 
 console.log(`OK: ${checks} provider takeover checks passed`);
