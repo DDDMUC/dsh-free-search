@@ -211,7 +211,7 @@
 
 ### 安装
 
-需要 **DSH 0.2.1-rc.2 或更新的 0.2.x**；更早的 0.1.x 宿主不满足 `engines.dsh`，插件管理器会拒绝安装。DSH 0.2.2-rc.2 移除了 `@deepseek-ai/dsh-web-search-exa` 和 `@deepseek-ai/dsh-web-search-perplexity`；profile 里如果还手工挂着这两行，请删掉，本插件不依赖它们。
+需要 **DSH 0.2.1-rc.2 或更新的 0.2.x**；更早的 0.1.x 宿主不满足 `engines.dsh`，插件管理器会拒绝安装。
 
 ```sh
 git clone https://github.com/DDDMUC/dsh-free-search.git
@@ -911,7 +911,7 @@ Rule of thumb for a default pool: **① as the floor + ③ as the workhorse**; �
 
 ### Installation
 
-Requires **DSH 0.2.1-rc.2 or a newer 0.2.x**; older 0.1.x hosts do not satisfy `engines.dsh` and the plugin manager will refuse the install. DSH 0.2.2-rc.2 removes `@deepseek-ai/dsh-web-search-exa` and `@deepseek-ai/dsh-web-search-perplexity`; delete those rows from a hand-maintained profile if present — this plugin does not depend on them.
+Requires **DSH 0.2.1-rc.2 or a newer 0.2.x**; older 0.1.x hosts do not satisfy `engines.dsh` and the plugin manager will refuse the install.
 
 ```sh
 git clone https://github.com/DDDMUC/dsh-free-search.git
