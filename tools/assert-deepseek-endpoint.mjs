@@ -54,6 +54,8 @@ await check("the config and settings UI expose the endpoint", () => {
   assert.match(index, /deepseekToolsBaseUrl/);
   assert.match(index, /current\(\)\.deepseekToolsBaseUrl/);
   assert.match(client, /deepseekToolsUrlLabel/);
+  assert.match(client, /const \[deepseekToolsKey, setDeepseekToolsKey\] = react\.useState\(""\)/);
+  assert.match(client, /const \[deepseekToolsUrl, setDeepseekToolsUrl\] = react\.useState\(""\)/);
   assert.match(client, /deepseekToolsKeyLabel/);
   assert.match(client, /\["deepseekToolsApiKey", deepseekToolsKey\]/);
   assert.match(client, /path: \["deepseekToolsBaseUrl"\]/);
