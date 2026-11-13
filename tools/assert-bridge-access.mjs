@@ -112,7 +112,8 @@ check("the settings client resolves bridge URLs against document.baseURI", () =>
   assert.match(client, /new URL\(`\$\{BRIDGE_PATH\}\/\$\{endpoint\}`, document\.baseURI\)/);
   assert.doesNotMatch(client, /fetch\(`\/api\/dsh-free-search-settings/);
   assert.doesNotMatch(client, /BRIDGE_PREFIX/);
-  assert.equal((client.match(/fetch\(bridgeUrl\(/g) ?? []).length >= 10, true);
+  assert.equal((client.match(/fetch\(bridgeUrl\(/g) ?? []).length >= 8, true);
+  assert.match(client, /async function bridgeRead/);
 });
 
 console.log(`OK: ${checks} bridge access checks passed`);
