@@ -62,6 +62,9 @@ await check("the config and settings UI expose the endpoint", () => {
   assert.match(client, /expandedEngine/);
   assert.match(client, /renderEngineSettings/);
   assert.match(client, /explicitEnginesLabel/);
+  assert.match(client, /name: "sidebar.panellist"/);
+  assert.match(client, /name: "main"/);
+  assert.match(client, /id: "dsh-free-search"/);
   assert.match(client, /\["deepseekToolsApiKey", deepseekToolsKey\]/);
   assert.match(client, /path: \["deepseekToolsBaseUrl"\]/);
 });
