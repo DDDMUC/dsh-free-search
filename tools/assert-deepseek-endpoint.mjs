@@ -20,6 +20,8 @@ await check("base and full custom URLs are both accepted", () => {
   assert.equal(deepseekToolsEndpoint("https://gw.example.com"), "https://gw.example.com/v1/tools/search");
   assert.equal(deepseekToolsEndpoint("https://gw.example.com/v1/"), "https://gw.example.com/v1/tools/search");
   assert.equal(deepseekToolsEndpoint("https://gw.example.com/custom/search"), "https://gw.example.com/custom/search");
+  assert.equal(deepseekToolsEndpoint("http://127.0.0.1:3000/v1/search"), "http://127.0.0.1:3000/v1/search");
+  assert.equal(deepseekToolsEndpoint("http://127.0.0.1:3000/v1/search/"), "http://127.0.0.1:3000/v1/search");
   assert.throws(() => deepseekToolsEndpoint("ftp://gw.example.com"), /http\(s\)/);
   assert.throws(() => deepseekToolsEndpoint("not a url"), /invalid/);
 });
@@ -35,8 +37,8 @@ await check("the custom endpoint receives the query and bearer key", async () =>
     return { ok: true, json: async () => ({ results: [{ title: "A", url: "https://a.test/1", summary: "s" }] }) };
   };
   try {
-    const result = await searchDeepSeekTools("q", 5, "custom-key", undefined, undefined, "https://gw.example.com/custom/search");
-    assert.equal(url, "https://gw.example.com/custom/search");
+    const result = await searchDeepSeekTools("q", 5, "custom-key", undefined, undefined, "http://127.0.0.1:3000/v1/search");
+    assert.equal(url, "http://127.0.0.1:3000/v1/search");
     assert.equal(headers.authorization, "Bearer custom-key");
     assert.equal(body.query, "q");
     assert.equal(result.sources[0].url, "https://a.test/1");
