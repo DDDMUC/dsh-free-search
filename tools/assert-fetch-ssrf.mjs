@@ -12,6 +12,7 @@ const check = async (name, fn) => {
 const publicLookup = async () => [{ address: "93.184.216.34", family: 4 }];
 const privateLookup = async () => [{ address: "10.0.0.7", family: 4 }];
 const fakeIpLookup = async () => [{ address: "198.18.0.44", family: 4 }];
+const fakeIp6Lookup = async () => [{ address: "fdfe:dcba:9876::37", family: 6 }];
 
 await check("public addresses pass, private and reserved ranges fail", () => {
   for (const address of ["8.8.8.8", "1.1.1.1", "93.184.216.34", "2606:4700:4700::1111"]) {
@@ -33,9 +34,12 @@ await check("fake-ip ranges are blocked by default and allowed only when listed"
   assert.equal(isAddressAllowed("198.18.0.44", ["198.18.0.0/15"]), true);
   assert.equal(isAddressAllowed("198.20.0.1", ["198.18.0.0/15"]), false);
   // the opt-in must not weaken the ranges that matter, even when listed explicitly
-  for (const address of ["127.0.0.1", "10.0.0.7", "192.168.1.1", "169.254.169.254", "::1", "fc00::1"]) {
+  for (const address of ["127.0.0.1", "10.0.0.7", "192.168.1.1", "169.254.169.254", "::1", "fe80::1"]) {
     assert.equal(isPublicAddress(address, { allowedCidrs: ["0.0.0.0/0", "::/0"] }), false, address);
   }
+  assert.equal(isPublicAddress("fdfe:dcba:9876::37"), false);
+  assert.equal(isPublicAddress("fdfe:dcba:9876::37", { allowedCidrs: ["fdfe:dcba:9876::/64"] }), true);
+  assert.equal(isPublicAddress("fdfe:dcba:9876::37", { allowedCidrs: ["fc00::/7"] }), true);
 });
 
 await check("a fake-ip host passes only with the matching CIDR", async () => {
@@ -46,6 +50,9 @@ await check("a fake-ip host passes only with the matching CIDR", async () => {
     () => assertPublicUrl("https://docs.example.test/", { lookup: fakeIpLookup, allowedCidrs: ["203.0.113.0/24"] }),
     /SSRF blocked/
   );
+  await assert.rejects(() => assertPublicUrl("https://docs.example.test/", { lookup: fakeIp6Lookup }), /SSRF blocked/);
+  const url6 = await assertPublicUrl("https://docs.example.test/", { lookup: fakeIp6Lookup, allowedCidrs: ["fdfe:dcba:9876::/64"] });
+  assert.equal(url6.hostname, "docs.example.test");
 });
 
 await check("public hosts resolve and pass", async () => {
