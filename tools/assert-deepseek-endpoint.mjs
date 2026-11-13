@@ -49,8 +49,13 @@ await check("the config and settings UI expose the endpoint", () => {
   const index = fs.readFileSync(new URL("../lib/index.js", import.meta.url), "utf8");
   const client = fs.readFileSync(new URL("../lib/client.js", import.meta.url), "utf8");
   assert.match(index, /deepseekToolsBaseUrl: z\.string\(\)\.default\(""\)/);
+  assert.match(index, /deepseekToolsApiKey/);
+  assert.match(index, /DEEPSEEK_TOOLS_API_KEY/);
+  assert.match(index, /deepseekToolsBaseUrl/);
   assert.match(index, /current\(\)\.deepseekToolsBaseUrl/);
   assert.match(client, /deepseekToolsUrlLabel/);
+  assert.match(client, /deepseekToolsKeyLabel/);
+  assert.match(client, /\["deepseekToolsApiKey", deepseekToolsKey\]/);
   assert.match(client, /path: \["deepseekToolsBaseUrl"\]/);
 });
 
