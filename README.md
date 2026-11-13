@@ -153,7 +153,7 @@
 | `yandex` | Yandex 搜索 | 付费 | 需 `YANDEX_API_KEY` 和 `yandexFolderId`（AI Studio，按请求计费，需 billing account）；官方 Search API，`searchType` 支持 RU/TR/COM/KK/BE/UZ，响应为 Base64 XML；支持 day / 2 weeks / month 时间过滤；显式专用 |
 | `yuanbao` | 腾讯元宝搜索 | 付费（有活动免费额度） | 需 `TENCENTCLOUD_WSA_APIKEY`（console.cloud.tencent.com/wsapi）；API key 网关，支持自然 / 权威 / 混合模式、站点限定、时间范围；活动页可领每日免费额度（限时）；显式专用 |
 | `deepseek-official` | DeepSeek 官方 | 付费 | 需 `DEEPSEEK_API_KEY`；走 Anthropic 兼容的 `web_search` 服务端工具，每次搜索是一整个模型轮次（慢、耗 token） |
-| `deepseek-tools` | DeepSeek 原生搜索 API | 付费 | 需 `DEEPSEEK_API_KEY`（与上一档共用）；直接 `POST /v1/tools/search`，无模型参与，返回结构化 `results[]`（`title`/`url`/`summary`/`date`），同 query 实测 ~0.3s vs 上一档 ~5-6s |
+| `deepseek-tools` | DeepSeek 原生搜索 API | 付费 | 需 `DEEPSEEK_API_KEY`（与上一档共用）；直接 `POST /v1/tools/search`，无模型参与，返回结构化 `results[]`（`title`/`url`/`summary`/`date`），同 query 实测 ~0.3s vs 上一档 ~5-6s；端点可通过 `deepseekToolsBaseUrl` 改成自定义网关（完整 URL 或 base） |
 | `baidu` | 百度千帆 AI 搜索 | 额度 | 需 `BAIDU_API_KEY`（千帆 AI 搜索：web_search 每日赠 50 次，额度用尽/403 时自动回退到 chat/completions，另有 100 次/天免费额度；超额按量后付费）；中文全网，支持时间过滤 |
 | `kimi` | Kimi（Moonshot）联网搜索 | 付费 | 需 `MOONSHOT_API_KEY`（basic 约 ￥0.01/次），返回带正文 chunks 的中文结果；**无免费额度**，适合显式选用或作质量升级池，不建议放进默认并发池 |
 | `kimi` | Kimi（Moonshot）联网搜索 | 付费 | 需 `MOONSHOT_API_KEY`（basic 约 ￥0.01/次），返回带正文 chunks 的中文结果 |
@@ -435,6 +435,7 @@ yandexApiKey: ...          # Yandex Search API key (AI Studio)
 yandexFolderId: "..."      # folder the key was created in
 yandexSearchType: auto     # auto | ru | tr | com | kk | be | uz
 deepseekApiKey: ...
+deepseekToolsBaseUrl: ""    # custom /v1/tools/search endpoint or base; empty = api.deepseek.com
 ```
 
 #### 让 agent 测试所有引擎
@@ -521,7 +522,7 @@ Search engine test:
 
 - 自动跟随重定向、解码正文（HTML 转文本）
 - 支持超时和大小限制
-- ⚠️ 注意：`web_fetch` 默认拒绝回环、私网、链路本地和云元数据地址。若使用 Clash / mihomo TUN 的 fake-ip DNS，请把对应网段（常见 `198.18.0.0/15`）加入设置页的「额外允许的网段」，否则所有被代理域名都会被判成私网而抓取失败；只放行 fake-ip 保留段，不要放行 RFC1918。
+- ⚠️ 注意：`web_fetch` 默认拒绝回环、私网、链路本地和云元数据地址。若使用 Clash / mihomo TUN 的 fake-ip DNS，请把对应网段（常见 `198.18.0.0/15`）加入设置页的「额外允许的网段」，否则所有被代理域名都会被判成私网而抓取失败；只放行 fake-ip 网段，不要放行 RFC1918；IPv6 fake-ip 常用 ULA（如 `fdfe:dcba:9876::/64`），需要显式加入才会放行。
 
 #### MCP server（stdio）
 
@@ -619,7 +620,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **60 个**零依赖断言脚本（合计 **878 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
+仓库自带 **61 个**零依赖断言脚本（合计 **882 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -641,11 +642,12 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-research-degradation.mjs` | research 无 key 全降级、`node:sqlite` no-op、90s 预算隔离、缓存目录可配置、`budget.exhausted` 契约名 | `node tools/assert-research-degradation.mjs`（19） |
 | `assert-research-call-wrappers.mjs` | research 四个 `call*` 包装层的替身/底层透传（#75 回归） | `node tools/assert-research-call-wrappers.mjs`（23） |
 | `assert-fetch-chain.mjs` | `fs-quality-fetch` 四层链序、任一层命中即停、exa 失败静默降级 firecrawl、全层失败聚合报错 | `node tools/assert-fetch-chain.mjs`（8） |
-| `assert-fetch-ssrf.mjs` | 抓取 SSRF 防护：公网/私网/保留地址判定、DNS 解析到私网拒绝、localhost 与 IP 字面量拒绝、非 HTTPS 与带凭据 URL 拒绝、fake-ip 网段默认拒绝且仅按配置放行、放行后仍拒绝回环/私网、provider 接线与设置项 | `node tools/assert-fetch-ssrf.mjs`（8） |
+| `assert-fetch-ssrf.mjs` | 抓取 SSRF 防护：公网/私网/保留地址判定、DNS 解析到私网拒绝、localhost 与 IP 字面量拒绝、非 HTTPS 与带凭据 URL 拒绝、fake-ip 网段默认拒绝且仅按配置放行、IPv6 ULA 显式放行、放行后仍拒绝回环/IPv4 私网/链路本地、provider 接线与设置项 | `node tools/assert-fetch-ssrf.mjs`（8） |
 | `assert-mcp.mjs` | MCP stdio 面：initialize 协议协商、tools/list 的 JSON Schema、tools/call 文本结果、工具错误与 JSON-RPC 错误区分、必填参数校验、bin/files 打包 | `node tools/assert-mcp.mjs`（6） |
 | `assert-mcp.mjs` | MCP stdio surface: initialize negotiation, tools/list JSON Schema, tools/call text results, tool errors vs JSON-RPC errors, required arguments, bin/files packaging | `node tools/assert-mcp.mjs` (6) |
 | `assert-baidu.mjs` | 百度千帆：key 必填、web_search 首请求、403 或 results.code 额度错误回退 chat/completions（stream:false）、401 不回退、双端失败合并报错 | `node tools/assert-baidu.mjs`（6） |
-| `assert-yuanbao.mjs` | 元宝搜索：key 必填、Bearer 网关/Query/Mode/Site/FromTime、自然与 VR 页面解析、日期归一、错误分类、注册与显式专用 | `node tools/assert-yuanbao.mjs`（6） |
+| `assert-deepseek-endpoint.mjs` | DeepSeek 搜索端点：默认地址、base/完整 URL 归一、自定义 endpoint 收 Bearer/key/query、配置与设置页接线 | `node tools/assert-deepseek-endpoint.mjs`（4） |
+| `assert-yuanbao.mjs` |key 必填、Bearer 网关/Query/Mode/Site/FromTime、自然与 VR 页面解析、日期归一、错误分类、注册与显式专用 | `node tools/assert-yuanbao.mjs`（6） |
 | `assert-yandex.mjs` | Yandex Search：key+folder 必填、Api-Key/请求体/分组、searchType 与 period/family 映射、Base64 XML 解析与日期、错误分类、注册与显式专用 | `node tools/assert-yandex.mjs`（6） |
 | `assert-metaso.mjs` | 秘塔搜索：key 必填、请求体（q/scope/size/summary/raw/concise）、摘要与日期映射、文库数组、size 上限、无效 scope 回退、401/402/429/400 错误分类、注册与默认回退排除 | `node tools/assert-metaso.mjs`（6） |
 | `assert-google-cse.mjs` | Google Custom Search：key+ID 必填、请求参数（q/num/start/hl/safe/dateRestrict）、结果映射与发布日期、超过 10 条分页、403/429/400 错误分类、时间档映射、全链路注册 | `node tools/assert-google-cse.mjs`（6） |
@@ -854,7 +856,7 @@ If this plugin has been helpful, a ⭐ on [GitHub](https://github.com/DDDMUC/dsh
 | `yandex` | Yandex Search | Paid | Requires `YANDEX_API_KEY` and `yandexFolderId` (AI Studio; billed per request to a billing account); official Search API with RU/TR/COM/KK/BE/UZ search types and Base64 XML responses; supports day / 2 weeks / month time filters; explicit-only |
 | `yuanbao` | Tencent Yuanbao Search | Paid (limited free-quota activity) | Requires `TENCENTCLOUD_WSA_APIKEY` (console.cloud.tencent.com/wsapi); API-key gateway with natural / authoritative / hybrid modes, site restriction and time ranges; the activity page offers a limited daily free quota; explicit-only |
 | `deepseek-official` | DeepSeek Official | Paid | Requires `DEEPSEEK_API_KEY`; uses the Anthropic-compatible `web_search` server tool, so every search is a full model turn (slow, token-billed) |
-| `deepseek-tools` | DeepSeek Native Search API | Paid | Requires `DEEPSEEK_API_KEY` (shared with the row above); calls `POST /v1/tools/search` directly, no model involved, returns structured `results[]` (`title`/`url`/`summary`/`date`) — measured ~0.3s vs ~5-6s for the row above on the same query |
+| `deepseek-tools` | DeepSeek Native Search API | Paid | Requires `DEEPSEEK_API_KEY` (shared with the row above); calls `POST /v1/tools/search` directly, no model involved, returns structured `results[]` (`title`/`url`/`summary`/`date`) — measured ~0.3s vs ~5-6s for the row above; the endpoint is configurable via `deepseekToolsBaseUrl` (full URL or base) for custom gateways |
 | `baidu` | Baidu Qianfan AI Search | Quota | Requires `BAIDU_API_KEY` (Qianfan AI Search: 50 free web_search calls/day; when that quota is exhausted or returns 403 it falls back to chat/completions, which has a separate 100/day free quota; pay-as-you-go beyond); Chinese web-wide, supports time filtering |
 | `kimi` | Kimi (Moonshot) Web Search | Paid | Requires `MOONSHOT_API_KEY` (basic ~¥0.01/call); returns Chinese results with body chunks; **no free quota**, so prefer explicit selection or the escalation pool over the default concurrent pool |
 | `kimi` | Kimi (Moonshot) Web Search | Paid | Requires `MOONSHOT_API_KEY` (basic ~¥0.01/call); returns Chinese results with body chunks |
@@ -1137,6 +1139,7 @@ yandexApiKey: ...          # Yandex Search API key (AI Studio)
 yandexFolderId: "..."      # folder the key was created in
 yandexSearchType: auto     # auto | ru | tr | com | kk | be | uz
 deepseekApiKey: ...
+deepseekToolsBaseUrl: ""    # custom /v1/tools/search endpoint or base; empty = api.deepseek.com
 ```
 
 #### Asking the Agent to Test All Engines
@@ -1223,7 +1226,7 @@ After searching, the agent can **read full webpage content** (e.g., *"Open the f
 
 - Automatically follows redirects and decodes HTML to plain text.
 - Supports timeout and response size limits.
-- ⚠️ Note: `web_fetch` rejects loopback, private, link-local and cloud-metadata addresses by default. Under Clash / mihomo TUN fake-ip DNS, add the fake-ip range (usually `198.18.0.0/15`) to extra allowed networks in Settings, otherwise every proxied host resolves to a placeholder address and is rejected; only allow fake-ip reserved ranges, never RFC1918.
+- ⚠️ Note: `web_fetch` rejects loopback, private, link-local and cloud-metadata addresses by default. Under Clash / mihomo TUN fake-ip DNS, add the fake-ip range (usually `198.18.0.0/15`) to extra allowed networks in Settings, otherwise every proxied host resolves to a placeholder address and is rejected; only allow the fake-ip ranges, never RFC1918; IPv6 fake-ip often uses a ULA such as `fdfe:dcba:9876::/64`, which must be listed explicitly.
 
 #### MCP server (stdio)
 
@@ -1321,7 +1324,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Sixty** zero-dependency assertion scripts ship with the repo (**878 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
+**Sixty-one** zero-dependency assertion scripts ship with the repo (**882 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
 
 | Script | Covers | Run (count) |
 |---|---|---|
@@ -1343,9 +1346,10 @@ Restart `dsh web` after switching to apply changes.
 | `assert-research-degradation.mjs` | research degrades fully without keys, `node:sqlite` no-op, 90s budget isolation, configurable cache dir, `budget.exhausted` contract names | `node tools/assert-research-degradation.mjs` (19) |
 | `assert-research-call-wrappers.mjs` | the four research `call*` wrappers proxy to stubs / the real layer (#75 regression) | `node tools/assert-research-call-wrappers.mjs` (23) |
 | `assert-fetch-chain.mjs` | `fs-quality-fetch` tier ordering, stop-on-first-success, silent firecrawl degradation, aggregated all-tiers failure | `node tools/assert-fetch-chain.mjs` (8) |
-| `assert-fetch-ssrf.mjs` | Fetch SSRF guard: public/private/reserved address classification, DNS resolving to a private address rejected, localhost and IP literals rejected, non-HTTPS and credential URLs rejected, fake-ip ranges blocked by default and allowed only when configured, loopback/RFC1918 still blocked after opt-in, provider wiring and settings | `node tools/assert-fetch-ssrf.mjs` (8) |
+| `assert-fetch-ssrf.mjs` | Fetch SSRF guard: public/private/reserved address classification, DNS resolving to a private address rejected, localhost and IP literals rejected, non-HTTPS and credential URLs rejected, fake-ip ranges blocked by default and allowed only when configured, IPv6 ULA allowed only when listed, loopback/IPv4-private/link-local still blocked after opt-in, provider wiring and settings | `node tools/assert-fetch-ssrf.mjs` (8) |
 | `assert-baidu.mjs` | Baidu Qianfan: key required, web_search first, 403 or results.code quota fallback to chat/completions (stream:false), no fallback on 401, combined error when both fail | `node tools/assert-baidu.mjs` (6) |
-| `assert-yuanbao.mjs` | Yuanbao Search: key required, Bearer gateway and Query/Mode/Site/FromTime, natural and VR page parsing, date normalization, error classes, registration and explicit-only | `node tools/assert-yuanbao.mjs` (6) |
+| `assert-deepseek-endpoint.mjs` | DeepSeek search endpoint: default URL, base/full-URL normalization, custom endpoint receives bearer/key/query, config and settings wiring | `node tools/assert-deepseek-endpoint.mjs` (4) |
+| `assert-yuanbao.mjs` | key required, Bearer gateway and Query/Mode/Site/FromTime, natural and VR page parsing, date normalization, error classes, registration and explicit-only | `node tools/assert-yuanbao.mjs` (6) |
 | `assert-yandex.mjs` | Yandex Search: key + folder required, Api-Key/body/grouping, searchType and period/family mapping, Base64 XML parsing and dates, error classes, registration and explicit-only | `node tools/assert-yandex.mjs` (6) |
 | `assert-metaso.mjs` | Metaso search: key required, request body (q/scope/size/summary/raw/concise), summary and date mapping, document array, size clamp, invalid scope fallback, 401/402/429/400 error classes, registration and default-chain exclusion | `node tools/assert-metaso.mjs` (6) |
 | `assert-google-cse.mjs` | Google Custom Search: key + ID required, request params (q/num/start/hl/safe/dateRestrict), result mapping with dates, pagination past ten results, 403/429/400 classification, time-range mapping, full registration | `node tools/assert-google-cse.mjs` (6) |
