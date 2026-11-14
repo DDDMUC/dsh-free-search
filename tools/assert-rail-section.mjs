@@ -1,7 +1,7 @@
 // The in-page rail follows dsh-url-router's panel-sections contract v1:
 //   data-dsh-panel-section = <id>   exactly one element (the page root) = the current section
 //   data-dsh-section       = <id>   on every section container (scroll target)
-//   <a data-dsh-section="<id>" href="#/panel/plugins/dsh-free-search/<id>">  the rail entry
+//   <a data-dsh-section="<id>" href="#/panel/dsh-free-search/<id>">  the rail entry
 // Section ids are stable and language independent; the count is not fixed (7 today).
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -38,20 +38,27 @@ check("every section container carries its own data-dsh-section", () => {
   assert.match(client, /"data-dsh-section": poolKey === "zh" \? "pools" : undefined,/);
 });
 
-check("rail entries are real anchors with the contract href", () => {
-  assert.match(client, /react_jsx_runtime\.jsx\("a", \{/);
-  assert.match(client, /href: `#\/panel\/plugins\/dsh-free-search\/\$\{item\.id\}`/);
+check("rail entries have independent links that do not open the plugin row page", () => {
+  assert.match(client, /href: `#\/panel\/dsh-free-search\/\$\{item\.id\}`/);
+  assert.equal(client.includes("href: `#/panel/plugins/dsh-free-search/${item.id}`"), false);
+  assert.equal(client.includes("PAGE_HASH"), false);
   assert.match(client, /"data-dsh-section": item\.id,/);
   assert.equal((client.match(/react_jsx_runtime\.jsx\("a", \{\r?\n\s+className: "dshfs-railItem"/g) || []).length, 1);
-  // the package name in the href must match package.json
   assert.equal(pkg.name, "dsh-free-search");
 });
 
 check("a pasted section URL scrolls there, and the page never writes the URL", () => {
+  assert.match(client, /parts\[0\] === "panel" && parts\[1\] === "dsh-free-search"\) return parts\[2\]/);
   assert.match(client, /window\.addEventListener\("hashchange", apply\)/);
   assert.equal(client.includes("location.hash ="), false);
   assert.equal(client.includes("history.pushState"), false);
   assert.equal(client.includes("history.replaceState"), false);
+});
+
+check("the sidebar label follows the DSH locale", () => {
+  assert.match(client, /const PANEL_LABELS = \{/);
+  assert.match(client, /ja: "無料検索"/);
+  assert.match(client, /localeFace\?\.getLocale\?\.\(\)\.active/);
 });
 
 check("current section is the one being read, not a guess at the last one", () => {
