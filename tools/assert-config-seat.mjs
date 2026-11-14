@@ -39,7 +39,7 @@ check("the row-level seat is kept, keyed package#row", () => {
 });
 
 check("both seats render the same card and summary handler", () => {
-  assert.equal((client.match(/react_jsx_runtime\.jsx\(FreeSearchCard, \{ page: true \}\)/g) || []).length, 2);
+  assert.equal((client.match(/react_jsx_runtime\.jsx\(FreeSearchCard, \{ page: true \}\)/g) || []).length, 3);
   assert.equal((client.match(/slotProps\.view === "summary"/g) || []).length, 2);
 });
 
