@@ -21,6 +21,7 @@
 | `serpbase` | 注册送 100 次 | 按量 | 付费 |
 | `serply` | 新账户 30 天 2,500 次 | 按量 | 付费 |
 | `outcrawl` | 每月 1,000 credits | 按量 | 付费 |
+| `specstream` | 无 | 按量 | 付费 |
 | `openai` / `gemini` / `claude` | 无（按次计费） | 按次 | 按次计费 |
 
 两处与现状不一致，值得改：
