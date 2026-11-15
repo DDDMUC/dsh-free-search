@@ -35,7 +35,10 @@ await check("a quota-failed key is reported and the next key is tried", async ()
   });
   assert.deepEqual(result, { text: "ok" });
   assert.deepEqual(used, ["bad", "good"]);
-  assert.deepEqual(failures, [{ engine: "exa", env: "EXA_API_KEY", error: failures[0].error }]);
+  assert.equal(failures.length, 1);
+  assert.equal(failures[0].engine, "exa");
+  assert.equal(failures[0].env, "EXA_API_KEY");
+  assert.equal(failures[0].key, "bad");
   assert.equal(failures[0].error.message, "exa HTTP 402: insufficient balance");
   assert.equal(errors.length, 1);
 });
@@ -95,7 +98,7 @@ await check("the real fetch provider retries exa with the next key after a 402",
     });
     const result = await provider.fetch({ url: "https://127.0.0.1:1/x" });
     assert.equal(result.body.content, "x".repeat(400));
-    assert.deepEqual(failures.map((failure) => [failure.engine, failure.env]), [["exa", "EXA_API_KEY"]]);
+    assert.deepEqual(failures.map((failure) => [failure.engine, failure.env, failure.key]), [["exa", "EXA_API_KEY", "bad"]]);
   } finally {
     CONTROLLED_STUBS.exa = original;
   }
