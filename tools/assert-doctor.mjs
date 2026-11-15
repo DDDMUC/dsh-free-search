@@ -45,7 +45,7 @@ check("durations are human", () => {
 check("the header names the version, node, home and the resolved default", () => {
   assert.match(report, /^dsh-free-search 9\.9\.9/m);
   assert.match(report, /node 24\.0\.0 · C:\/home\/\.dsh/);
-  assert.match(report, /preferred: auto \(resolves to parallel\) · prompt zh, 1951 chars/);
+  assert.match(report, /preferred: geo default \(parallel\) · prompt zh, 1951 chars/);
   assert.match(report, /tools: 1\/2 on \(free_search_test\)/);
 });
 
@@ -66,6 +66,12 @@ check("foreign providers are reported as a warning", () => {
   const warned = buildDoctorReport({ version: "1", nodeVersion: "24", searchProvider: "argo", fetchProvider: "other" });
   assert.match(warned, /providers: search=argo · fetch=other/);
   assert.match(warned, /mutually exclusive/);
+});
+
+check("configured pools with a non-auto provider are reported", () => {
+  const warned = buildDoctorReport({ provider: "", effectiveProvider: "bing", poolsConfigured: true });
+  assert.match(warned, /language pools are configured/);
+  assert.match(warned, /only apply to auto or multi/);
 });
 
 check("a missing prompt section is called out", () => {

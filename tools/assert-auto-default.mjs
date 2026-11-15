@@ -40,7 +40,7 @@ const withEnv = async (value, fn) => {
   }
 };
 
-await check("an empty provider means auto", () => {
+await check("an empty provider keeps the geo-default sentinel", () => {
   assert.equal(Config({}).provider.get(), "");
   assert.equal(Config({ provider: "bing" }).provider.get(), "bing");
 });
