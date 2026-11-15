@@ -1,6 +1,6 @@
 {
   "name": "dsh-free-search",
-  "version": "0.9.50",
+  "version": "0.9.51",
   "description": "Free web search for DeepSeek Harness: 39 engines (Bing/DuckDuckGo/AnySearch/SearXNG/Exa/Tavily/Keenable/Firecrawl/Parallel/You.com keyless; Zhihu global/site via MCP and Perplexity/SerpBase/DeepSeek (official + native tools/search)/Baidu/Kimi/Aliyun/Doubao/Google CSE/Metaso/Yandex/Yuanbao with key; OpenAI/Gemini/Claude model built-in search, explicit-only) + auto smart routing + global engine enable/disable & fallback priority + editable zh/en language pools + multi mode (parallel full language-pool merge) + multi_search cross-source tool + failure-aware fallback (quota/auth cooldown, transient retry, fallbackOn) + time filtering + platform search + domain blocklist (blockedDomains) + web_fetch, with web settings UI, plus a standalone stdio MCP server.",
   "type": "module",
   "main": "lib/index.js",
@@ -62,15 +62,16 @@
     "url": "https://github.com/DDDMUC/dsh-free-search.git"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20",
+    "dsh": ">=0.2.1-rc.2 <0.4.0-0"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
-    "@deepseek-ai/dsh-client-ui-commands": "^0.1.7-rc.1 || ^0.2.0-rc.1",
-    "@deepseek-ai/dsh-client-ui-plugin-manager": "^0.1.7-rc.1 || ^0.2.0-rc.1",
-    "@deepseek-ai/dsh-client-ui-renderer": "^0.1.7-rc.1 || ^0.2.0-rc.1",
-    "@deepseek-ai/dsh-settings": "^0.1.7-rc.1 || ^0.2.0-rc.1",
-    "@deepseek-ai/dsh-tools": "^0.1.7-rc.1 || ^0.2.0-rc.1",
+    "@deepseek-ai/dsh-client-ui-commands": "^0.1.7-rc.1 || ^0.2.0-rc.1 || ^0.3.0-0",
+    "@deepseek-ai/dsh-client-ui-plugin-manager": "^0.1.7-rc.1 || ^0.2.0-rc.1 || ^0.3.0-0",
+    "@deepseek-ai/dsh-client-ui-renderer": "^0.1.7-rc.1 || ^0.2.0-rc.1 || ^0.3.0-0",
+    "@deepseek-ai/dsh-settings": "^0.1.7-rc.1 || ^0.2.0-rc.1 || ^0.3.0-0",
+    "@deepseek-ai/dsh-tools": "^0.1.7-rc.1 || ^0.2.0-rc.1 || ^0.3.0-0",
     "@deepseek-ai/schemastery": ">=3.18.4 <4",
     "react": "^18.2.0"
   },
@@ -123,9 +124,12 @@
     "compatibility": {
       "dshReleases": {
         "0.2.1-rc.2": "compatible",
+        "0.2.1-rc.3": "compatible",
+        "0.2.1-rc.4": "compatible",
         "0.2.1-rc.5": "compatible",
         "0.2.2-rc.1": "compatible",
-        "0.2.2-rc.2": "compatible"
+        "0.2.2-rc.2": "compatible",
+        "0.2.2-rc.3": "compatible"
       }
     }
   },

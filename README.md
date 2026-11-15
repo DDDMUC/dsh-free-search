@@ -212,7 +212,7 @@
 
 ### 安装
 
-需要 **DSH 0.2.1-rc.2 或更新的 0.2.x**；更早的 0.1.x 宿主不满足 `engines.dsh`，插件管理器会拒绝安装。
+需要 **DSH 0.2.1-rc.2 到 0.3.x**（`engines.dsh` = `>=0.2.1-rc.2 <0.4.0-0`，顶层 `engines.dsh` 与 `dsh.engines.dsh` 同步声明，安装门禁与社区市场读同一范围）；更早的 0.1.x 和 0.4 及以上宿主不满足该范围，插件管理器会拒绝安装。已实测：0.2.2-rc.1（DSH Desktop 2.0.22-next 内置版本）与 0.2.2-rc.3。
 
 ```sh
 git clone https://github.com/DDDMUC/dsh-free-search.git
@@ -676,6 +676,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-doctor.mjs` | 诊断报告：时长格式化、头部版本 / Node / DSH 主目录 / 生效默认 / 提示词字数、每个引擎的标记与原因、冷却原因去重列出、提示词未注入的提示 | `node tools/assert-doctor.mjs`（5） |
 | `assert-agy.mjs` | Antigravity CLI：提示词查询 / 条数 / JSON 契约、structuredOutput 与 response 两种信封、非 SUCCESS 透出上游原因、URL 过滤与截断、CLI 参数、注入 runner 跳过 PATH 检查 | `node tools/assert-agy.mjs`（6） |
 | `assert-allowed-engines.mjs` | 引擎白名单（#106）：条目归一化、空名单保持原状、非空时禁用其余全部（含未来新增）、显式禁用优先、错拼不锁死搜索、白名单内引擎可入链（HTML 家族 / 按次计费）、auto 只路由白名单、内置提示词只列白名单且回退为 none、schema 默认空 | `node tools/assert-allowed-engines.mjs`（9） |
+| `assert-host-compat.mjs` | 宿主兼容声明（0.9.51）：顶层 `engines.dsh` 与 `dsh.engines.dsh` 一致、覆盖 0.2.1-rc.2～0.3.x 并拒绝 0.1.x/0.4+、每个 `@deepseek-ai/dsh*` peer 与主范围无冲突、市场的交集判定与安装门禁一致、`dshReleases` 列出实测版本、客户端版本跟随 package.json | `node tools/assert-host-compat.mjs`（8） |
 | `assert-updater.mjs` | 自带更新：版本比较、registry 探测（成功 / 非 200 / 网络失败返回 null）、安装模式识别（真实安装优先于 link）、客户端按钮与桥接、服务端两条路由与 pnpm 升级命令、卡片版本跟 package.json 一致 | `node tools/assert-updater.mjs`（9） |
 | `assert-inject.mjs` | 旧版 Cordis 兼容（#107）：静态 inject 声明 web / settings / tools / systemPrompt、可选服务只走 `ctx.get`、回调上下文的属性读取都在 inject 里、动态依赖列表没有未知服务 | `node tools/assert-inject.mjs`（4） |
 | `assert-safe-text.mjs` | UTF-16 截断安全（#108）：孤立高低代理清理、有效代理对保留、码点截断不切开 emoji、`cleanSnippet` 300 边界落在整字符、结果/来源/错误脱敏、web_fetch 各层正文兜底、源码守卫 | `node tools/assert-safe-text.mjs`（9） |
@@ -917,7 +918,7 @@ Rule of thumb for a default pool: **① as the floor + ③ as the workhorse**; �
 
 ### Installation
 
-Requires **DSH 0.2.1-rc.2 or a newer 0.2.x**; older 0.1.x hosts do not satisfy `engines.dsh` and the plugin manager will refuse the install.
+Requires **DSH 0.2.1-rc.2 through 0.3.x** (`engines.dsh` = `>=0.2.1-rc.2 <0.4.0-0`, declared at both the top-level `engines.dsh` and `dsh.engines.dsh` so the install gate and the community market read one range); older 0.1.x hosts and 0.4+ hosts do not satisfy it and the plugin manager refuses the install. Verified on 0.2.2-rc.1 (the runtime inside DSH Desktop 2.0.22-next) and 0.2.2-rc.3.
 
 ```sh
 git clone https://github.com/DDDMUC/dsh-free-search.git
@@ -1379,6 +1380,7 @@ Restart `dsh web` after switching to apply changes.
 | `assert-doctor.mjs` | Doctor report: duration formatting, version / Node / DSH home / effective default / prompt size header, a mark and reason per engine, cooldown reasons listed once, a warning when the prompt is not injected | `node tools/assert-doctor.mjs` (5) |
 | `assert-agy.mjs` | Antigravity CLI: query / cap / JSON contract in the prompt, structuredOutput and response envelopes, upstream reason on non-SUCCESS, URL filtering and truncation, CLI flags, injected runner skips the PATH check | `node tools/assert-agy.mjs` (6) |
 | `assert-allowed-engines.mjs` | Engine whitelist (#106): entries normalised, an empty list changes nothing, a non-empty list disables everything else (including future engines), explicit disables win, a typo does not brick search, whitelisted engines join the chain (HTML family / billed), Auto only routes allowed engines, the built-in prompt lists only them with a none fallback, and the schema defaults to empty | `node tools/assert-allowed-engines.mjs` (9) |
+| `assert-host-compat.mjs` | Host compatibility declarations (0.9.51): top-level `engines.dsh` matches `dsh.engines.dsh`, covers 0.2.1-rc.2 through 0.3.x and rejects 0.1.x/0.4+, every `@deepseek-ai/dsh*` peer agrees with that line, the market's intersection matches the install gate, `dshReleases` lists the verified hosts, and the client version follows package.json | `node tools/assert-host-compat.mjs` (8) |
 | `assert-updater.mjs` | Built-in updater: version comparison, registry probe (success / non-200 / network failure yields null), install-mode detection (a real install beats a link), the client button and bridge helper, both server routes with the pnpm upgrade command, and the card version matching package.json | `node tools/assert-updater.mjs` (9) |
 | `assert-inject.mjs` | Older Cordis compatibility (#107): the static inject list declares web / settings / tools / systemPrompt, optional services are read through `ctx.get`, every property read on a callback context is declared, and dynamic dependency lists contain no unknown services | `node tools/assert-inject.mjs` (4) |
 | `assert-safe-text.mjs` | UTF-16 truncation safety (#108): lone high/low surrogates replaced, valid pairs kept, code-point slicing never splits an emoji, `cleanSnippet`'s 300 boundary lands on a whole character, results/sources/errors sanitized, every web_fetch tier covered, plus source guards | `node tools/assert-safe-text.mjs` (9) |
