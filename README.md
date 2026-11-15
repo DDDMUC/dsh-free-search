@@ -621,7 +621,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **61 个**零依赖断言脚本（合计 **882 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
+仓库自带 **62 个**零依赖断言脚本（合计 **889 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -670,6 +670,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-rail-section.mjs` | 页内目录的机器可读当前段：卡片根 `data-dsh-fs-section` 与 `railActive` 绑定、六段 id 固定、滚动监听仍在更新 | `node tools/assert-rail-section.mjs`（4） |
 | `assert-package-files.mjs` | 发布清单闸门（#97）：`files` 展开后必须覆盖被引用的本地模块、入口点与 `cordis.patch.yml`，并确认 `prepack` 守卫生效 | `node tools/assert-package-files.mjs`（4） |
 | `assert-key-rotation.mjs` | 多 key 轮换（#96）：round-robin 与 peek、单 key 不推进、配额优先于 429 的分类、轮换候选集合、`multi` 模式内重试与预检不消耗 key | `node tools/assert-key-rotation.mjs`（7） |
+| `assert-fetch-key-rotation.mjs` | `web_fetch` 云端抓取（#128）：配额失败冻结当前 key 并用下一把重试、非轮换错误不换 key、无 key 不发请求、真实 provider 的 exa 402 重试、Linux 浏览器路径可发现 | `node tools/assert-fetch-key-rotation.mjs`（6） |
 | `assert-x-platform.mjs` | X (Twitter) 平台（Grok Build CLI）：可用性、提示词约束、structuredOutput/text/原始 JSON 解析、status 链接过滤与截断、双语文案与面板默认值 | `node tools/assert-x-platform.mjs`（8） |
 | `assert-cooldown.mjs` | 冷却：Retry-After / reset 时间提示优先、失败类档次（session / 短冷却 / 额度 / 月度 / 地区）、key 指纹稳定且互不相同、store 冷却 / 剩余 / 清除、有限冷却落盘重启后仍在而 session 不落盘、按 key 与按引擎互不干扰 | `node tools/assert-cooldown.mjs`（6） |
 | `assert-redact.mjs` | 错误脱敏：已登记 key 全量替换、`sk-` / Bearer / api_key / x-api-key 形态无需登记也能打码、普通文本与短值不动、环境变量按名称收集 | `node tools/assert-redact.mjs`（4） |
@@ -1326,7 +1327,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Sixty-one** zero-dependency assertion scripts ship with the repo (**882 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
+**Sixty-two** zero-dependency assertion scripts ship with the repo (**889 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
 
 | Script | Covers | Run (count) |
 |---|---|---|
@@ -1373,6 +1374,7 @@ Restart `dsh web` after switching to apply changes.
 | `assert-rail-section.mjs` | Machine-readable active section for the in-page rail: the card root's `data-dsh-fs-section` tracks `railActive`, the six section ids are fixed, and the scroll spy still updates it | `node tools/assert-rail-section.mjs` (4) |
 | `assert-package-files.mjs` | Packaging gate (#97): after expanding `files`, every imported local module, the entry points and `cordis.patch.yml` must be published, and the `prepack` guard must be wired | `node tools/assert-package-files.mjs` (4) |
 | `assert-key-rotation.mjs` | Multi-key rotation (#96): round-robin and peek, single keys never advancing, quota classification ahead of 429, the rotation-candidate set, and in-engine retries that keep multi-mode preflight from consuming keys | `node tools/assert-key-rotation.mjs` (7) |
+| `assert-fetch-key-rotation.mjs` | `web_fetch` cloud tiers (#128): a quota-failed key is cooled and the next key is tried, non-rotation errors do not consume another key, no key means no request, the real provider retries exa after a 402, and Linux browser paths | `node tools/assert-fetch-key-rotation.mjs` (6) |
 | `assert-x-platform.mjs` | X (Twitter) platform via the Grok Build CLI: availability, prompt guardrails, structuredOutput/text/raw JSON parsing, status-link filtering and caps, bilingual copy and panel defaults | `node tools/assert-x-platform.mjs` (8) |
 | `assert-cooldown.mjs` | Cooldowns: Retry-After / reset hints win, failure classes (session / short / quota / monthly / region), stable distinct key fingerprints, store cool/remaining/clear, finite cooldowns survive a restart while session ones do not, per-key and per-engine state stay separate | `node tools/assert-cooldown.mjs` (6) |
 | `assert-redact.mjs` | Error redaction: registered keys are scrubbed everywhere, `sk-` / Bearer / api_key / x-api-key shapes need no registration, ordinary text and short values are untouched, environment secrets are collected by name | `node tools/assert-redact.mjs` (4) |
