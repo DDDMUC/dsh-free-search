@@ -95,6 +95,7 @@
 #### 设置页与目录
 
 - **网页设置页** —— 引擎切换 + API key 配置（UI 中 key 脱敏显示「已配置」）+ 中英文切换；入口在左侧「插件」页的组件行配置（`plugins.row.config`，DSH 0.2.1-rc.2+）。远程访问（VPS / 反向代理 / 自定义域名）下也能用：桥接接口沿用宿主的 Host 围栏，`--trusted-host` 与 `--public-url` 声明的地址会放行（#84）。
+- **侧栏入口可关闭** —— 默认在左侧栏显示「免费搜索」；设置页关闭后写入配置并持久化，重启仍隐藏；隐藏时可用 `/free-search` 命令或插件页打开。
 
 <img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/ui-apikeys.png" alt="全局回退优先级与每引擎 API key" width="100%" />
 <sub>▲ 全局回退优先级：每行一个引擎，右侧填该引擎的 API key（已配置会脱敏显示）</sub>
@@ -128,50 +129,50 @@
 
 ### 引擎列表
 
-| id | 引擎 | 费用 | 说明 |
-|---|---|---|---|
-| `auto` | Auto 智能路由 | 动态 | **根据查询语言/时间条件自动选路**（含中文优先 Bing/Baidu/Aliyun/AnySearch，英文优先 Bing/Exa/Tavily；时间过滤优先支持引擎），末尾全量回退 |
-| `ddg` | DuckDuckGo HTML | 免费 | 偶发限流（反爬），解封自动恢复 |
-| `ddg-lite` | DuckDuckGo Lite | 免费 | 轻量版，同上 |
-| `bing` | Bing | 免费 | 免 key，中文优化（zh-CN）；中国出口的自动默认 |
-| `anysearch` | AnySearch AI | 免费 | AI 搜索，无 key（匿名额度） |
-| `searxng` | SearXNG 元搜索 | 免费 | 多实例自动切换，支持自定义实例 |
-| `degoog` | Degoog（自建聚合器） | 免费 | 需要自己的实例（`degoogInstances`），免 key；实例开启 API Key 时用 `degoogApiKey`（Bearer） |
-| `exa` | Exa | 免费 | **无 key 也可用**（MCP 匿名），配 key 提升额度 |
-| `tavily` | Tavily | 免费 | **无 key 也可用**（keyless 匿名），配 key 提升额度 |
-| `keenable` | Keenable | 免费 | **无 key 也可用**（MCP 匿名），配 key 提升额度 |
-| `firecrawl` | Firecrawl | 免费 | **无 key 也可用**（官方免 key 匿名额度），配 key 提升限额。注意：keyless 档按**出口 IP** 判定，VPN/代理出口会被 403 拒绝；插件会冷却 6 小时并说明原因（有 key 不受影响） |
-| `parallel` | Parallel | 免费 | **无 key 也可用**（官方 MCP 匿名额度），配 key 提升额度并支持精确时间过滤 |
-| `brave` | Brave Search | 付费（有免费额度） | 需 `BRAVE_API_KEY`（[API Dashboard](https://api-dashboard.search.brave.com)，$5/月免费额度 ≈ 1,000 次，超出按 $5/1,000 次计费）；独立索引，`freshness` 支持 pd/pw/pm/py 与日期区间 |
-| `you` | You.com | 免费 | **无 key 也可用**（官方免 key 档，每天 100 次），配 `YDC_API_KEY` 提升额度（旧名 `YOUCOM_API_KEY` 继续兼容） |
-| `agy` | Antigravity CLI | 免费 | 需本机安装 [Antigravity](https://antigravity.google) 并登录，插件通过 `agy -p` 调用；免 key、免额度，默认在引擎列表里，没装 CLI 时自动跳过 |
-| `perplexity` | Perplexity | 付费 | 需 `PERPLEXITY_API_KEY` |
-| `serpbase` | SerpBase | 付费 | 需 `SERPBASE_API_KEY`（serpbase.dev，注册送 100 次免费额度） |
-| `serply` | Serply | 付费 | 需 `SERPLY_API_KEY`（serply.io，新账户 30 天内 2,500 次免费额度）；Google 网页结果，按设置页语言本地化 |
-| `outcrawl` | Outcrawl | 付费 | 需 `OUTCRAWL_API_KEY`（outcrawl.ai，每月 1,000 credits 免费额度）；网页搜索结果（标题/链接/摘要），单次最多 20 条 |
-| `google` | Google 自定义搜索 | 免费额度 | 需 `GOOGLE_CSE_API_KEY` 和 Programmable Search Engine ID（`googleCseId` / cx）；Google 官方 Custom Search JSON API，每天 100 次免费，按次计费超额；支持 `hl`、安全搜索和 `dateRestrict` 时间过滤 |
-| `metaso` | 秘塔搜索 | 付费（点数） | 需 `METASO_API_KEY`（metaso.cn/api）；官方 AI 搜索 API，按点数计费（约 0.03 元/次，新用户有体验额度）；支持网页 / 文库 / 学术三种 `scope`，返回摘要和来源；不在默认回退顺序里，配 key 后显式选用 |
-| `yandex` | Yandex 搜索 | 付费 | 需 `YANDEX_API_KEY` 和 `yandexFolderId`（AI Studio，按请求计费，需 billing account）；官方 Search API，`searchType` 支持 RU/TR/COM/KK/BE/UZ，响应为 Base64 XML；支持 day / 2 weeks / month 时间过滤；显式专用 |
-| `yuanbao` | 腾讯元宝搜索 | 付费（有活动免费额度） | 需 `TENCENTCLOUD_WSA_APIKEY`（console.cloud.tencent.com/wsapi）；API key 网关，支持自然 / 权威 / 混合模式、站点限定、时间范围；活动页可领每日免费额度（限时）；显式专用 |
-| `deepseek-official` | DeepSeek 官方 | 付费 | 需 `DEEPSEEK_API_KEY`；走 Anthropic 兼容的 `web_search` 服务端工具，每次搜索是一整个模型轮次（慢、耗 token） |
-| `deepseek-tools` | DeepSeek 原生搜索 API | 付费 | 需 `DEEPSEEK_API_KEY`（与上一档共用）；直接 `POST /v1/tools/search`，无模型参与，返回结构化 `results[]`（`title`/`url`/`summary`/`date`），同 query 实测 ~0.3s vs 上一档 ~5-6s；端点可通过 `deepseekToolsBaseUrl` 改成自定义网关（完整 URL 或 base；走 `/v1/search` 的网关请填完整 URL），key 可用 `deepseekToolsApiKey` 单独覆盖 |
-| `baidu` | 百度千帆 AI 搜索 | 额度 | 需 `BAIDU_API_KEY`（千帆 AI 搜索：web_search 每日赠 50 次，额度用尽/403 时自动回退到 chat/completions，另有 100 次/天免费额度；超额按量后付费）；中文全网，支持时间过滤 |
-| `kimi` | Kimi（Moonshot）联网搜索 | 付费 | 需 `MOONSHOT_API_KEY`（basic 约 ￥0.01/次），返回带正文 chunks 的中文结果；**无免费额度**，适合显式选用或作质量升级池，不建议放进默认并发池 |
-| `kimi` | Kimi（Moonshot）联网搜索 | 付费 | 需 `MOONSHOT_API_KEY`（basic 约 ￥0.01/次），返回带正文 chunks 的中文结果 |
-| `aliyun` | 阿里云百炼 EnhancedSearch | 付费 | 需 `DASHSCOPE_API_KEY`（MCP search_pro，约 ￥0.03/次，新用户 200 次免费包）；中文全网带来源 hostname |
-| `doubao` | 火山引擎联网搜索（豆包搜索） | 免费额度 | 需 `DOUBAO_SEARCH_API_KEY`（联网搜索控制台开通，**每月 500 次免费**，超出按量付费）；中文时效内容强，支持时间/站点过滤，返回千字级摘要 |
-| `zhihu_global` | 知乎全网搜索（开放平台 MCP） | 免费额度 | 需 `ZHIHU_API_KEY`；**每日 5,000 次试用额度**（试用结束需另行开通）；支持时间过滤（`publish_time`）；无 key 时自动跳过 |
-| `zhihu_site` | 知乎站内搜索（开放平台 MCP） | 免费额度 | 需 `ZHIHU_API_KEY`；**每日 5,000 次试用额度**（与 `zhihu_global` 共享）；不支持时间过滤 |
-| `zhihu_global` | 知乎全网搜索（开放平台 MCP） | 付费 | 需 `ZHIHU_API_KEY`；支持时间过滤（`publish_time`）；无 key 时自动跳过 |
-| `zhihu_site` | 知乎站内搜索（开放平台 MCP） | 付费 | 需 `ZHIHU_API_KEY`；不支持时间过滤 |
-| `openai` | OpenAI 模型内置搜索 | 付费 | 需 `OPENAI_API_KEY`；走 Responses API 的 `web_search` 工具，返回带引用的回答。**按次计费，仅在显式选中时使用**（不参与自动回退/auto）；默认 `gpt-6-luna`，模型与端点可配（`openaiModel` / `openaiBaseUrl`） |
-| `gemini` | Gemini Grounding with Google Search | 付费 | 需 `GEMINI_API_KEY`（兼容 `GOOGLE_API_KEY`）；走官方推荐的 **Interactions API**（`POST /v1beta/interactions`，`tools:[{type:"google_search"}]`），从 `steps[].content[].annotations` 取引用。**按次计费，仅在显式选中时使用**；默认 `gemini-3.8-flash`，模型与端点可配（`geminiModel` / `geminiBaseUrl`） |
-| `claude` | Claude 服务端 web_search | 付费 | 需 `ANTHROPIC_API_KEY`；结果来自 `web_search_tool_result`。**按次计费，仅在显式选中时使用**；默认 `claude-sonnet-5-5`，模型与端点可配（`claudeModel` / `claudeBaseUrl`） |
-| `baidu-html` | 百度网页（HTML） | 免费 | 中文网页结果最全的一档；连续请求 2–3 次容易触发验证码，触发后家族冷却 10 分钟。API 版百度见 `baidu`（千帆） |
-| `so360` | 360 搜索 | 免费 | 中文网页；反爬最严，多数网络下直接返回验证码页，命中 `bot-wall` |
-| `sogou` | 搜狗 | 免费 | 中文网页；`/link?url=…` 签名跳转链会解包成真实地址（一次 `redirect: manual`，不抓正文） |
-| `wechat` | 微信文章（搜狗） | 免费 | 公众号文章；签名链**单次有效**，预取会跳反爬页，因此保留原链不解包 |
-| `toutiao` | 今日头条 | 免费 | 走页面内嵌 JSON 的 `article_url`；聚合内容多，建议对结论做二次核对 |
+| id | 引擎 | 费用 | 免 key | 说明 |
+|---|---|---|---|---|
+| `auto` | Auto 智能路由 | 动态 | 视池 | **根据查询语言/时间条件自动选路**（含中文优先 Bing/Baidu/Aliyun/AnySearch，英文优先 Bing/Exa/Tavily；时间过滤优先支持引擎），末尾全量回退 |
+| `ddg` | DuckDuckGo HTML | 免费 | 是 | 偶发限流（反爬），解封自动恢复 |
+| `ddg-lite` | DuckDuckGo Lite | 免费 | 是 | 轻量版，同上 |
+| `bing` | Bing | 免费 | 是 | 免 key，中文优化（zh-CN）；中国出口的自动默认 |
+| `anysearch` | AnySearch AI | 免费 | 是 | AI 搜索，无 key（匿名额度） |
+| `searxng` | SearXNG 元搜索 | 免费 | 是 | 多实例自动切换，支持自定义实例 |
+| `degoog` | Degoog（自建聚合器） | 免费 | 是（需实例） | 需要自己的实例（`degoogInstances`），免 key；实例开启 API Key 时用 `degoogApiKey`（Bearer） |
+| `exa` | Exa | 免费 | 可选 | **无 key 也可用**（MCP 匿名），配 key 提升额度 |
+| `tavily` | Tavily | 免费 | 可选 | **无 key 也可用**（keyless 匿名），配 key 提升额度 |
+| `keenable` | Keenable | 免费 | 可选 | **无 key 也可用**（MCP 匿名），配 key 提升额度 |
+| `firecrawl` | Firecrawl | 免费 | 可选 | **无 key 也可用**（官方免 key 匿名额度），配 key 提升限额。注意：keyless 档按**出口 IP** 判定，VPN/代理出口会被 403 拒绝；插件会冷却 6 小时并说明原因（有 key 不受影响） |
+| `parallel` | Parallel | 免费 | 可选 | **无 key 也可用**（官方 MCP 匿名额度），配 key 提升额度并支持精确时间过滤 |
+| `brave` | Brave Search | 付费（有免费额度） | 否 | 需 `BRAVE_API_KEY`（[API Dashboard](https://api-dashboard.search.brave.com)，$5/月免费额度 ≈ 1,000 次，超出按 $5/1,000 次计费）；独立索引，`freshness` 支持 pd/pw/pm/py 与日期区间 |
+| `you` | You.com | 免费 | 可选 | **无 key 也可用**（官方免 key 档，每天 100 次），配 `YDC_API_KEY` 提升额度（旧名 `YOUCOM_API_KEY` 继续兼容） |
+| `agy` | Antigravity CLI | 免费 | 是（需 CLI） | 需本机安装 [Antigravity](https://antigravity.google) 并登录，插件通过 `agy -p` 调用；免 key、免额度，默认在引擎列表里，没装 CLI 时自动跳过 |
+| `perplexity` | Perplexity | 付费 | 否 | 需 `PERPLEXITY_API_KEY` |
+| `serpbase` | SerpBase | 付费 | 否 | 需 `SERPBASE_API_KEY`（serpbase.dev，注册送 100 次免费额度） |
+| `serply` | Serply | 付费 | 否 | 需 `SERPLY_API_KEY`（serply.io，新账户 30 天内 2,500 次免费额度）；Google 网页结果，按设置页语言本地化 |
+| `outcrawl` | Outcrawl | 付费 | 否 | 需 `OUTCRAWL_API_KEY`（outcrawl.ai，每月 1,000 credits 免费额度）；网页搜索结果（标题/链接/摘要），单次最多 20 条 |
+| `google` | Google 自定义搜索 | 免费额度 | 否 | 需 `GOOGLE_CSE_API_KEY` 和 Programmable Search Engine ID（`googleCseId` / cx）；Google 官方 Custom Search JSON API，每天 100 次免费，按次计费超额；支持 `hl`、安全搜索和 `dateRestrict` 时间过滤 |
+| `metaso` | 秘塔搜索 | 付费（点数） | 否 | 需 `METASO_API_KEY`（metaso.cn/api）；官方 AI 搜索 API，按点数计费（约 0.03 元/次，新用户有体验额度）；支持网页 / 文库 / 学术三种 `scope`，返回摘要和来源；不在默认回退顺序里，配 key 后显式选用 |
+| `yandex` | Yandex 搜索 | 付费 | 否 | 需 `YANDEX_API_KEY` 和 `yandexFolderId`（AI Studio，按请求计费，需 billing account）；官方 Search API，`searchType` 支持 RU/TR/COM/KK/BE/UZ，响应为 Base64 XML；支持 day / 2 weeks / month 时间过滤；显式专用 |
+| `yuanbao` | 腾讯元宝搜索 | 付费（有活动免费额度） | 否 | 需 `TENCENTCLOUD_WSA_APIKEY`（console.cloud.tencent.com/wsapi）；API key 网关，支持自然 / 权威 / 混合模式、站点限定、时间范围；活动页可领每日免费额度（限时）；显式专用 |
+| `deepseek-official` | DeepSeek 官方 | 付费 | 否 | 需 `DEEPSEEK_API_KEY`；走 Anthropic 兼容的 `web_search` 服务端工具，每次搜索是一整个模型轮次（慢、耗 token） |
+| `deepseek-tools` | DeepSeek 原生搜索 API | 付费 | 否 | 需 `DEEPSEEK_API_KEY`（与上一档共用）；直接 `POST /v1/tools/search`，无模型参与，返回结构化 `results[]`（`title`/`url`/`summary`/`date`），同 query 实测 ~0.3s vs 上一档 ~5-6s；端点可通过 `deepseekToolsBaseUrl` 改成自定义网关（完整 URL 或 base；走 `/v1/search` 的网关请填完整 URL），key 可用 `deepseekToolsApiKey` 单独覆盖 |
+| `baidu` | 百度千帆 AI 搜索 | 额度 | 否 | 需 `BAIDU_API_KEY`（千帆 AI 搜索：web_search 每日赠 50 次，额度用尽/403 时自动回退到 chat/completions，另有 100 次/天免费额度；超额按量后付费）；中文全网，支持时间过滤 |
+| `kimi` | Kimi（Moonshot）联网搜索 | 付费 | 否 | 需 `MOONSHOT_API_KEY`（basic 约 ￥0.01/次），返回带正文 chunks 的中文结果；**无免费额度**，适合显式选用或作质量升级池，不建议放进默认并发池 |
+| `kimi` | Kimi（Moonshot）联网搜索 | 付费 | 否 | 需 `MOONSHOT_API_KEY`（basic 约 ￥0.01/次），返回带正文 chunks 的中文结果 |
+| `aliyun` | 阿里云百炼 EnhancedSearch | 付费 | 否 | 需 `DASHSCOPE_API_KEY`（MCP search_pro，约 ￥0.03/次，新用户 200 次免费包）；中文全网带来源 hostname |
+| `doubao` | 火山引擎联网搜索（豆包搜索） | 免费额度 | 否 | 需 `DOUBAO_SEARCH_API_KEY`（联网搜索控制台开通，**每月 500 次免费**，超出按量付费）；中文时效内容强，支持时间/站点过滤，返回千字级摘要 |
+| `zhihu_global` | 知乎全网搜索（开放平台 MCP） | 免费额度 | 否 | 需 `ZHIHU_API_KEY`；**每日 5,000 次试用额度**（试用结束需另行开通）；支持时间过滤（`publish_time`）；无 key 时自动跳过 |
+| `zhihu_site` | 知乎站内搜索（开放平台 MCP） | 免费额度 | 否 | 需 `ZHIHU_API_KEY`；**每日 5,000 次试用额度**（与 `zhihu_global` 共享）；不支持时间过滤 |
+| `zhihu_global` | 知乎全网搜索（开放平台 MCP） | 付费 | 否 | 需 `ZHIHU_API_KEY`；支持时间过滤（`publish_time`）；无 key 时自动跳过 |
+| `zhihu_site` | 知乎站内搜索（开放平台 MCP） | 付费 | 否 | 需 `ZHIHU_API_KEY`；不支持时间过滤 |
+| `openai` | OpenAI 模型内置搜索 | 付费 | 否 | 需 `OPENAI_API_KEY`；走 Responses API 的 `web_search` 工具，返回带引用的回答。**按次计费，仅在显式选中时使用**（不参与自动回退/auto）；默认 `gpt-6-luna`，模型与端点可配（`openaiModel` / `openaiBaseUrl`） |
+| `gemini` | Gemini Grounding with Google Search | 付费 | 否 | 需 `GEMINI_API_KEY`（兼容 `GOOGLE_API_KEY`）；走官方推荐的 **Interactions API**（`POST /v1beta/interactions`，`tools:[{type:"google_search"}]`），从 `steps[].content[].annotations` 取引用。**按次计费，仅在显式选中时使用**；默认 `gemini-3.8-flash`，模型与端点可配（`geminiModel` / `geminiBaseUrl`） |
+| `claude` | Claude 服务端 web_search | 付费 | 否 | 需 `ANTHROPIC_API_KEY`；结果来自 `web_search_tool_result`。**按次计费，仅在显式选中时使用**；默认 `claude-sonnet-5-5`，模型与端点可配（`claudeModel` / `claudeBaseUrl`） |
+| `baidu-html` | 百度网页（HTML） | 免费 | 是 | 中文网页结果最全的一档；连续请求 2–3 次容易触发验证码，触发后家族冷却 10 分钟。API 版百度见 `baidu`（千帆） |
+| `so360` | 360 搜索 | 免费 | 是 | 中文网页；反爬最严，多数网络下直接返回验证码页，命中 `bot-wall` |
+| `sogou` | 搜狗 | 免费 | 是 | 中文网页；`/link?url=…` 签名跳转链会解包成真实地址（一次 `redirect: manual`，不抓正文） |
+| `wechat` | 微信文章（搜狗） | 免费 | 是 | 公众号文章；签名链**单次有效**，预取会跳反爬页，因此保留原链不解包 |
+| `toutiao` | 今日头条 | 免费 | 是 | 走页面内嵌 JSON 的 `article_url`；聚合内容多，建议对结论做二次核对 |
 
 - **默认引擎自动选**：`provider` 留空时按出口地区选一次——中国大陆出口用 `bing`（不依赖代理），其它地区用 `parallel`（免 key 的官方 MCP，官方文档命中率更高）；探测失败一律退回 `bing`。也可用 `DSH_FREE_SEARCH_DEFAULT=bing` 或 `=parallel` 指定，设置页选过引擎则以你的选择为准。
 - **自动回退**：任何引擎失败（免费限流/反爬，付费缺 key/无效/网络错误）都会自动轮流尝试下一个引擎——先试其他已配 key 的付费引擎，再试免费引擎（Bing/AnySearch 等），并在结果中附带回退提示——搜索不会因引擎问题直接失败。
@@ -623,7 +624,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **65 个**零依赖断言脚本（合计 **961 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
+仓库自带 **66 个**零依赖断言脚本（合计 **965 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -636,6 +637,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-maintenance.mjs` | 维护面：CI 在 Node 20/22/24 跑全部断言并过打包闸门、发布脚本会 bump / 校验 / 打 tag / 可发布、恢复官方 provider 的桥接与设置页按钮 | `node tools/assert-maintenance.mjs`（4） |
 | `assert-engine-modules.mjs` | 引擎分层：实现文件存在且被 index 引用、引擎函数已迁出 index、设置页引擎 id 与服务端清单一致、清单覆盖 40 个引擎且免费/按次标记正确、index 不引用引擎私有名 | `node tools/assert-engine-modules.mjs`（6） |
 | `assert-brave.mjs` | Brave Search：catalog/凭据/设置接线、请求头与 count/freshness、错误分类、HTML 清洗、ISO 日期归一化、15s 超时 | `node tools/assert-brave.mjs`（54） |
+| `assert-sidebar-entry.mjs` | 侧栏入口（#129）：`sidebarEntry` 默认开、设置页读写、条件注册/注销、`/free-search` 命令打开面板 | `node tools/assert-sidebar-entry.mjs`（4） |
 | `assert-bing-relevance.mjs` | Bing 相关性（#112）：单字中文 token 被剔除、无关替代 SERP 被拒、真正相关的结果通过、只命中通用引擎名的整批被拒、单一 token 覆盖一半时放行、单字/纯数字查询的显式行为 | `node tools/assert-bing-relevance.mjs`（6） |
 | `assert-relevance-pools.mjs` | 相关性守卫与语言池（#132/#133）：AnySearch 无关批次判空、相关批次保留、shared.js 守卫被 anysearch/searxng/ddg/ddg-lite/degoog/keenable 使用、doctor 地区默认文案与语言池告警、缓存 key 随 zhPool/enPool 变化 | `node tools/assert-relevance-pools.mjs`（5） |
 | `assert-quality.mjs` | 研究证据闸门：8 源 / 3 域 / 3 正文 / 2 日期为 high，3 源 / 2 域 / 1 正文为 medium，单源与失败注记为 low，空包为 low，research 的 schema/输出/brief 接线 | `node tools/assert-quality.mjs`（6） |
@@ -804,6 +806,7 @@ This plugin solves exactly that: multiple free engines plus automatic fallback, 
 #### Settings and rail
 
 - **Web Settings UI** — Engine switching, API key configuration (keys masked as "configured" in the UI), and a Chinese/English toggle; the entry is the component-row config (`plugins.row.config`) on the sidebar Plugins page (DSH 0.2.1-rc.2+). Remote access (VPS, reverse proxy, custom domain) works too: the bridge reuses the host's own Host fence, so addresses declared with `--trusted-host` or `--public-url` are accepted (#84).
+- **Optional sidebar entry** — the left-sidebar row is shown by default; turning it off persists in the plugin config and survives restarts. The panel remains reachable through `/free-search` or the plugin page.
 
 <img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/ui-apikeys.png" alt="Global fallback priority and per-engine API keys" width="100%" />
 <sub>▲ Global fallback priority: one engine per row, its API key on the right (configured keys are masked)</sub>
@@ -838,50 +841,50 @@ If this plugin has been helpful, a ⭐ on [GitHub](https://github.com/DDDMUC/dsh
 
 ### Supported Engines
 
-| id | Engine | Cost | Description |
-|---|---|---|---|
-| `auto` | Auto Smart Routing | Dynamic | **Smartly routes engines based on query language/time filter** (Chinese queries prioritize Bing/Baidu/Aliyun/AnySearch, English queries prioritize Bing/Exa/Tavily; time filters prioritize time-capable engines), with full fallback |
-| `ddg` | DuckDuckGo HTML | Free | Occasional rate limits (anti-bot challenges); recovers automatically |
-| `ddg-lite` | DuckDuckGo Lite | Free | Lightweight version; same rate-limit behavior as above |
-| `bing` | Bing | Free | No key, optimized for Chinese (`zh-CN`); the automatic default on a mainland egress |
-| `anysearch` | AnySearch AI | Free | AI search, no key needed (anonymous quota) |
-| `searxng` | SearXNG Meta Search | Free | Multi-instance automatic failover; supports custom instances |
-| `degoog` | Degoog (self-hosted aggregator) | Free | Needs your own instance (`degoogInstances`), no key; `degoogApiKey` (Bearer) only if the instance enables API keys |
-| `exa` | Exa | Free | **Usable without a key** (anonymous MCP); configure a key for higher quota |
-| `tavily` | Tavily | Free | **Usable without a key** (keyless anonymous); configure a key for higher quota |
-| `keenable` | Keenable | Free | **Usable without a key** (anonymous MCP); configure a key for higher quota |
-| `firecrawl` | Firecrawl | Free | **Usable without a key** (official keyless anonymous quota); a key adds higher limits. Note: the keyless tier is judged by **egress IP** — VPN/proxy egress gets a 403, in which case the plugin cools it down for 6 hours and says why (a key is unaffected) |
-| `parallel` | Parallel | Free | **Works without a key** (official MCP anonymous quota); a key raises limits and enables precise time filtering |
-| `brave` | Brave Search | Paid (free allowance) | Requires `BRAVE_API_KEY` ([API Dashboard](https://api-dashboard.search.brave.com); $5/month free credit ≈ 1,000 queries, then $5 per 1,000); independent index, `freshness` supports pd/pw/pm/py and date ranges |
-| `you` | You.com | Free | **Works without a key** (official keyless tier, 100 searches a day); set `YDC_API_KEY` for higher limits (the old `YOUCOM_API_KEY` name still works) |
-| `agy` | Antigravity CLI | Free | Requires the [Antigravity](https://antigravity.google) CLI installed and signed in; invoked as `agy -p`, no key and no quota, enabled by default and skipped automatically when the CLI is absent |
-| `perplexity` | Perplexity | Paid | Requires `PERPLEXITY_API_KEY` |
-| `serpbase` | SerpBase | Paid | Requires `SERPBASE_API_KEY` (serpbase.dev, 100 free queries on signup) |
-| `serply` | Serply | Paid | Requires `SERPLY_API_KEY` (serply.io, 2,500 free credits for the first 30 days); Google web results localized to the settings language |
-| `outcrawl` | Outcrawl | Paid | Requires `OUTCRAWL_API_KEY` (outcrawl.ai, free tier of 1,000 credits a month); web results with title, URL and snippet, up to 20 per search |
-| `google` | Google Programmable Search | Free quota | Requires `GOOGLE_CSE_API_KEY` and a Programmable Search Engine ID (`googleCseId` / cx); official Custom Search JSON API, 100 free queries/day then billed; supports `hl`, safe search and `dateRestrict` time filtering |
-| `metaso` | Metaso (秘塔搜索) | Paid (credits) | Requires `METASO_API_KEY` (metaso.cn/api); official AI search API billed per call (about ¥0.03/query, trial credits for new accounts); supports webpage / document / scholar scopes and returns summaries with sources; not in the default fallback order, use it explicitly after configuring a key |
-| `yandex` | Yandex Search | Paid | Requires `YANDEX_API_KEY` and `yandexFolderId` (AI Studio; billed per request to a billing account); official Search API with RU/TR/COM/KK/BE/UZ search types and Base64 XML responses; supports day / 2 weeks / month time filters; explicit-only |
-| `yuanbao` | Tencent Yuanbao Search | Paid (limited free-quota activity) | Requires `TENCENTCLOUD_WSA_APIKEY` (console.cloud.tencent.com/wsapi); API-key gateway with natural / authoritative / hybrid modes, site restriction and time ranges; the activity page offers a limited daily free quota; explicit-only |
-| `deepseek-official` | DeepSeek Official | Paid | Requires `DEEPSEEK_API_KEY`; uses the Anthropic-compatible `web_search` server tool, so every search is a full model turn (slow, token-billed) |
-| `deepseek-tools` | DeepSeek Native Search API | Paid | Requires `DEEPSEEK_API_KEY` (shared with the row above); calls `POST /v1/tools/search` directly, no model involved, returns structured `results[]` (`title`/`url`/`summary`/`date`) — measured ~0.3s vs ~5-6s for the row above; the endpoint is configurable via `deepseekToolsBaseUrl` (full URL or base; use the full URL for a gateway exposing `/v1/search`) and the key can be overridden with `deepseekToolsApiKey` for custom gateways |
-| `baidu` | Baidu Qianfan AI Search | Quota | Requires `BAIDU_API_KEY` (Qianfan AI Search: 50 free web_search calls/day; when that quota is exhausted or returns 403 it falls back to chat/completions, which has a separate 100/day free quota; pay-as-you-go beyond); Chinese web-wide, supports time filtering |
-| `kimi` | Kimi (Moonshot) Web Search | Paid | Requires `MOONSHOT_API_KEY` (basic ~¥0.01/call); returns Chinese results with body chunks; **no free quota**, so prefer explicit selection or the escalation pool over the default concurrent pool |
-| `kimi` | Kimi (Moonshot) Web Search | Paid | Requires `MOONSHOT_API_KEY` (basic ~¥0.01/call); returns Chinese results with body chunks |
-| `aliyun` | Aliyun Bailian EnhancedSearch | Paid | Requires `DASHSCOPE_API_KEY` (MCP search_pro, ~¥0.03/call, 200 free calls for new users); Chinese web-wide with source hostnames |
-| `doubao` | Volcano Web Search (Doubao) | Free quota | Requires `DOUBAO_SEARCH_API_KEY` (open it in the Web Search console; **500 free queries/month**, pay-as-you-go beyond); strong for fresh Chinese content, supports time/site filters, returns long summaries |
-| `zhihu_global` | Zhihu web-wide search (open-platform MCP) | Free quota | Requires `ZHIHU_API_KEY`; **5,000 calls/day trial quota** (paid access after the trial); supports the time filter (`publish_time`); skipped automatically when no key is set |
-| `zhihu_site` | Zhihu site search (open-platform MCP) | Free quota | Requires `ZHIHU_API_KEY`; **5,000 calls/day trial quota** (shared with `zhihu_global`); time filtering not offered |
-| `zhihu_global` | Zhihu web-wide search (open-platform MCP) | Paid | Requires `ZHIHU_API_KEY`; supports the time filter (`publish_time`); skipped automatically when no key is set |
-| `zhihu_site` | Zhihu site search (open-platform MCP) | Paid | Requires `ZHIHU_API_KEY`; time filtering not verified, so it is not offered |
-| `openai` | OpenAI built-in web search | Paid | Requires `OPENAI_API_KEY`; uses the Responses API `web_search` tool and returns a cited answer. **Billed per search, explicit selection only** (never picked by the fallback chain or Auto); default `gpt-6-luna`, model/endpoint configurable (`openaiModel` / `openaiBaseUrl`) |
-| `gemini` | Gemini grounding with Google Search | Paid | Requires `GEMINI_API_KEY` (falls back to `GOOGLE_API_KEY`); uses the recommended **Interactions API** (`POST /v1beta/interactions`, `tools:[{type:"google_search"}]`) and reads citations from `steps[].content[].annotations`. **Billed per search, explicit selection only**; default `gemini-3.8-flash`, model/endpoint configurable (`geminiModel` / `geminiBaseUrl`) |
-| `claude` | Claude server-side web_search | Paid | Requires `ANTHROPIC_API_KEY`; results come from `web_search_tool_result`. **Billed per search, explicit selection only**; default `claude-sonnet-5-5`, model/endpoint configurable (`claudeModel` / `claudeBaseUrl`) |
-| `baidu-html` | Baidu web (HTML) | Free | Broadest Chinese web coverage of the family; 2–3 back-to-back requests can trigger a captcha, which cools the family down for 10 minutes. The API-based Baidu engine is `baidu` (Qianfan) |
-| `so360` | 360 Search | Free | Chinese web; the strictest anti-bot of the family, usually answers with a captcha page (`bot-wall`) |
-| `sogou` | Sogou | Free | Chinese web; `/link?url=…` signed redirects are resolved to the real URL (one `redirect: manual` hop, body discarded) |
-| `wechat` | WeChat articles (Sogou) | Free | Public-account articles; the signed link is **single-use**, so prefetching burns it and lands on the anti-bot page — the original link is kept as-is |
-| `toutiao` | Toutiao | Free | Reads `article_url` out of the embedded JSON; heavily aggregated, so verify conclusions a second time |
+| id | Engine | Cost | Keyless | Description |
+|---|---|---|---|---|
+| `auto` | Auto Smart Routing | Dynamic | Pool-dependent | **Smartly routes engines based on query language/time filter** (Chinese queries prioritize Bing/Baidu/Aliyun/AnySearch, English queries prioritize Bing/Exa/Tavily; time filters prioritize time-capable engines), with full fallback |
+| `ddg` | DuckDuckGo HTML | Free | Yes | Occasional rate limits (anti-bot challenges); recovers automatically |
+| `ddg-lite` | DuckDuckGo Lite | Free | Yes | Lightweight version; same rate-limit behavior as above |
+| `bing` | Bing | Free | Yes | No key, optimized for Chinese (`zh-CN`); the automatic default on a mainland egress |
+| `anysearch` | AnySearch AI | Free | Yes | AI search, no key needed (anonymous quota) |
+| `searxng` | SearXNG Meta Search | Free | Yes | Multi-instance automatic failover; supports custom instances |
+| `degoog` | Degoog (self-hosted aggregator) | Free | Yes (instance) | Needs your own instance (`degoogInstances`), no key; `degoogApiKey` (Bearer) only if the instance enables API keys |
+| `exa` | Exa | Free | Optional | **Usable without a key** (anonymous MCP); configure a key for higher quota |
+| `tavily` | Tavily | Free | Optional | **Usable without a key** (keyless anonymous); configure a key for higher quota |
+| `keenable` | Keenable | Free | Optional | **Usable without a key** (anonymous MCP); configure a key for higher quota |
+| `firecrawl` | Firecrawl | Free | Optional | **Usable without a key** (official keyless anonymous quota); a key adds higher limits. Note: the keyless tier is judged by **egress IP** — VPN/proxy egress gets a 403, in which case the plugin cools it down for 6 hours and says why (a key is unaffected) |
+| `parallel` | Parallel | Free | Optional | **Works without a key** (official MCP anonymous quota); a key raises limits and enables precise time filtering |
+| `brave` | Brave Search | Paid (free allowance) | No | Requires `BRAVE_API_KEY` ([API Dashboard](https://api-dashboard.search.brave.com); $5/month free credit ≈ 1,000 queries, then $5 per 1,000); independent index, `freshness` supports pd/pw/pm/py and date ranges |
+| `you` | You.com | Free | Optional | **Works without a key** (official keyless tier, 100 searches a day); set `YDC_API_KEY` for higher limits (the old `YOUCOM_API_KEY` name still works) |
+| `agy` | Antigravity CLI | Free | Yes (CLI) | Requires the [Antigravity](https://antigravity.google) CLI installed and signed in; invoked as `agy -p`, no key and no quota, enabled by default and skipped automatically when the CLI is absent |
+| `perplexity` | Perplexity | Paid | No | Requires `PERPLEXITY_API_KEY` |
+| `serpbase` | SerpBase | Paid | No | Requires `SERPBASE_API_KEY` (serpbase.dev, 100 free queries on signup) |
+| `serply` | Serply | Paid | No | Requires `SERPLY_API_KEY` (serply.io, 2,500 free credits for the first 30 days); Google web results localized to the settings language |
+| `outcrawl` | Outcrawl | Paid | No | Requires `OUTCRAWL_API_KEY` (outcrawl.ai, free tier of 1,000 credits a month); web results with title, URL and snippet, up to 20 per search |
+| `google` | Google Programmable Search | Free quota | No | Requires `GOOGLE_CSE_API_KEY` and a Programmable Search Engine ID (`googleCseId` / cx); official Custom Search JSON API, 100 free queries/day then billed; supports `hl`, safe search and `dateRestrict` time filtering |
+| `metaso` | Metaso (秘塔搜索) | Paid (credits) | No | Requires `METASO_API_KEY` (metaso.cn/api); official AI search API billed per call (about ¥0.03/query, trial credits for new accounts); supports webpage / document / scholar scopes and returns summaries with sources; not in the default fallback order, use it explicitly after configuring a key |
+| `yandex` | Yandex Search | Paid | No | Requires `YANDEX_API_KEY` and `yandexFolderId` (AI Studio; billed per request to a billing account); official Search API with RU/TR/COM/KK/BE/UZ search types and Base64 XML responses; supports day / 2 weeks / month time filters; explicit-only |
+| `yuanbao` | Tencent Yuanbao Search | Paid (limited free-quota activity) | No | Requires `TENCENTCLOUD_WSA_APIKEY` (console.cloud.tencent.com/wsapi); API-key gateway with natural / authoritative / hybrid modes, site restriction and time ranges; the activity page offers a limited daily free quota; explicit-only |
+| `deepseek-official` | DeepSeek Official | Paid | No | Requires `DEEPSEEK_API_KEY`; uses the Anthropic-compatible `web_search` server tool, so every search is a full model turn (slow, token-billed) |
+| `deepseek-tools` | DeepSeek Native Search API | Paid | No | Requires `DEEPSEEK_API_KEY` (shared with the row above); calls `POST /v1/tools/search` directly, no model involved, returns structured `results[]` (`title`/`url`/`summary`/`date`) — measured ~0.3s vs ~5-6s for the row above; the endpoint is configurable via `deepseekToolsBaseUrl` (full URL or base; use the full URL for a gateway exposing `/v1/search`) and the key can be overridden with `deepseekToolsApiKey` for custom gateways |
+| `baidu` | Baidu Qianfan AI Search | Quota | No | Requires `BAIDU_API_KEY` (Qianfan AI Search: 50 free web_search calls/day; when that quota is exhausted or returns 403 it falls back to chat/completions, which has a separate 100/day free quota; pay-as-you-go beyond); Chinese web-wide, supports time filtering |
+| `kimi` | Kimi (Moonshot) Web Search | Paid | No | Requires `MOONSHOT_API_KEY` (basic ~¥0.01/call); returns Chinese results with body chunks; **no free quota**, so prefer explicit selection or the escalation pool over the default concurrent pool |
+| `kimi` | Kimi (Moonshot) Web Search | Paid | No | Requires `MOONSHOT_API_KEY` (basic ~¥0.01/call); returns Chinese results with body chunks |
+| `aliyun` | Aliyun Bailian EnhancedSearch | Paid | No | Requires `DASHSCOPE_API_KEY` (MCP search_pro, ~¥0.03/call, 200 free calls for new users); Chinese web-wide with source hostnames |
+| `doubao` | Volcano Web Search (Doubao) | Free quota | No | Requires `DOUBAO_SEARCH_API_KEY` (open it in the Web Search console; **500 free queries/month**, pay-as-you-go beyond); strong for fresh Chinese content, supports time/site filters, returns long summaries |
+| `zhihu_global` | Zhihu web-wide search (open-platform MCP) | Free quota | No | Requires `ZHIHU_API_KEY`; **5,000 calls/day trial quota** (paid access after the trial); supports the time filter (`publish_time`); skipped automatically when no key is set |
+| `zhihu_site` | Zhihu site search (open-platform MCP) | Free quota | No | Requires `ZHIHU_API_KEY`; **5,000 calls/day trial quota** (shared with `zhihu_global`); time filtering not offered |
+| `zhihu_global` | Zhihu web-wide search (open-platform MCP) | Paid | No | Requires `ZHIHU_API_KEY`; supports the time filter (`publish_time`); skipped automatically when no key is set |
+| `zhihu_site` | Zhihu site search (open-platform MCP) | Paid | No | Requires `ZHIHU_API_KEY`; time filtering not verified, so it is not offered |
+| `openai` | OpenAI built-in web search | Paid | No | Requires `OPENAI_API_KEY`; uses the Responses API `web_search` tool and returns a cited answer. **Billed per search, explicit selection only** (never picked by the fallback chain or Auto); default `gpt-6-luna`, model/endpoint configurable (`openaiModel` / `openaiBaseUrl`) |
+| `gemini` | Gemini grounding with Google Search | Paid | No | Requires `GEMINI_API_KEY` (falls back to `GOOGLE_API_KEY`); uses the recommended **Interactions API** (`POST /v1beta/interactions`, `tools:[{type:"google_search"}]`) and reads citations from `steps[].content[].annotations`. **Billed per search, explicit selection only**; default `gemini-3.8-flash`, model/endpoint configurable (`geminiModel` / `geminiBaseUrl`) |
+| `claude` | Claude server-side web_search | Paid | No | Requires `ANTHROPIC_API_KEY`; results come from `web_search_tool_result`. **Billed per search, explicit selection only**; default `claude-sonnet-5-5`, model/endpoint configurable (`claudeModel` / `claudeBaseUrl`) |
+| `baidu-html` | Baidu web (HTML) | Free | Yes | Broadest Chinese web coverage of the family; 2–3 back-to-back requests can trigger a captcha, which cools the family down for 10 minutes. The API-based Baidu engine is `baidu` (Qianfan) |
+| `so360` | 360 Search | Free | Yes | Chinese web; the strictest anti-bot of the family, usually answers with a captcha page (`bot-wall`) |
+| `sogou` | Sogou | Free | Yes | Chinese web; `/link?url=…` signed redirects are resolved to the real URL (one `redirect: manual` hop, body discarded) |
+| `wechat` | WeChat articles (Sogou) | Free | Yes | Public-account articles; the signed link is **single-use**, so prefetching burns it and lands on the anti-bot page — the original link is kept as-is |
+| `toutiao` | Toutiao | Free | Yes | Reads `article_url` out of the embedded JSON; heavily aggregated, so verify conclusions a second time |
 
 - **The default engine is picked automatically**: when `provider` is left empty the plugin probes the egress region once - mainland China gets `bing` (no proxy needed), everywhere else gets `parallel` (the keyless official MCP, which hits official documentation more often). A failed probe falls back to `bing`. Set `DSH_FREE_SEARCH_DEFAULT=bing` or `=parallel` to override, and any engine picked in the settings page wins.
 - **Auto-failover**: any engine failure (rate-limited free engine, or missing/invalid paid key, network error) automatically tries the next engine — the configured engine first, then other engines (exa/tavily/keenable/firecrawl/parallel/you are tried even without a key because they have built-in keyless quota), then the remaining free engines (Bing/AnySearch etc.) — with a note attached to the results naming the engine that actually served them (e.g. `Note: perplexity unavailable or failed, using exa.`). Search never fails outright because of engine issues.
@@ -1334,7 +1337,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Sixty-five** zero-dependency assertion scripts ship with the repo (**961 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
+**Sixty-six** zero-dependency assertion scripts ship with the repo (**965 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
 
 | Script | Covers | Run (count) |
 |---|---|---|
@@ -1347,6 +1350,7 @@ Restart `dsh web` after switching to apply changes.
 | `assert-maintenance.mjs` | Maintenance surface: CI runs every assertion on Node 20/22/24 plus the packaging gate, the release script bumps / verifies / tags / can publish, and the restore-official-provider bridge and settings button are wired | `node tools/assert-maintenance.mjs` (4) |
 | `assert-engine-modules.mjs` | Engine layout: module files exist and are imported, implementations have left index.js, the client engine ids match the server catalog, the catalog covers 40 engines with the right free/explicit flags, and index never reads an engine-private name | `node tools/assert-engine-modules.mjs` (6) |
 | `assert-brave.mjs` | Brave Search: catalog / credential / settings wiring, request headers and count/freshness, error classification, HTML stripping, ISO date normalization, and the 15s budget | `node tools/assert-brave.mjs` (54) |
+| `assert-sidebar-entry.mjs` | Sidebar entry (#129): `sidebarEntry` defaults on, settings load/save it, registration can be disposed/recreated, and `/free-search` opens the panel | `node tools/assert-sidebar-entry.mjs` (4) |
 | `assert-bing-relevance.mjs` | Bing relevance (#112): single-character CJK tokens removed, an unrelated substituted SERP rejected, genuinely relevant results accepted, a batch matching only a generic engine name rejected, one distinctive token covering half the query accepted, and explicit single-character/numeric behaviour | `node tools/assert-bing-relevance.mjs` (6) |
 | `assert-relevance-pools.mjs` | Relevance guard and language pools (#132/#133): AnySearch drops an unrelated batch but keeps a matching one, the shared guard is used by anysearch/searxng/ddg/ddg-lite/degoog/keenable, doctor reports the geo default and warns about unused pools, and the cache key changes with zhPool/enPool | `node tools/assert-relevance-pools.mjs` (5) |
 | `assert-quality.mjs` | Research evidence gate: 8 sources / 3 domains / 3 bodies / 2 dates is high, 3 / 2 / 1 is medium, a single source or a degraded note is low, an empty package is low, and research wires the gate into schema, output and brief | `node tools/assert-quality.mjs` (6) |
