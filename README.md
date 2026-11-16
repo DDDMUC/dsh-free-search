@@ -34,7 +34,7 @@
 #### 引擎与切换
 
 - **零成本** —— 多个免费引擎，无需 key、无需注册
-- **40 个引擎可选**：DuckDuckGo（html/lite）、Bing、SearXNG（元搜索，支持自定义实例）、AnySearch、Exa、Tavily、Keenable、Firecrawl、Parallel、Brave（`brave`，官方 Search API，需 `BRAVE_API_KEY`）、Perplexity、SerpBase、Serply、Outcrawl、Google 自定义搜索（`google`，需 API key + CSE ID）、秘塔搜索（`metaso`，官方 API，按点数计费）、Yandex 搜索（`yandex`，官方 API，按请求计费，需 folder ID）、腾讯元宝搜索（`yuanbao`，API key 网关，有活动免费额度）、DeepSeek 官方、DeepSeek 原生搜索 API、You.com、百度千帆、Kimi、阿里云百炼、火山联网搜索（豆包搜索）、知乎全网/站内（`zhihu_global`/`zhihu_site`，经知乎开放平台 MCP）、Antigravity CLI 搜索（`agy`，需本机安装）、OpenAI / Gemini / Claude 模型内置搜索。默认自动回退链覆盖其中 29 个；5 个 HTML SERP 引擎默认不参与，OpenAI / Gemini / Claude 三个模型引擎、Metaso、Yandex 和 Yuanbao 都只在显式点名时运行。
+- **41 个引擎可选**：DuckDuckGo（html/lite）、Bing、SearXNG（元搜索，支持自定义实例）、AnySearch、Exa、Tavily、Keenable、Firecrawl、Parallel、Brave（`brave`，官方 Search API，需 `BRAVE_API_KEY`）、智谱（`zhipu`，官方 Web Search API，需 `ZHIPU_API_KEY`）、Perplexity、SerpBase、Serply、Outcrawl、Google 自定义搜索（`google`，需 API key + CSE ID）、秘塔搜索（`metaso`，官方 API，按点数计费）、Yandex 搜索（`yandex`，官方 API，按请求计费，需 folder ID）、腾讯元宝搜索（`yuanbao`，API key 网关，有活动免费额度）、DeepSeek 官方、DeepSeek 原生搜索 API、You.com、百度千帆、Kimi、阿里云百炼、火山联网搜索（豆包搜索）、知乎全网/站内（`zhihu_global`/`zhihu_site`，经知乎开放平台 MCP）、Antigravity CLI 搜索（`agy`，需本机安装）、OpenAI / Gemini / Claude 模型内置搜索。默认自动回退链覆盖其中 30 个；5 个 HTML SERP 引擎默认不参与，OpenAI / Gemini / Claude 三个模型引擎、Metaso、Yandex 和 Yuanbao 都只在显式点名时运行。
 - **5 个 HTML 搜索页引擎（默认关闭）** —— 把传统搜索页并入同一套引擎 / 回退 / 冷却 / 设置体系：`baidu-html`（百度网页）、`so360`、`sogou`、`wechat`（微信文章）、`toutiao`。免 key、免额度，代价是抓页面：验证码/反爬按 `bot-wall` 归类并让整个家族冷却 10 分钟（整段出口 IP 都会被打标），结果也没有 API 摘要。它们默认不进 auto / 回退链 / 语言池，只在显式 `engine=` 或加入语言池时运行。
 - **引擎白名单** —— 设置页「只使用勾选的引擎」开启后，只有勾选的引擎可用，升级新增的引擎默认不启用；配置里对应 `allowedEngines`（非空时等价于把其余引擎全部禁用）。
 - **全局引擎开关与回退优先级** —— 设置页可勾选/取消引擎（取消后全局生效：普通搜索 / Auto / `advanced_search` / `multi_search` / 引擎测试都不再用它），并可用 ↑↓ 调整全局回退顺序（一键恢复默认）。
@@ -145,6 +145,7 @@
 | `firecrawl` | Firecrawl | 免费 | 可选 | **无 key 也可用**（官方免 key 匿名额度），配 key 提升限额。注意：keyless 档按**出口 IP** 判定，VPN/代理出口会被 403 拒绝；插件会冷却 6 小时并说明原因（有 key 不受影响） |
 | `parallel` | Parallel | 免费 | 可选 | **无 key 也可用**（官方 MCP 匿名额度），配 key 提升额度并支持精确时间过滤 |
 | `brave` | Brave Search | 付费（有免费额度） | 否 | 需 `BRAVE_API_KEY`（[API Dashboard](https://api-dashboard.search.brave.com)，$5/月免费额度 ≈ 1,000 次，超出按 $5/1,000 次计费）；独立索引，`freshness` 支持 pd/pw/pm/py 与日期区间 |
+| `zhipu` | 智谱搜索 | 付费（按次） | 否 | 需 `ZHIPU_API_KEY`；`search_std` ¥0.01/次、`search_pro` ¥0.03/次、搜狗/夸克 ¥0.05/次；支持 oneDay/oneWeek/oneMonth/oneYear 时间过滤 |
 | `you` | You.com | 免费 | 可选 | **无 key 也可用**（官方免 key 档，每天 100 次），配 `YDC_API_KEY` 提升额度（旧名 `YOUCOM_API_KEY` 继续兼容） |
 | `agy` | Antigravity CLI | 免费 | 是（需 CLI） | 需本机安装 [Antigravity](https://antigravity.google) 并登录，插件通过 `agy -p` 调用；免 key、免额度，默认在引擎列表里，没装 CLI 时自动跳过 |
 | `perplexity` | Perplexity | 付费 | 否 | 需 `PERPLEXITY_API_KEY` |
@@ -183,6 +184,7 @@
   - Keenable：<https://keenable.ai/login>
   - Parallel：<https://platform.parallel.ai>
   - Brave：<https://api-dashboard.search.brave.com>（API 文档：<https://api-dashboard.search.brave.com/app/documentation>）
+  - 智谱：<https://bigmodel.cn/apikey/platform>（API 文档：<https://docs.bigmodel.cn/cn/guide/tools/web-search>）
   - Perplexity：<https://www.perplexity.ai/settings/api>
   - SerpBase：<https://serpbase.dev>
   - Serply：<https://serply.io>（API 文档：<https://serply.io/docs>）
@@ -625,7 +627,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **67 个**零依赖断言脚本（合计 **969 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
+仓库自带 **69 个**零依赖断言脚本（合计 **983 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -636,10 +638,12 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-multi-policy.mjs` | multi 执行策略：并发上限是天花板 / 目标成功源非硬下限 / 凭据资格在上限之前分流 / **Fast·Balanced·Deep 档位** | `node tools/assert-multi-policy.mjs`（146） |
 | `assert-multi-limit.mjs` | multi 结果上限（#109）：默认 20 / 硬上限 100 / 配置归一化、单次 maxResults 受上限约束、工具参数与本段提示词写明生效上限、设置页字段与保存 | `node tools/assert-multi-limit.mjs`（6） |
 | `assert-maintenance.mjs` | 维护面：CI 在 Node 20/22/24 跑全部断言并过打包闸门、发布脚本会 bump / 校验 / 打 tag / 可发布、恢复官方 provider 的桥接与设置页按钮 | `node tools/assert-maintenance.mjs`（4） |
-| `assert-engine-modules.mjs` | 引擎分层：实现文件存在且被 index 引用、引擎函数已迁出 index、设置页引擎 id 与服务端清单一致、清单覆盖 40 个引擎且免费/按次标记正确、index 不引用引擎私有名 | `node tools/assert-engine-modules.mjs`（6） |
+| `assert-engine-modules.mjs` | 引擎分层：实现文件存在且被 index 引用、引擎函数已迁出 index、设置页引擎 id 与服务端清单一致、清单覆盖 41 个引擎且免费/按次标记正确、index 不引用引擎私有名 | `node tools/assert-engine-modules.mjs`（6） |
 | `assert-brave.mjs` | Brave Search：catalog/凭据/设置接线、请求头与 count/freshness、错误分类、HTML 清洗、ISO 日期归一化、15s 超时 | `node tools/assert-brave.mjs`（54） |
 | `assert-sidebar-entry.mjs` | 侧栏入口（#129）：`sidebarEntry` 默认开、设置页读写、条件注册/注销、`/free-search` 命令打开面板 | `node tools/assert-sidebar-entry.mjs`（4） |
 | `assert-slash-commands.mjs` | 斜杠命令开关：`slashCommands` 默认开、设置页读写、两个命令按配置注册/注销、关闭后提示词不再提 `/free-search-engine` | `node tools/assert-slash-commands.mjs`（4） |
+| `assert-zhipu.mjs` | 智谱搜索：catalog/回退链、请求头与 engine/count/recency、Sogou 步进、响应映射、错误分类、无 key | `node tools/assert-zhipu.mjs`（6） |
+| `assert-deepseek-snippets.mjs` | deepseek-tools 摘要：默认 600、0 不截断、总预算上限、短条目保留 | `node tools/assert-deepseek-snippets.mjs`（4） |
 | `assert-bing-relevance.mjs` | Bing 相关性（#112）：单字中文 token 被剔除、无关替代 SERP 被拒、真正相关的结果通过、只命中通用引擎名的整批被拒、单一 token 覆盖一半时放行、单字/纯数字查询的显式行为 | `node tools/assert-bing-relevance.mjs`（6） |
 | `assert-relevance-pools.mjs` | 相关性守卫与语言池（#132/#133）：AnySearch 无关批次判空、相关批次保留、shared.js 守卫被 anysearch/searxng/ddg/ddg-lite/degoog/keenable 使用、doctor 地区默认文案与语言池告警、缓存 key 随 zhPool/enPool 变化 | `node tools/assert-relevance-pools.mjs`（5） |
 | `assert-quality.mjs` | 研究证据闸门：8 源 / 3 域 / 3 正文 / 2 日期为 high，3 源 / 2 域 / 1 正文为 medium，单源与失败注记为 low，空包为 low，research 的 schema/输出/brief 接线 | `node tools/assert-quality.mjs`（6） |
@@ -747,7 +751,7 @@ This plugin solves exactly that: multiple free engines plus automatic fallback, 
 #### Engines and switching
 
 - **Zero Cost** — Multiple free engines with no API key or registration required
-- **40 engines available** — DuckDuckGo (HTML / Lite), Bing, AnySearch AI, SearXNG (meta-search with custom instances), Exa, Tavily, Keenable, Firecrawl, Parallel, Brave (`brave`, official Search API, needs `BRAVE_API_KEY`), Perplexity, SerpBase, Serply, Outcrawl, Google Programmable Search (`google`, needs an API key plus a CSE ID), Metaso (秘塔搜索, official API, billed per call), Yandex Search (official API, billed per request, folder ID required), Tencent Yuanbao Search (API-key gateway with a limited free-quota activity), DeepSeek Official, DeepSeek Native Search API, You.com, Baidu Qianfan, Kimi, Aliyun Bailian, Volcano Doubao, Zhihu web-wide/site search (`zhihu_global`/`zhihu_site`, via the Zhihu open-platform MCP), Antigravity CLI search (`agy`, requires the local CLI), and the model-based OpenAI / Gemini / Claude searches. The default auto-fallback chain covers 29 of them; the 5 HTML SERP engines stay out by default and the per-call billed OpenAI / Gemini / Claude engines, Metaso, Yandex and Yuanbao run only when explicitly named.
+- **41 engines available** — DuckDuckGo (HTML / Lite), Bing, AnySearch AI, SearXNG (meta-search with custom instances), Exa, Tavily, Keenable, Firecrawl, Parallel, Brave (`brave`, official Search API, needs `BRAVE_API_KEY`), Zhipu (`zhipu`, official Web Search API, needs `ZHIPU_API_KEY`), Perplexity, SerpBase, Serply, Outcrawl, Google Programmable Search (`google`, needs an API key plus a CSE ID), Metaso (秘塔搜索, official API, billed per call), Yandex Search (official API, billed per request, folder ID required), Tencent Yuanbao Search (API-key gateway with a limited free-quota activity), DeepSeek Official, DeepSeek Native Search API, You.com, Baidu Qianfan, Kimi, Aliyun Bailian, Volcano Doubao, Zhihu web-wide/site search (`zhihu_global`/`zhihu_site`, via the Zhihu open-platform MCP), Antigravity CLI search (`agy`, requires the local CLI), and the model-based OpenAI / Gemini / Claude searches. The default auto-fallback chain covers 30 of them; the 5 HTML SERP engines stay out by default and the per-call billed OpenAI / Gemini / Claude engines, Metaso, Yandex and Yuanbao run only when explicitly named.
 - **5 HTML SERP engines (off by default)** — Traditional result pages join the same engine / fallback / cooldown / settings machinery: `baidu-html` (Baidu web), `so360`, `sogou`, `wechat` (WeChat articles) and `toutiao`. No key, no quota — the trade-off is scraping: captcha/anti-bot pages are classified as `bot-wall` and cool the whole family down for 10 minutes (the egress IP gets flagged as a whole), and results carry no API snippets. They never join auto routing, the fallback chain or the language pools; they only run when named via `engine=` or added to a pool.
 - **Engine whitelist** — turn on Use only the checked engines and only those engines stay usable; engines added by later versions stay off. It maps to `allowedEngines` in the config (a non-empty list is equivalent to disabling every other engine).
 - **Global engine enable/disable & fallback priority** — uncheck engines you never want (applies everywhere: web_search fallback, Auto routing, advanced_search, multi_search, engine tests) and reorder the global fallback chain with ↑↓ (one-click reset).
@@ -859,6 +863,7 @@ If this plugin has been helpful, a ⭐ on [GitHub](https://github.com/DDDMUC/dsh
 | `firecrawl` | Firecrawl | Free | Optional | **Usable without a key** (official keyless anonymous quota); a key adds higher limits. Note: the keyless tier is judged by **egress IP** — VPN/proxy egress gets a 403, in which case the plugin cools it down for 6 hours and says why (a key is unaffected) |
 | `parallel` | Parallel | Free | Optional | **Works without a key** (official MCP anonymous quota); a key raises limits and enables precise time filtering |
 | `brave` | Brave Search | Paid (free allowance) | No | Requires `BRAVE_API_KEY` ([API Dashboard](https://api-dashboard.search.brave.com); $5/month free credit ≈ 1,000 queries, then $5 per 1,000); independent index, `freshness` supports pd/pw/pm/py and date ranges |
+| `zhipu` | Zhipu Web Search | Paid (per call) | No | Requires `ZHIPU_API_KEY`; `search_std` ¥0.01/call, `search_pro` ¥0.03/call, Sogou/Quark ¥0.05/call; supports oneDay/oneWeek/oneMonth/oneYear recency |
 | `you` | You.com | Free | Optional | **Works without a key** (official keyless tier, 100 searches a day); set `YDC_API_KEY` for higher limits (the old `YOUCOM_API_KEY` name still works) |
 | `agy` | Antigravity CLI | Free | Yes (CLI) | Requires the [Antigravity](https://antigravity.google) CLI installed and signed in; invoked as `agy -p`, no key and no quota, enabled by default and skipped automatically when the CLI is absent |
 | `perplexity` | Perplexity | Paid | No | Requires `PERPLEXITY_API_KEY` |
@@ -897,6 +902,7 @@ If this plugin has been helpful, a ⭐ on [GitHub](https://github.com/DDDMUC/dsh
   - Keenable: <https://keenable.ai/login>
   - Parallel: <https://platform.parallel.ai>
   - Brave: <https://api-dashboard.search.brave.com> (API docs: <https://api-dashboard.search.brave.com/app/documentation>)
+  - Zhipu: <https://bigmodel.cn/apikey/platform> (API docs: <https://docs.bigmodel.cn/cn/guide/tools/web-search>)
   - Perplexity: <https://www.perplexity.ai/settings/api>
   - SerpBase: <https://serpbase.dev>
   - Serply: <https://serply.io> (API docs: <https://serply.io/docs>)
@@ -1340,7 +1346,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Sixty-seven** zero-dependency assertion scripts ship with the repo (**969 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
+**Sixty-nine** zero-dependency assertion scripts ship with the repo (**983 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
 
 | Script | Covers | Run (count) |
 |---|---|---|
@@ -1351,10 +1357,12 @@ Restart `dsh web` after switching to apply changes.
 | `assert-multi-policy.mjs` | multi execution policy: ceiling semantics / target-is-not-a-hard-minimum / credential eligibility before the ceiling / **Fast·Balanced·Deep presets** | `node tools/assert-multi-policy.mjs` (146) |
 | `assert-multi-limit.mjs` | Multi result ceiling (#109): default 20 / hard max 100 / config normalisation, per-call maxResults clamped to the ceiling, tool copy and prompt state name the effective limit, settings field and save path | `node tools/assert-multi-limit.mjs` (6) |
 | `assert-maintenance.mjs` | Maintenance surface: CI runs every assertion on Node 20/22/24 plus the packaging gate, the release script bumps / verifies / tags / can publish, and the restore-official-provider bridge and settings button are wired | `node tools/assert-maintenance.mjs` (4) |
-| `assert-engine-modules.mjs` | Engine layout: module files exist and are imported, implementations have left index.js, the client engine ids match the server catalog, the catalog covers 40 engines with the right free/explicit flags, and index never reads an engine-private name | `node tools/assert-engine-modules.mjs` (6) |
+| `assert-engine-modules.mjs` | Engine layout: module files exist and are imported, implementations have left index.js, the client engine ids match the server catalog, the catalog covers 41 engines with the right free/explicit flags, and index never reads an engine-private name | `node tools/assert-engine-modules.mjs` (6) |
 | `assert-brave.mjs` | Brave Search: catalog / credential / settings wiring, request headers and count/freshness, error classification, HTML stripping, ISO date normalization, and the 15s budget | `node tools/assert-brave.mjs` (54) |
 | `assert-sidebar-entry.mjs` | Sidebar entry (#129): `sidebarEntry` defaults on, settings load/save it, registration can be disposed/recreated, and `/free-search` opens the panel | `node tools/assert-sidebar-entry.mjs` (4) |
 | `assert-slash-commands.mjs` | Slash-command switch: `slashCommands` defaults on, settings load/save it, both commands register/unregister from config, and the prompt stops naming `/free-search-engine` when off | `node tools/assert-slash-commands.mjs` (4) |
+| `assert-zhipu.mjs` | Zhipu Web Search: catalog/fallback wiring, auth and request engine/count/recency, Sogou count steps, response mapping, error classes, missing key | `node tools/assert-zhipu.mjs` (6) |
+| `assert-deepseek-snippets.mjs` | deepseek-tools snippets: default 600, 0 disables the cap, total budget ceiling, and short results survive | `node tools/assert-deepseek-snippets.mjs` (4) |
 | `assert-bing-relevance.mjs` | Bing relevance (#112): single-character CJK tokens removed, an unrelated substituted SERP rejected, genuinely relevant results accepted, a batch matching only a generic engine name rejected, one distinctive token covering half the query accepted, and explicit single-character/numeric behaviour | `node tools/assert-bing-relevance.mjs` (6) |
 | `assert-relevance-pools.mjs` | Relevance guard and language pools (#132/#133): AnySearch drops an unrelated batch but keeps a matching one, the shared guard is used by anysearch/searxng/ddg/ddg-lite/degoog/keenable, doctor reports the geo default and warns about unused pools, and the cache key changes with zhPool/enPool | `node tools/assert-relevance-pools.mjs` (5) |
 | `assert-quality.mjs` | Research evidence gate: 8 sources / 3 domains / 3 bodies / 2 dates is high, 3 / 2 / 1 is medium, a single source or a degraded note is low, an empty package is low, and research wires the gate into schema, output and brief | `node tools/assert-quality.mjs` (6) |
