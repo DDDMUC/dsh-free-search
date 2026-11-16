@@ -16,7 +16,7 @@ const check = async (name, fn) => {
 
 const irrelevant = [
   { title: "我们的猜想：战神不会死，等待它的将是一次超越一切的重生", snippet: "日产 GT-R", url: "https://www.cqvip.com/a" },
-  { title: "陆地巡洋舰：2010 TRIUMPH THUNDERBIRD 1600", snippet: "凯旋摩托车", url: "https://www.cqvip.com/b" },
+  { title: "陆地巡洋舰：2010 TRIUMPH THUNDERBIRD 1600", snippet: "雷鸟 凯旋摩托车", url: "https://www.cqvip.com/b" },
   { title: "混搭达人（BMW 3 系 GT 导购）", snippet: "", url: "https://www.cqvip.com/c" },
   { title: "四款 GeForce GT240 显卡新品齐亮相", snippet: "", url: "https://www.cqvip.com/d" },
   { title: "视觉享受 价该多高——显示卡个性竞技", snippet: "", url: "https://www.cqvip.com/e" },

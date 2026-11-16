@@ -115,7 +115,8 @@ try {
   assert(result.sources.length === 2, "duplicate URLs collapse into one source");
   assert(result.sources[0].title === "A bold", "HTML tags are stripped from titles");
   assert(result.sources[0].publishedAt === "2026-11-10", "page_age keeps its ISO date");
-  assert(result.sources[1].publishedAt === "2026-11-13", "relative age text becomes an ISO date");
+  const twoDaysAgo = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10);
+  assert(result.sources[1].publishedAt === twoDaysAgo, "relative age text becomes an ISO date");
 
   await capture(okFetch({ web: { results: [] } }), () => searchBrave("q", 0, "k"));
   assert(new URL(calls[0].url).searchParams.get("count") === "1", "count has a floor of 1");
