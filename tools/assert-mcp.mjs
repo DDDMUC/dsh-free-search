@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { createMcpHandler, searchWeb, fetchWeb } from "../lib/mcp_server.js";
+import { MCP_ENGINE_IDS, MCP_KEYED_ENGINES, runMcpEngine } from "../lib/mcp_engines.js";
 
 let checks = 0;
 const check = async (name, fn) => {
@@ -79,6 +80,45 @@ await check("the real search/fetch entry points validate required arguments", as
   await assert.rejects(() => searchWeb({ query: "q", engine: "nope" }), /unknown engine/);
   await assert.rejects(() => searchWeb({ query: "q", safe_search: "nope" }), /invalid safe_search/);
   await assert.rejects(() => fetchWeb({}), /url is required/);
+});
+
+await check("keyed engines are explicit and include the new providers", async () => {
+  for (const id of ["google", "baidu", "brave", "metaso", "yandex", "yuanbao", "deepseek-tools", "zhipu"]) {
+    assert.ok(MCP_ENGINE_IDS.includes(id), id);
+    assert.ok(MCP_KEYED_ENGINES.includes(id), id);
+  }
+  assert.equal(MCP_ENGINE_IDS.includes("auto"), true);
+  assert.equal(MCP_KEYED_ENGINES.includes("bing"), false);
+});
+
+await check("an explicit Zhipu MCP call uses its key and maps results", async () => {
+  const realFetch = globalThis.fetch;
+  const oldKey = process.env.ZHIPU_API_KEY;
+  process.env.ZHIPU_API_KEY = "mcp-zhipu-key";
+  globalThis.fetch = async () => ({
+    ok: true,
+    status: 200,
+    text: async () => JSON.stringify({
+      search_result: [{ title: "zhipu", link: "https://example.test/z", content: "hello", publish_date: "2026-11-01" }],
+    }),
+  });
+  try {
+    const result = await runMcpEngine("zhipu", "q", { maxResults: 3 });
+    assert.equal(result.engine, "zhipu");
+    assert.equal(result.sources[0].url, "https://example.test/z");
+    assert.equal(result.sources[0].publishedAt, "2026-11-01");
+  } finally {
+    globalThis.fetch = realFetch;
+    if (oldKey === undefined) delete process.env.ZHIPU_API_KEY;
+    else process.env.ZHIPU_API_KEY = oldKey;
+  }
+});
+
+await check("the MCP schema advertises keyed engines and time_range", async () => {
+  const response = await handler({ jsonrpc: "2.0", id: 1, method: "tools/list" });
+  const search = response.result.tools.find((tool) => tool.name === "web_search");
+  assert.ok(search.inputSchema.properties.engine.enum.includes("zhipu"));
+  assert.deepEqual(search.inputSchema.properties.time_range.enum, ["day", "week", "month", "year"]);
 });
 
 await check("the package exposes a stdio bin and ships it", async () => {

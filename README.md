@@ -539,7 +539,7 @@ Search engine test:
 npx -y -p dsh-free-search dsh-free-search-mcp
 ```
 
-第一版只暴露 `web_search`（Bing / DuckDuckGo，免 key）和 `web_fetch`（直连 / 浏览器 / Exa / Firecrawl）；不暴露付费引擎、`research`、`multi_search`，也不监听端口。Claude Desktop 配置示例：
+`web_search` 默认只自动调用免 key 的 Bing / DuckDuckGo；在参数或 `MCP_SEARCH_ENGINE` 里显式点名 `google` / `baidu` / `brave` / `metaso` / `yandex` / `yuanbao` / `deepseek-tools` / `zhipu` 时才会使用付费引擎。支持 `time_range`（day/week/month/year）。`web_fetch` 仍走直连 / 浏览器 / Exa / Firecrawl。不暴露 `research`、`multi_search`，也不监听端口。Claude Desktop 配置示例：
 
 ```json
 {
@@ -553,7 +553,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 }
 ```
 
-环境变量：`MCP_SEARCH_ENGINE`（auto / bing / ddg / ddg-lite）、`MCP_MAX_RESULTS`、`MCP_SAFE_SEARCH`、`MCP_LANG`、`MCP_BING_MARKET`、`MCP_BROWSER_FETCH`、`MCP_ALLOW_FAKE_IP_CIDRS`；抓取层可用 `EXA_API_KEY` / `FIRECRAWL_API_KEY`。
+环境变量：`MCP_SEARCH_ENGINE`（默认 auto，也可指定任意引擎 id）、`MCP_MAX_RESULTS`、`MCP_SAFE_SEARCH`、`MCP_LANG`、`MCP_BING_MARKET`、`MCP_BROWSER_FETCH`、`MCP_ALLOW_FAKE_IP_CIDRS`。付费引擎按需读取：`GOOGLE_CSE_API_KEY` + `GOOGLE_CSE_ID`、`BAIDU_API_KEY`、`BRAVE_API_KEY`、`METASO_API_KEY` / `MCP_METASO_SCOPE`、`YANDEX_API_KEY` + `YANDEX_FOLDER_ID`、`TENCENTCLOUD_WSA_APIKEY` / `MCP_YUANBAO_MODE` / `MCP_YUANBAO_SITE`、`DEEPSEEK_TOOLS_API_KEY` 或 `DEEPSEEK_API_KEY`、`ZHIPU_API_KEY` / `MCP_ZHIPU_SEARCH_ENGINE`；抓取层可用 `EXA_API_KEY` / `FIRECRAWL_API_KEY`。
 
 #### 平台搜索（platform_search）
 
@@ -627,7 +627,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **69 个**零依赖断言脚本（合计 **983 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
+仓库自带 **69 个**零依赖断言脚本（合计 **986 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -656,8 +656,8 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-research-call-wrappers.mjs` | research 四个 `call*` 包装层的替身/底层透传（#75 回归） | `node tools/assert-research-call-wrappers.mjs`（23） |
 | `assert-fetch-chain.mjs` | `fs-quality-fetch` 四层链序、任一层命中即停、exa 失败静默降级 firecrawl、全层失败聚合报错 | `node tools/assert-fetch-chain.mjs`（8） |
 | `assert-fetch-ssrf.mjs` | 抓取 SSRF 防护：公网/私网/保留地址判定、DNS 解析到私网拒绝、localhost 与 IP 字面量拒绝、非 HTTPS 与带凭据 URL 拒绝、fake-ip 网段默认拒绝且仅按配置放行、IPv6 ULA 显式放行、放行后仍拒绝回环/IPv4 私网/链路本地、provider 接线与设置项 | `node tools/assert-fetch-ssrf.mjs`（8） |
-| `assert-mcp.mjs` | MCP stdio 面：initialize 协议协商、tools/list 的 JSON Schema、tools/call 文本结果、工具错误与 JSON-RPC 错误区分、必填参数校验、bin/files 打包 | `node tools/assert-mcp.mjs`（6） |
-| `assert-mcp.mjs` | MCP stdio surface: initialize negotiation, tools/list JSON Schema, tools/call text results, tool errors vs JSON-RPC errors, required arguments, bin/files packaging | `node tools/assert-mcp.mjs` (6) |
+| `assert-mcp.mjs` | MCP stdio 面：initialize 协议协商、tools/list 的 JSON Schema、tools/call 文本结果、工具错误与 JSON-RPC 错误区分、必填参数校验、显式付费引擎与新 provider、bin/files 打包 | `node tools/assert-mcp.mjs`（9） |
+| `assert-mcp.mjs` | MCP stdio surface: initialize negotiation, tools/list JSON Schema, tools/call text results, tool errors vs JSON-RPC errors, required arguments, explicit keyed engines and new providers, bin/files packaging | `node tools/assert-mcp.mjs` (9) |
 | `assert-baidu.mjs` | 百度千帆：key 必填、web_search 首请求、403 或 results.code 额度错误回退 chat/completions（stream:false）、401 不回退、双端失败合并报错 | `node tools/assert-baidu.mjs`（6） |
 | `assert-deepseek-endpoint.mjs` | DeepSeek 搜索端点：默认地址、base/完整 URL 归一、自定义 endpoint 收 Bearer/key/query、配置与设置页接线 | `node tools/assert-deepseek-endpoint.mjs`（4） |
 | `assert-yuanbao.mjs` |key 必填、Bearer 网关/Query/Mode/Site/FromTime、自然与 VR 页面解析、日期归一、错误分类、注册与显式专用 | `node tools/assert-yuanbao.mjs`（6） |
@@ -1258,7 +1258,7 @@ The repo also ships a standalone stdio MCP server for Claude Desktop, Cursor, Co
 npx -y -p dsh-free-search dsh-free-search-mcp
 ```
 
-The first version exposes `web_search` (Bing / DuckDuckGo, no key) and `web_fetch` (direct / browser / Exa / Firecrawl). It does not expose paid engines, `research` or `multi_search`, and it does not listen on a port. Claude Desktop example:
+`web_search` auto-runs only the keyless Bing / DuckDuckGo engines; a keyed engine (`google` / `baidu` / `brave` / `metaso` / `yandex` / `yuanbao` / `deepseek-tools` / `zhipu`) runs only when named in the argument or `MCP_SEARCH_ENGINE`. It supports `time_range` (day/week/month/year). `web_fetch` still uses direct / browser / Exa / Firecrawl. It does not expose `research` or `multi_search`, and it does not listen on a port. Claude Desktop example:
 
 ```json
 {
@@ -1272,7 +1272,7 @@ The first version exposes `web_search` (Bing / DuckDuckGo, no key) and `web_fetc
 }
 ```
 
-Environment: `MCP_SEARCH_ENGINE` (auto / bing / ddg / ddg-lite), `MCP_MAX_RESULTS`, `MCP_SAFE_SEARCH`, `MCP_LANG`, `MCP_BING_MARKET`, `MCP_BROWSER_FETCH`, `MCP_ALLOW_FAKE_IP_CIDRS`; the fetch tiers can use `EXA_API_KEY` / `FIRECRAWL_API_KEY`.
+Environment: `MCP_SEARCH_ENGINE` (auto by default, or any explicit engine id), `MCP_MAX_RESULTS`, `MCP_SAFE_SEARCH`, `MCP_LANG`, `MCP_BING_MARKET`, `MCP_BROWSER_FETCH`, `MCP_ALLOW_FAKE_IP_CIDRS`. Keyed engines read their own env: `GOOGLE_CSE_API_KEY` + `GOOGLE_CSE_ID`, `BAIDU_API_KEY`, `BRAVE_API_KEY`, `METASO_API_KEY` / `MCP_METASO_SCOPE`, `YANDEX_API_KEY` + `YANDEX_FOLDER_ID`, `TENCENTCLOUD_WSA_APIKEY` / `MCP_YUANBAO_MODE` / `MCP_YUANBAO_SITE`, `DEEPSEEK_TOOLS_API_KEY` or `DEEPSEEK_API_KEY`, `ZHIPU_API_KEY` / `MCP_ZHIPU_SEARCH_ENGINE`; the fetch tiers can use `EXA_API_KEY` / `FIRECRAWL_API_KEY`.
 
 #### Platform Search (`platform_search`)
 
@@ -1346,7 +1346,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Sixty-nine** zero-dependency assertion scripts ship with the repo (**983 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
+**Sixty-nine** zero-dependency assertion scripts ship with the repo (**986 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
 
 | Script | Covers | Run (count) |
 |---|---|---|
