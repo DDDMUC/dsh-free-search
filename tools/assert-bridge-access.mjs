@@ -107,7 +107,8 @@ check("the bridge delegates authentication to the host connection service", () =
 check("every bridge handler runs the host-auth guard first", () => {
   const index = fs.readFileSync(new URL("../lib/index.js", import.meta.url), "utf8");
   assert.match(index, /bridgeAuthRejection\(req, connection\(\)\)/);
-  assert.match(index, /sctx\.get\("connection"\)/);
+  assert.match(index, /connectionContext\.get\("connection"\)/);
+  assert.match(index, /ctx\.inject\(\["connection\.authentication"\]/);
   assert.match(index, /const rejection = bridgeAuthRejection/);
   assert.equal((index.match(/if \(!guard\(req, res\)\) return;/g) ?? []).length >= 10, true);
 });
