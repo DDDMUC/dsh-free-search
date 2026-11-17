@@ -27,18 +27,19 @@ const EXPORTS = [
 const up = read("fetch_upstream.js");
 const research = read("research.js");
 const vertical = read("vertical.js");
+const domain = read("domain_engines.js");
 
 console.log("== A. 唯一实现 ==");
 for (const decl of EXPORTS) {
   assert(up.includes(decl), `fetch_upstream.js declares ${decl.slice(7).split("(")[0]}`);
   assert(!research.includes(decl), `research.js does NOT declare ${decl.slice(7).split("(")[0]}`);
-  assert(!vertical.includes(decl), `vertical.js does NOT declare ${decl.slice(7).split("(")[0]}`);
+  assert(!(vertical.includes(decl) || domain.includes(decl)), `vertical/domain do NOT declare ${decl.slice(7).split("(")[0]}`);
 }
 
 console.log("\n== B. 依赖方向单向（fetch 谁也不依赖）==");
-assert(!/from "\.\/(research|vertical)\.js"/.test(up), "fetch_upstream.js imports neither research nor vertical");
+assert(!/from "\.\/(research|vertical|domain_engines)\.js"/.test(up), "fetch_upstream.js imports neither research nor vertical/domain_engines");
 assert(/from "\.\/fetch_upstream\.js"/.test(research), "research.js imports the fetch layer");
-assert(/from "\.\/fetch_upstream\.js"/.test(vertical), "vertical.js imports the fetch layer");
+assert(/from "\.\/fetch_upstream\.js"/.test(domain), "domain_engines.js imports the fetch layer");
 assert(!/CONTROLLED_STUBS\s*=\s*\{[^}]*exa/.test(research), "research.js no longer stubs the fetch tier");
 
 console.log("\n== C. 替身键按层归属 ==");
