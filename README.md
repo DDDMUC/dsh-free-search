@@ -631,7 +631,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **70 个**零依赖断言脚本（合计 **1032 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
+仓库自带 **71 个**零依赖断言脚本（合计 **1044 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -703,6 +703,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-firecrawl-keyless.mjs` | Firecrawl keyless 出口判定：403 + VPN/proxy 文案才算拒绝、普通 403 与 401/429/500 不算、冷却初始未触发 | `node tools/assert-firecrawl-keyless.mjs`（5） |
 | `assert-fetch-charset.mjs` | 抓取编码（#88）：`charset=gbk` / `gb2312` 按声明解码、无声明时嗅探 `<meta charset>` 与 http-equiv 形式、默认 UTF-8、未知 label 兜底 UTF-8 不抛错 | `node tools/assert-fetch-charset.mjs`（6） |
 | `assert-fetch-abort.mjs` | 抓取中断（#87）：压缩响应中途断连必须 reject（不再永久 pending）、明文断连同样 reject、abort 能打断停滞的 gzip 流、complete 响应与重定向仍正常 | `node tools/assert-fetch-abort.mjs`（6） |
+| `assert-fetch-proxy.mjs` | 抓取层代理：`http_proxy` / `https_proxy` / `all_proxy` / `no_proxy` 解析（大小写与小写优先、空值视为未设置）、`NO_PROXY` 的域名 / `host:port` / `*` 匹配、loopback 恒直连、`socks5://` 忽略、`CONNECT` 隧道握手与 `Proxy-Authorization`、代理拒绝与提前断连不挂起、有 agent 时重定向每一跳仍过 SSRF 校验、浏览器 tier 的 `--proxy-server` | `node tools/assert-fetch-proxy.mjs`（12） |
 | `assert-bridge-access.mjs` | 桥接 Host 围栏（#84）：loopback 放行、remote peer 打 loopback Host 拒绝、`--trusted-host`（无端口匹配任意端口 / 带端口精确匹配）、`--public-url`、绑定地址、跨站与异源拒绝、connection 鉴权委托与 fail-closed、设置客户端按 `document.baseURI` 解析子路径 | `node tools/assert-bridge-access.mjs`（14） |
 | `assert-provider-takeover.mjs` | provider 接管：旧属性 API 与 rc.2 的 `config.*` ref 两套兼容、`settings.mutate(web)` 单批写入、显式指定的 provider 不被抢占、`fetchProviderTakeover: false` 时保留显式 `http`、describe 噪声不误报、嵌套 config 变化与 web 重建分别成行、关闭 DSH 搜索开关后重新接管（`deepseek-search-api` / `deepseek-official` 均视为官方默认）、打开 DeepSeek 开关（`deepseek-fetch-api`）时让路、apply 重入/重复注册不再中断、重复日志去重 | `node tools/assert-provider-takeover.mjs`（20） |
 
@@ -712,15 +713,27 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 ### 代理说明（国内用户）
 
-DuckDuckGo 等引擎可能需要代理才能访问，而 Node.js 的 `fetch` 默认不走系统代理。需要给 dsh 进程设置（Node 24+）：
+本插件有两条独立的出网路径，代理对两条都要配：
+
+1. **搜索**（`web_search` / `multi_search` / `advanced_search` / `platform_search` / `video_search` 等）走 `globalThis.fetch`（undici），是否代理由 undici 的全局 dispatcher 决定。
+2. **抓取正文**（`web_fetch` 与 `research` 的 T1 直连、T1.5 无头浏览器，以及 exa / firecrawl / crawl4ai 的云端调用）历史上直接用 `node:https` 与子进程，**既不读代理环境变量，也不受 undici dispatcher 影响**。所以会出现「搜索能通、抓取一直超时」——设置里的代理插件对第二层无效。现在这一层自己读代理环境变量，并为每一跳建立 HTTP `CONNECT` 隧道（浏览器 tier 则传 `--proxy-server`）。
+
+配置方式（`http_proxy` / `https_proxy` / `all_proxy` / `no_proxy`，大小写均可，小写优先，空值视为未设置）：
 
 ```sh
-export NODE_USE_ENV_PROXY=1
 export HTTPS_PROXY=http://127.0.0.1:7897   # 你的代理地址
 export HTTP_PROXY=http://127.0.0.1:7897
+export NO_PROXY=localhost,127.0.0.1,::1    # 可选
 ```
 
-Windows 用户：桌面快捷方式已内置此配置（`set NODE_USE_ENV_PROXY=1&& set HTTPS_PROXY=...`）。
+- 只支持 `http://` / `https://` 代理（可带 Basic 认证）；`socks5://` 会被忽略并直连。
+- loopback 地址（`localhost`、`127.0.0.1`、`::1`、`127.0.0.0/8`）恒直连。
+- `NO_PROXY` 支持逗号分隔的域名、`host:port` 与 `*`。
+- 走代理时域名由代理端解析，`lookup` 钩子失效；因此重定向的每一跳都会先显式过一遍 SSRF 校验，`allowFakeIpCidrs` 等设置继续生效。
+- 代理不可达时按原有逻辑降级到云端 tier，错误信息里会带 `proxy <host> refused CONNECT ...` 之类的具体原因。
+- 不依赖 Node 24 的 `NODE_USE_ENV_PROXY`，Node ≥ 20 即可；该变量只影响 undici 那条路径。
+
+Windows 用户：桌面快捷方式已内置 `NODE_USE_ENV_PROXY=1` + `HTTPS_PROXY`（`set NODE_USE_ENV_PROXY=1&& set HTTPS_PROXY=...`）。
 
 ### 工作原理
 
@@ -1355,7 +1368,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Seventy** zero-dependency assertion scripts ship with the repo (**1032 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
+**Seventy-one** zero-dependency assertion scripts ship with the repo (**1044 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
 
 | Script | Covers | Run (count) |
 |---|---|---|
@@ -1425,6 +1438,7 @@ Restart `dsh web` after switching to apply changes.
 | `assert-firecrawl-keyless.mjs` | Firecrawl keyless egress refusal: only a 403 with the VPN/proxy wording counts, plain 403 and 401/429/500 do not, and the cooldown starts inactive | `node tools/assert-firecrawl-keyless.mjs` (5) |
 | `assert-fetch-charset.mjs` | fetch encoding (#88): `charset=gbk` / `gb2312` decoded as declared, `<meta charset>` and the http-equiv form sniffed when the header omits it, UTF-8 by default, and an unknown label falls back to UTF-8 instead of throwing | `node tools/assert-fetch-charset.mjs` (6) |
 | `assert-fetch-abort.mjs` | fetch interruption (#87): a compressed response cut mid-body rejects instead of hanging forever, identity truncation rejects too, abort breaks a stalled gzip stream, and complete responses plus redirects still work | `node tools/assert-fetch-abort.mjs` (6) |
+| `assert-fetch-proxy.mjs` | proxy support for the fetch tiers: `http_proxy` / `https_proxy` / `all_proxy` / `no_proxy` parsing (either case, lowercase wins, empty means unset), `NO_PROXY` domain / `host:port` / `*` matching, loopback always direct, `socks5://` ignored, the `CONNECT` tunnel handshake and `Proxy-Authorization`, a refusing proxy and an early disconnect never hanging, the SSRF guard still applied to every redirect hop when an agent is in use, and `--proxy-server` for the browser tier | `node tools/assert-fetch-proxy.mjs` (12) |
 | `assert-bridge-access.mjs` | bridge Host fence (#84): loopback allowed, a remote peer behind a loopback Host refused, `--trusted-host` (port-less matches any port, explicit port matches exactly), `--public-url`, the bind address, cross-site and foreign-Origin refused, connection-auth delegation, fail-closed behavior, and settings-client subpath resolution via `document.baseURI` | `node tools/assert-bridge-access.mjs` (14) |
 | `assert-provider-takeover.mjs` | provider takeover: both the legacy property API and the rc.2 `config.*` refs, a single batched `settings.mutate(web)`, explicit foreign providers left untouched, an explicit `http` kept when `fetchProviderTakeover` is off, describe()-triggered events ignored when nothing changed, nested config changes and web rebuilds reported separately, re-takeover after DSH's search switch is turned off (both `deepseek-search-api` and `deepseek-official` count as the factory default), stepping aside for the explicit `deepseek-fetch-api` switch, apply re-entry / duplicate registrations tolerated, and repeated logs deduplicated | `node tools/assert-provider-takeover.mjs` (20) |
 
@@ -1434,15 +1448,27 @@ Any failure exits non-zero with the failing items listed. Passing the path of an
 
 ### Proxy Note (for Users in Mainland China)
 
-Engines like DuckDuckGo may require a proxy. Since Node.js `fetch` does not use the system proxy by default, set the following environment variables for the dsh process (Node 24+):
+This plugin has two independent outbound paths, and both need the proxy configured:
+
+1. **Search** (`web_search` / `multi_search` / `advanced_search` / `platform_search` / `video_search`, …) goes through `globalThis.fetch` (undici), so whether it is proxied depends on undici's global dispatcher.
+2. **Body fetching** (`web_fetch`, plus the T1 direct fetch and T1.5 headless-browser tiers of `research`, and the exa / firecrawl / crawl4ai cloud calls) used plain `node:https` and child processes. That layer **never read the proxy environment variables and never saw the undici dispatcher**, which is why search works while fetching keeps timing out — a proxy plugin installed for undici cannot reach it. It now reads the proxy environment itself and opens an HTTP `CONNECT` tunnel per hop (the browser tier gets `--proxy-server` instead).
+
+Configure (`http_proxy` / `https_proxy` / `all_proxy` / `no_proxy`, either case, lowercase wins, empty means unset):
 
 ```sh
-export NODE_USE_ENV_PROXY=1
 export HTTPS_PROXY=http://127.0.0.1:7897   # Your proxy address
 export HTTP_PROXY=http://127.0.0.1:7897
+export NO_PROXY=localhost,127.0.0.1,::1    # Optional
 ```
 
-Windows users: The desktop shortcut already includes this configuration (`set NODE_USE_ENV_PROXY=1&& set HTTPS_PROXY=...`).
+- Only `http://` / `https://` proxies are supported (Basic auth allowed); `socks5://` is ignored and the request goes direct.
+- Loopback addresses (`localhost`, `127.0.0.1`, `::1`, `127.0.0.0/8`) always go direct.
+- `NO_PROXY` accepts comma-separated domains, `host:port`, and `*`.
+- When proxied, the proxy resolves the hostname so the `lookup` hook no longer applies; every redirect hop is therefore re-checked by the SSRF guard explicitly, and settings such as `allowFakeIpCidrs` keep working.
+- If the proxy is unreachable the usual degradation to the cloud tiers still happens, and the error message names the reason (`proxy <host> refused CONNECT ...`).
+- This does not depend on Node 24's `NODE_USE_ENV_PROXY`; Node ≥ 20 is enough. That variable only affects the undici path.
+
+Windows users: The desktop shortcut already includes `NODE_USE_ENV_PROXY=1` + `HTTPS_PROXY` (`set NODE_USE_ENV_PROXY=1&& set HTTPS_PROXY=...`).
 
 ### How It Works
 
