@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { createMcpHandler, searchWeb, fetchWeb, multiSearchWeb, searchDomain, getWeather, searchPlatformWeb, searchVideosWeb, researchWeb } from "../lib/mcp_server.js";
-import { MCP_ENGINE_IDS, MCP_KEYED_ENGINES, runMcpEngine } from "../lib/mcp_engines.js";
+import { MCP_ENGINE_IDS, MCP_KEYED_ENGINES, MCP_KEYLESS_ENGINES, runMcpEngine } from "../lib/mcp_engines.js";
 
 let checks = 0;
 const check = async (name, fn) => {
@@ -222,6 +222,13 @@ await check("keyed engines are explicit and include the new providers", async ()
   }
   assert.equal(MCP_ENGINE_IDS.includes("auto"), true);
   assert.equal(MCP_KEYED_ENGINES.includes("bing"), false);
+  for (const id of ["anysearch", "searxng", "exa", "tavily", "keenable", "firecrawl", "parallel", "you"]) {
+    assert.ok(MCP_ENGINE_IDS.includes(id), id);
+    assert.ok(MCP_KEYLESS_ENGINES.includes(id), id);
+  }
+  assert.equal(MCP_KEYLESS_ENGINES.includes("bing"), false);
+  const list = await handler({ jsonrpc: "2.0", id: 1, method: "tools/list" });
+  assert.ok(list.result.tools[0].inputSchema.properties.engine.enum.includes("exa"));
 });
 
 await check("an explicit Zhipu MCP call uses its key and maps results", async () => {

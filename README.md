@@ -543,7 +543,7 @@ Search engine test:
 npx -y -p dsh-free-search dsh-free-search-mcp
 ```
 
-`web_search` 默认只自动调用免 key 的 Bing / DuckDuckGo；在参数或 `MCP_SEARCH_ENGINE` 里显式点名 `google` / `baidu` / `brave` / `metaso` / `yandex` / `yuanbao` / `deepseek-tools` / `zhipu` 时才会使用付费引擎。支持 `time_range`（day/week/month/year）。`advanced_search` 是同一后端的兼容别名，便于按宿主工具名调用。`web_fetch` 仍走直连 / 浏览器 / Exa / Firecrawl。`multi_search` 并行合并多个引擎（默认只跑免费引擎），`domain_search` 直查包/论文/CVE/财报/金融/法律等垂直源，`platform_search` 直查 GitHub/HN/Reddit/npm/Wikipedia/Bilibili/V2EX/掘金/豆瓣/Qiita/YouTube/Vimeo/X，`video_search` 查 Bing/DDG 视频，`research` 做轻量多引擎检索 + 抓取 + 证据摘要，`weather` 查询 1–7 天天气；不监听端口。Claude Desktop 配置示例：
+`web_search` 默认只自动调用免 key 的 Bing / DuckDuckGo；在参数或 `MCP_SEARCH_ENGINE` 里显式点名 `google` / `baidu` / `brave` / `metaso` / `yandex` / `yuanbao` / `deepseek-tools` / `zhipu` 时才会使用付费引擎；`anysearch` / `searxng` / `exa` / `tavily` / `keenable` / `firecrawl` / `parallel` / `you` 可显式选择，且有免 key 档。支持 `time_range`（day/week/month/year）。`advanced_search` 是同一后端的兼容别名，便于按宿主工具名调用。`web_fetch` 仍走直连 / 浏览器 / Exa / Firecrawl。`multi_search` 并行合并多个引擎（默认只跑免费引擎），`domain_search` 直查包/论文/CVE/财报/金融/法律等垂直源，`platform_search` 直查 GitHub/HN/Reddit/npm/Wikipedia/Bilibili/V2EX/掘金/豆瓣/Qiita/YouTube/Vimeo/X，`video_search` 查 Bing/DDG 视频，`research` 做轻量多引擎检索 + 抓取 + 证据摘要，`weather` 查询 1–7 天天气；不监听端口。Claude Desktop 配置示例：
 
 ```json
 {
@@ -557,7 +557,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 }
 ```
 
-环境变量：`MCP_SEARCH_ENGINE`（默认 auto，也可指定任意引擎 id）、`MCP_MAX_RESULTS`、`MCP_SAFE_SEARCH`、`MCP_LANG`、`MCP_BING_MARKET`、`MCP_BROWSER_FETCH`、`MCP_ALLOW_FAKE_IP_CIDRS`。付费引擎按需读取：`GOOGLE_CSE_API_KEY` + `GOOGLE_CSE_ID`、`BAIDU_API_KEY`、`BRAVE_API_KEY`、`METASO_API_KEY` / `MCP_METASO_SCOPE`、`YANDEX_API_KEY` + `YANDEX_FOLDER_ID`、`TENCENTCLOUD_WSA_APIKEY` / `MCP_YUANBAO_MODE` / `MCP_YUANBAO_SITE`、`DEEPSEEK_TOOLS_API_KEY` 或 `DEEPSEEK_API_KEY`、`ZHIPU_API_KEY` / `MCP_ZHIPU_SEARCH_ENGINE`；抓取层可用 `EXA_API_KEY` / `FIRECRAWL_API_KEY`。
+环境变量：`MCP_SEARCH_ENGINE`（默认 auto，也可指定任意引擎 id）、`MCP_MAX_RESULTS`、`MCP_SAFE_SEARCH`、`MCP_LANG`、`MCP_BING_MARKET`、`MCP_BROWSER_FETCH`、`MCP_ALLOW_FAKE_IP_CIDRS`。付费/可选 key 引擎按需读取：`GOOGLE_CSE_API_KEY` + `GOOGLE_CSE_ID`、`BAIDU_API_KEY`、`BRAVE_API_KEY`、`METASO_API_KEY` / `MCP_METASO_SCOPE`、`YANDEX_API_KEY` + `YANDEX_FOLDER_ID`、`TENCENTCLOUD_WSA_APIKEY` / `MCP_YUANBAO_MODE` / `MCP_YUANBAO_SITE`、`DEEPSEEK_TOOLS_API_KEY` 或 `DEEPSEEK_API_KEY`、`ZHIPU_API_KEY` / `MCP_ZHIPU_SEARCH_ENGINE`；免 key 档可选 `ANYSEARCH_API_KEY`、`MCP_SEARXNG_INSTANCES` / `MCP_SEARXNG_BEARER_TOKEN`、`EXA_API_KEY`、`TAVILY_API_KEY`、`KEENABLE_API_KEY`、`FIRECRAWL_API_KEY`、`PARALLEL_API_KEY`、`YDC_API_KEY`（旧名 `YOUCOM_API_KEY` 亦可）。
 
 #### 平台搜索（platform_search）
 
@@ -1280,7 +1280,7 @@ The repo also ships a standalone stdio MCP server for Claude Desktop, Cursor, Co
 npx -y -p dsh-free-search dsh-free-search-mcp
 ```
 
-`web_search` auto-runs only the keyless Bing / DuckDuckGo engines; a keyed engine (`google` / `baidu` / `brave` / `metaso` / `yandex` / `yuanbao` / `deepseek-tools` / `zhipu`) runs only when named in the argument or `MCP_SEARCH_ENGINE`. It supports `time_range` (day/week/month/year). `advanced_search` is a compatibility alias over the same backend for hosts that call that tool name. `web_fetch` still uses direct / browser / Exa / Firecrawl. `multi_search` merges several engines in parallel (free engines by default), `domain_search` queries structured package/paper/CVE/filing/finance/law sources, `platform_search` queries GitHub/HN/Reddit/npm/Wikipedia/Bilibili/V2EX/Juejin/Douban/Qiita/YouTube/Vimeo/X, `video_search` queries Bing/DDG videos, `research` runs a lightweight multi-engine search + fetch + evidence brief, and `weather` returns a 1-7 day forecast; the server does not listen on a port. Claude Desktop example:
+`web_search` auto-runs only the keyless Bing / DuckDuckGo engines; a keyed engine (`google` / `baidu` / `brave` / `metaso` / `yandex` / `yuanbao` / `deepseek-tools` / `zhipu`) runs only when named in the argument or `MCP_SEARCH_ENGINE`; `anysearch` / `searxng` / `exa` / `tavily` / `keenable` / `firecrawl` / `parallel` / `you` can also be named explicitly and have keyless tiers. It supports `time_range` (day/week/month/year). `advanced_search` is a compatibility alias over the same backend for hosts that call that tool name. `web_fetch` still uses direct / browser / Exa / Firecrawl. `multi_search` merges several engines in parallel (free engines by default), `domain_search` queries structured package/paper/CVE/filing/finance/law sources, `platform_search` queries GitHub/HN/Reddit/npm/Wikipedia/Bilibili/V2EX/Juejin/Douban/Qiita/YouTube/Vimeo/X, `video_search` queries Bing/DDG videos, `research` runs a lightweight multi-engine search + fetch + evidence brief, and `weather` returns a 1-7 day forecast; the server does not listen on a port. Claude Desktop example:
 
 ```json
 {
@@ -1294,7 +1294,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 }
 ```
 
-Environment: `MCP_SEARCH_ENGINE` (auto by default, or any explicit engine id), `MCP_MAX_RESULTS`, `MCP_SAFE_SEARCH`, `MCP_LANG`, `MCP_BING_MARKET`, `MCP_BROWSER_FETCH`, `MCP_ALLOW_FAKE_IP_CIDRS`. Keyed engines read their own env: `GOOGLE_CSE_API_KEY` + `GOOGLE_CSE_ID`, `BAIDU_API_KEY`, `BRAVE_API_KEY`, `METASO_API_KEY` / `MCP_METASO_SCOPE`, `YANDEX_API_KEY` + `YANDEX_FOLDER_ID`, `TENCENTCLOUD_WSA_APIKEY` / `MCP_YUANBAO_MODE` / `MCP_YUANBAO_SITE`, `DEEPSEEK_TOOLS_API_KEY` or `DEEPSEEK_API_KEY`, `ZHIPU_API_KEY` / `MCP_ZHIPU_SEARCH_ENGINE`; the fetch tiers can use `EXA_API_KEY` / `FIRECRAWL_API_KEY`.
+Environment: `MCP_SEARCH_ENGINE` (auto by default, or any explicit engine id), `MCP_MAX_RESULTS`, `MCP_SAFE_SEARCH`, `MCP_LANG`, `MCP_BING_MARKET`, `MCP_BROWSER_FETCH`, `MCP_ALLOW_FAKE_IP_CIDRS`. Keyed/optional engines read their own env: `GOOGLE_CSE_API_KEY` + `GOOGLE_CSE_ID`, `BAIDU_API_KEY`, `BRAVE_API_KEY`, `METASO_API_KEY` / `MCP_METASO_SCOPE`, `YANDEX_API_KEY` + `YANDEX_FOLDER_ID`, `TENCENTCLOUD_WSA_APIKEY` / `MCP_YUANBAO_MODE` / `MCP_YUANBAO_SITE`, `DEEPSEEK_TOOLS_API_KEY` or `DEEPSEEK_API_KEY`, `ZHIPU_API_KEY` / `MCP_ZHIPU_SEARCH_ENGINE`; keyless-capable engines can use `ANYSEARCH_API_KEY`, `MCP_SEARXNG_INSTANCES` / `MCP_SEARXNG_BEARER_TOKEN`, `EXA_API_KEY`, `TAVILY_API_KEY`, `KEENABLE_API_KEY`, `FIRECRAWL_API_KEY`, `PARALLEL_API_KEY`, `YDC_API_KEY` (the old `YOUCOM_API_KEY` alias also works).
 
 #### Platform Search (`platform_search`)
 
