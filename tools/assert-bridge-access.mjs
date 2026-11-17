@@ -97,6 +97,11 @@ check("the bridge delegates authentication to the host connection service", () =
   assert.equal(bridgeAuthRejection(req, { requestRejection: () => 403 }), 403);
   assert.equal(bridgeAuthRejection(req, { requestRejection: () => undefined }), undefined);
   assert.equal(bridgeAuthRejection(req, { requestRejection: () => { throw new Error("boom"); } }), 503);
+  assert.equal(bridgeAuthRejection(req, { admit: () => ({ peer: { id: "p" } }) }), undefined);
+  assert.equal(bridgeAuthRejection(req, { admit: () => ({ rejection: 401 }) }), 401);
+  assert.equal(bridgeAuthRejection(req, { admit: () => ({ rejection: 403 }) }), 403);
+  assert.equal(bridgeAuthRejection(req, { admit: () => ({ unexpected: true }) }), 503);
+  assert.equal(bridgeAuthRejection(req, { admit: () => { throw new Error("boom"); } }), 503);
 });
 
 check("every bridge handler runs the host-auth guard first", () => {
