@@ -1,7 +1,7 @@
 // MCP stdio surface: initialize, tools, calls and errors. No network.
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { createMcpHandler, searchWeb, fetchWeb } from "../lib/mcp_server.js";
+import { createMcpHandler, searchWeb, fetchWeb, multiSearchWeb, searchDomain, getWeather } from "../lib/mcp_server.js";
 import { MCP_ENGINE_IDS, MCP_KEYED_ENGINES, runMcpEngine } from "../lib/mcp_engines.js";
 
 let checks = 0;
@@ -18,6 +18,21 @@ const handler = createMcpHandler({
     sources: [{ title: "Result", url: "https://example.test/a", snippet: `q=${args.query}` }],
   }),
   fetchPage: async (args) => `fetched ${args.url}`,
+  multiSearch: async () => ({
+    query: "multi",
+    engines: ["bing", "ddg"],
+    sources: [
+      { title: "Shared", url: "https://example.test/shared", snippet: "one", engines: ["bing", "ddg"] },
+      { title: "Second", url: "https://example.test/two", snippet: "two", engines: ["ddg"] },
+    ],
+    errors: ["bing: timeout"],
+  }),
+  domainSearch: async () => ({
+    engine: "pypi",
+    query: "requests",
+    sources: [{ title: "requests 2.0", url: "https://pypi.org/project/requests", snippet: "HTTP library" }],
+  }),
+  weather: async () => "weather stub",
 });
 
 await check("initialize negotiates the protocol and advertises tools", async () => {
@@ -30,13 +45,18 @@ await check("initialize negotiates the protocol and advertises tools", async () 
   assert.equal(fallback.result.protocolVersion, "2025-06-18");
 });
 
-await check("tools/list exposes web_search and web_fetch with JSON Schema", async () => {
+await check("tools/list exposes search, fetch, multi, domain and weather with JSON Schema", async () => {
   const response = await handler({ jsonrpc: "2.0", id: 1, method: "tools/list" });
   const names = response.result.tools.map((tool) => tool.name);
-  assert.deepEqual(names, ["web_search", "web_fetch"]);
+  assert.deepEqual(names, ["web_search", "web_fetch", "multi_search", "domain_search", "weather"]);
   assert.deepEqual(response.result.tools[0].inputSchema.required, ["query"]);
   assert.equal(response.result.tools[0].inputSchema.additionalProperties, false);
   assert.deepEqual(response.result.tools[1].inputSchema.required, ["url"]);
+  assert.deepEqual(response.result.tools[2].inputSchema.required, ["query"]);
+  assert.deepEqual(response.result.tools[3].inputSchema.required, ["engine", "query"]);
+  assert.deepEqual(response.result.tools[4].inputSchema.required, ["location"]);
+  assert.equal(response.result.tools[2].inputSchema.properties.engines.type, "array");
+  assert.ok(response.result.tools[3].inputSchema.properties.engine.enum.includes("pypi"));
 });
 
 await check("tools/call returns text content", async () => {
@@ -57,6 +77,30 @@ await check("tools/call returns text content", async () => {
     params: { name: "web_fetch", arguments: { url: "https://example.test/x" } },
   });
   assert.equal(fetched.result.content[0].text, "fetched https://example.test/x");
+  const multi = await handler({
+    jsonrpc: "2.0",
+    id: 3,
+    method: "tools/call",
+    params: { name: "multi_search", arguments: { query: "multi" } },
+  });
+  assert.match(multi.result.content[0].text, /\[Shared\]/);
+  assert.match(multi.result.content[0].text, /\[bing, ddg\]/);
+  assert.match(multi.result.content[0].text, /Some engines failed/);
+  const domain = await handler({
+    jsonrpc: "2.0",
+    id: 4,
+    method: "tools/call",
+    params: { name: "domain_search", arguments: { engine: "pypi", query: "requests" } },
+  });
+  assert.match(domain.result.content[0].text, /pypi/);
+  assert.match(domain.result.content[0].text, /requests 2\.0/);
+  const weather = await handler({
+    jsonrpc: "2.0",
+    id: 5,
+    method: "tools/call",
+    params: { name: "weather", arguments: { location: "Shanghai" } },
+  });
+  assert.equal(weather.result.content[0].text, "weather stub");
 });
 
 await check("tool failures are isError results, protocol errors stay errors", async () => {
@@ -80,6 +124,33 @@ await check("the real search/fetch entry points validate required arguments", as
   await assert.rejects(() => searchWeb({ query: "q", engine: "nope" }), /unknown engine/);
   await assert.rejects(() => searchWeb({ query: "q", safe_search: "nope" }), /invalid safe_search/);
   await assert.rejects(() => fetchWeb({}), /url is required/);
+  await assert.rejects(() => multiSearchWeb({}), /query is required/);
+  await assert.rejects(() => multiSearchWeb({ query: "q", engines: "bing" }), /non-empty array/);
+  await assert.rejects(() => multiSearchWeb({ query: "q", engines: ["nope"] }), /unknown engine/);
+  await assert.rejects(() => searchDomain({ query: "q", engine: "nope" }), /unknown domain engine/);
+  await assert.rejects(() => getWeather({}), /location is required/);
+});
+
+await check("multi_search merges duplicate URLs and reports partial engine failures", async () => {
+  const runner = async (engine) => {
+    if (engine === "ddg") return { engine, sources: [{ title: "D", url: "https://example.test/shared" }, { title: "E", url: "https://example.test/e" }] };
+    return { engine, sources: [{ title: "B", url: "https://example.test/shared" }, { title: "C", url: "https://example.test/c" }] };
+  };
+  const result = await multiSearchWeb({ query: "q", engines: ["bing", "ddg"], max_results: 3 }, runner);
+  assert.equal(result.sources.length, 3);
+  assert.deepEqual(result.sources[0].engines, ["bing", "ddg"]);
+  assert.equal(result.sources[1].url, "https://example.test/c");
+  assert.deepEqual(result.errors, []);
+
+  const partial = await multiSearchWeb(
+    { query: "q", engines: ["bing", "ddg"], max_results: 2 },
+    async (engine) => {
+      if (engine === "ddg") throw new Error("quota");
+      return { engine, sources: [{ title: "B", url: "https://example.test/b" }] };
+    }
+  );
+  assert.equal(partial.sources.length, 1);
+  assert.match(partial.errors[0], /ddg: quota/);
 });
 
 await check("keyed engines are explicit and include the new providers", async () => {

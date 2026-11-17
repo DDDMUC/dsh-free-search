@@ -6,6 +6,7 @@ import fs from "node:fs";
 const root = new URL("..", import.meta.url);
 const idx = fs.readFileSync(new URL("lib/index.js", root), "utf8");
 const vert = fs.readFileSync(new URL("lib/vertical.js", root), "utf8");
+const domain = fs.readFileSync(new URL("lib/domain_engines.js", root), "utf8");
 const { ALL_ENGINES } = await import(new URL("lib/index.js", root));
 const { toolDescription, toolParam } = await import(new URL("lib/prompt_i18n.js", root));
 
@@ -43,7 +44,7 @@ check("the three schemas stay under 1.6k chars (~400 tokens)", () => {
 });
 
 check("per-engine sentences are still available in the registries", () => {
-  assert.match(vert, /desc:/);
+  assert.match(domain, /desc:/);
   assert.match(idx, /label:/);
 });
 

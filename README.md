@@ -543,7 +543,7 @@ Search engine test:
 npx -y -p dsh-free-search dsh-free-search-mcp
 ```
 
-`web_search` 默认只自动调用免 key 的 Bing / DuckDuckGo；在参数或 `MCP_SEARCH_ENGINE` 里显式点名 `google` / `baidu` / `brave` / `metaso` / `yandex` / `yuanbao` / `deepseek-tools` / `zhipu` 时才会使用付费引擎。支持 `time_range`（day/week/month/year）。`web_fetch` 仍走直连 / 浏览器 / Exa / Firecrawl。不暴露 `research`、`multi_search`，也不监听端口。Claude Desktop 配置示例：
+`web_search` 默认只自动调用免 key 的 Bing / DuckDuckGo；在参数或 `MCP_SEARCH_ENGINE` 里显式点名 `google` / `baidu` / `brave` / `metaso` / `yandex` / `yuanbao` / `deepseek-tools` / `zhipu` 时才会使用付费引擎。支持 `time_range`（day/week/month/year）。`web_fetch` 仍走直连 / 浏览器 / Exa / Firecrawl。`multi_search` 并行合并多个引擎（默认只跑免费引擎），`domain_search` 直查包/论文/CVE/财报/金融/法律等垂直源，`weather` 查询 1–7 天天气；不暴露 `research`，也不监听端口。Claude Desktop 配置示例：
 
 ```json
 {
@@ -631,7 +631,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **71 个**零依赖断言脚本（合计 **1044 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
+仓库自带 **71 个**零依赖断言脚本（合计 **1045 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -661,8 +661,8 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-research-call-wrappers.mjs` | research 四个 `call*` 包装层的替身/底层透传（#75 回归） | `node tools/assert-research-call-wrappers.mjs`（23） |
 | `assert-fetch-chain.mjs` | `fs-quality-fetch` 四层链序、任一层命中即停、exa 失败静默降级 firecrawl、全层失败聚合报错 | `node tools/assert-fetch-chain.mjs`（8） |
 | `assert-fetch-ssrf.mjs` | 抓取 SSRF 防护：公网/私网/保留地址判定、DNS 解析到私网拒绝、localhost 与 IP 字面量拒绝、非 HTTPS 与带凭据 URL 拒绝、fake-ip 网段默认拒绝且仅按配置放行、IPv6 ULA 显式放行、放行后仍拒绝回环/IPv4 私网/链路本地、provider 接线与设置项 | `node tools/assert-fetch-ssrf.mjs`（8） |
-| `assert-mcp.mjs` | MCP stdio 面：initialize 协议协商、tools/list 的 JSON Schema、tools/call 文本结果、工具错误与 JSON-RPC 错误区分、必填参数校验、显式付费引擎与新 provider、bin/files 打包 | `node tools/assert-mcp.mjs`（9） |
-| `assert-mcp.mjs` | MCP stdio surface: initialize negotiation, tools/list JSON Schema, tools/call text results, tool errors vs JSON-RPC errors, required arguments, explicit keyed engines and new providers, bin/files packaging | `node tools/assert-mcp.mjs` (9) |
+| `assert-mcp.mjs` | MCP stdio 面：initialize 协议协商、tools/list 的 JSON Schema、tools/call 文本结果、工具错误与 JSON-RPC 错误区分、必填参数校验、显式付费引擎与新 provider、multi/domain/weather 新工具、bin/files 打包 | `node tools/assert-mcp.mjs`（10） |
+| `assert-mcp.mjs` | MCP stdio surface: initialize negotiation, tools/list JSON Schema, tools/call text results, tool errors vs JSON-RPC errors, required arguments, explicit keyed engines and new providers, multi/domain/weather tools, bin/files packaging | `node tools/assert-mcp.mjs` (10) |
 | `assert-baidu.mjs` | 百度千帆：key 必填、web_search 首请求、403 或 results.code 额度错误回退 chat/completions（stream:false）、401 不回退、双端失败合并报错 | `node tools/assert-baidu.mjs`（6） |
 | `assert-deepseek-endpoint.mjs` | DeepSeek 搜索端点：默认地址、base/完整 URL 归一、自定义 endpoint 收 Bearer/key/query、配置与设置页接线 | `node tools/assert-deepseek-endpoint.mjs`（4） |
 | `assert-yuanbao.mjs` |key 必填、Bearer 网关/Query/Mode/Site/FromTime、自然与 VR 页面解析、日期归一、错误分类、注册与显式专用 | `node tools/assert-yuanbao.mjs`（6） |
@@ -1280,7 +1280,7 @@ The repo also ships a standalone stdio MCP server for Claude Desktop, Cursor, Co
 npx -y -p dsh-free-search dsh-free-search-mcp
 ```
 
-`web_search` auto-runs only the keyless Bing / DuckDuckGo engines; a keyed engine (`google` / `baidu` / `brave` / `metaso` / `yandex` / `yuanbao` / `deepseek-tools` / `zhipu`) runs only when named in the argument or `MCP_SEARCH_ENGINE`. It supports `time_range` (day/week/month/year). `web_fetch` still uses direct / browser / Exa / Firecrawl. It does not expose `research` or `multi_search`, and it does not listen on a port. Claude Desktop example:
+`web_search` auto-runs only the keyless Bing / DuckDuckGo engines; a keyed engine (`google` / `baidu` / `brave` / `metaso` / `yandex` / `yuanbao` / `deepseek-tools` / `zhipu`) runs only when named in the argument or `MCP_SEARCH_ENGINE`. It supports `time_range` (day/week/month/year). `web_fetch` still uses direct / browser / Exa / Firecrawl. `multi_search` merges several engines in parallel (free engines by default), `domain_search` queries structured package/paper/CVE/filing/finance/law sources, and `weather` returns a 1-7 day forecast; `research` remains unavailable, and the server does not listen on a port. Claude Desktop example:
 
 ```json
 {
@@ -1368,7 +1368,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Seventy-one** zero-dependency assertion scripts ship with the repo (**1044 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
+**Seventy-one** zero-dependency assertion scripts ship with the repo (**1045 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
 
 | Script | Covers | Run (count) |
 |---|---|---|
