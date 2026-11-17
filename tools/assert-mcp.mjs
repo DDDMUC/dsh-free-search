@@ -55,22 +55,23 @@ await check("initialize negotiates the protocol and advertises tools", async () 
   assert.equal(fallback.result.protocolVersion, "2025-06-18");
 });
 
-await check("tools/list exposes search, fetch, multi, domain, platform, video and weather with JSON Schema", async () => {
+await check("tools/list exposes search, advanced, fetch, multi, domain, platform, video and weather with JSON Schema", async () => {
   const response = await handler({ jsonrpc: "2.0", id: 1, method: "tools/list" });
   const names = response.result.tools.map((tool) => tool.name);
-  assert.deepEqual(names, ["web_search", "web_fetch", "multi_search", "domain_search", "weather", "platform_search", "video_search"]);
+  assert.deepEqual(names, ["web_search", "advanced_search", "web_fetch", "multi_search", "domain_search", "weather", "platform_search", "video_search"]);
   assert.deepEqual(response.result.tools[0].inputSchema.required, ["query"]);
   assert.equal(response.result.tools[0].inputSchema.additionalProperties, false);
-  assert.deepEqual(response.result.tools[1].inputSchema.required, ["url"]);
-  assert.deepEqual(response.result.tools[2].inputSchema.required, ["query"]);
-  assert.deepEqual(response.result.tools[3].inputSchema.required, ["engine", "query"]);
-  assert.deepEqual(response.result.tools[4].inputSchema.required, ["location"]);
-  assert.deepEqual(response.result.tools[5].inputSchema.required, ["platform", "query"]);
-  assert.deepEqual(response.result.tools[6].inputSchema.required, ["query"]);
-  assert.equal(response.result.tools[2].inputSchema.properties.engines.type, "array");
-  assert.ok(response.result.tools[3].inputSchema.properties.engine.enum.includes("pypi"));
-  assert.ok(response.result.tools[5].inputSchema.properties.platform.enum.includes("github"));
-  assert.deepEqual(response.result.tools[6].inputSchema.properties.source.enum, ["bing", "ddg"]);
+  assert.deepEqual(response.result.tools[1].inputSchema.required, ["query"]);
+  assert.deepEqual(response.result.tools[2].inputSchema.required, ["url"]);
+  assert.deepEqual(response.result.tools[3].inputSchema.required, ["query"]);
+  assert.deepEqual(response.result.tools[4].inputSchema.required, ["engine", "query"]);
+  assert.deepEqual(response.result.tools[5].inputSchema.required, ["location"]);
+  assert.deepEqual(response.result.tools[6].inputSchema.required, ["platform", "query"]);
+  assert.deepEqual(response.result.tools[7].inputSchema.required, ["query"]);
+  assert.equal(response.result.tools[3].inputSchema.properties.engines.type, "array");
+  assert.ok(response.result.tools[4].inputSchema.properties.engine.enum.includes("pypi"));
+  assert.ok(response.result.tools[6].inputSchema.properties.platform.enum.includes("github"));
+  assert.deepEqual(response.result.tools[7].inputSchema.properties.source.enum, ["bing", "ddg"]);
 });
 
 await check("tools/call returns text content", async () => {
@@ -84,6 +85,14 @@ await check("tools/call returns text content", async () => {
   assert.match(response.result.content[0].text, /Result/);
   assert.match(response.result.content[0].text, /https:\/\/example\.test\/a/);
   assert.match(response.result.content[0].text, /via stub/);
+  const advanced = await handler({
+    jsonrpc: "2.0",
+    id: 8,
+    method: "tools/call",
+    params: { name: "advanced_search", arguments: { query: "hello", time_range: "week" } },
+  });
+  assert.equal(advanced.result.isError, false);
+  assert.match(advanced.result.content[0].text, /via stub/);
   const fetched = await handler({
     jsonrpc: "2.0",
     id: 2,
