@@ -1,7 +1,7 @@
 // MCP stdio surface: initialize, tools, calls and errors. No network.
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { createMcpHandler, searchWeb, fetchWeb, multiSearchWeb, searchDomain, getWeather } from "../lib/mcp_server.js";
+import { createMcpHandler, searchWeb, fetchWeb, multiSearchWeb, searchDomain, getWeather, searchPlatformWeb, searchVideosWeb } from "../lib/mcp_server.js";
 import { MCP_ENGINE_IDS, MCP_KEYED_ENGINES, runMcpEngine } from "../lib/mcp_engines.js";
 
 let checks = 0;
@@ -33,6 +33,16 @@ const handler = createMcpHandler({
     sources: [{ title: "requests 2.0", url: "https://pypi.org/project/requests", snippet: "HTTP library" }],
   }),
   weather: async () => "weather stub",
+  platformSearch: async () => ({
+    platform: "github",
+    query: "repo",
+    sources: [{ title: "owner/repo", url: "https://github.com/owner/repo", snippet: "stars 1" }],
+  }),
+  videoSearch: async () => ({
+    provider: "bing",
+    query: "video",
+    sources: [{ title: "Video", url: "https://example.test/video", snippet: "1:00" }],
+  }),
 });
 
 await check("initialize negotiates the protocol and advertises tools", async () => {
@@ -45,18 +55,22 @@ await check("initialize negotiates the protocol and advertises tools", async () 
   assert.equal(fallback.result.protocolVersion, "2025-06-18");
 });
 
-await check("tools/list exposes search, fetch, multi, domain and weather with JSON Schema", async () => {
+await check("tools/list exposes search, fetch, multi, domain, platform, video and weather with JSON Schema", async () => {
   const response = await handler({ jsonrpc: "2.0", id: 1, method: "tools/list" });
   const names = response.result.tools.map((tool) => tool.name);
-  assert.deepEqual(names, ["web_search", "web_fetch", "multi_search", "domain_search", "weather"]);
+  assert.deepEqual(names, ["web_search", "web_fetch", "multi_search", "domain_search", "weather", "platform_search", "video_search"]);
   assert.deepEqual(response.result.tools[0].inputSchema.required, ["query"]);
   assert.equal(response.result.tools[0].inputSchema.additionalProperties, false);
   assert.deepEqual(response.result.tools[1].inputSchema.required, ["url"]);
   assert.deepEqual(response.result.tools[2].inputSchema.required, ["query"]);
   assert.deepEqual(response.result.tools[3].inputSchema.required, ["engine", "query"]);
   assert.deepEqual(response.result.tools[4].inputSchema.required, ["location"]);
+  assert.deepEqual(response.result.tools[5].inputSchema.required, ["platform", "query"]);
+  assert.deepEqual(response.result.tools[6].inputSchema.required, ["query"]);
   assert.equal(response.result.tools[2].inputSchema.properties.engines.type, "array");
   assert.ok(response.result.tools[3].inputSchema.properties.engine.enum.includes("pypi"));
+  assert.ok(response.result.tools[5].inputSchema.properties.platform.enum.includes("github"));
+  assert.deepEqual(response.result.tools[6].inputSchema.properties.source.enum, ["bing", "ddg"]);
 });
 
 await check("tools/call returns text content", async () => {
@@ -101,6 +115,22 @@ await check("tools/call returns text content", async () => {
     params: { name: "weather", arguments: { location: "Shanghai" } },
   });
   assert.equal(weather.result.content[0].text, "weather stub");
+  const platform = await handler({
+    jsonrpc: "2.0",
+    id: 6,
+    method: "tools/call",
+    params: { name: "platform_search", arguments: { platform: "github", query: "repo" } },
+  });
+  assert.match(platform.result.content[0].text, /owner\/repo/);
+  assert.match(platform.result.content[0].text, /via github/);
+  const video = await handler({
+    jsonrpc: "2.0",
+    id: 7,
+    method: "tools/call",
+    params: { name: "video_search", arguments: { query: "video", source: "bing" } },
+  });
+  assert.match(video.result.content[0].text, /Video/);
+  assert.match(video.result.content[0].text, /via bing/);
 });
 
 await check("tool failures are isError results, protocol errors stay errors", async () => {
@@ -129,6 +159,9 @@ await check("the real search/fetch entry points validate required arguments", as
   await assert.rejects(() => multiSearchWeb({ query: "q", engines: ["nope"] }), /unknown engine/);
   await assert.rejects(() => searchDomain({ query: "q", engine: "nope" }), /unknown domain engine/);
   await assert.rejects(() => getWeather({}), /location is required/);
+  await assert.rejects(() => searchPlatformWeb({}), /query is required/);
+  await assert.rejects(() => searchPlatformWeb({ query: "q", platform: "nope" }), /unknown platform/);
+  await assert.rejects(() => searchVideosWeb({}), /query is required/);
 });
 
 await check("multi_search merges duplicate URLs and reports partial engine failures", async () => {
