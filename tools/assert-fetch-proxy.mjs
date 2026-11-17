@@ -4,6 +4,7 @@
 // so the assertions prove the request reached the proxy with the right authority
 // without needing a real upstream or TLS handshake.
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import http from "node:http";
 import https from "node:https";
 
@@ -91,7 +92,7 @@ const withProxy = async (handler, run) => {
   const server = http.createServer(handler);
   const tunnels = [];
   server.on("connect", (req, socket) => {
-    seen.push(req.url);
+    seen.push({ url: req.url, auth: req.headers["proxy-authorization"] });
     tunnels.push(socket);
     handler(req, socket);
   });
@@ -111,12 +112,15 @@ await checkAsync("the tunnel sends CONNECT <host>:<port> to the proxy", async ()
       socket.end("HTTP/1.1 502 Bad Gateway\r\n\r\n");
     },
     async ({ port, seen }) => {
-      const agent = new TunnelAgent(`http://127.0.0.1:${port}`);
+      const agent = new TunnelAgent(`http://user:pass@127.0.0.1:${port}`);
       await assert.rejects(
         () => httpsGetFollow("https://example.com/a?b=1", { timeoutMs: 3000, agent }),
         /refused CONNECT example.com:443/
       );
-      assert.deepEqual(seen, ["example.com:443"]);
+      assert.deepEqual(seen.map((entry) => entry.url), ["example.com:443"]);
+      assert.equal(seen[0].auth, `Basic ${Buffer.from("user:pass").toString("base64")}`);
+      const provider = fs.readFileSync(new URL("../lib/fetch_provider.js", import.meta.url), "utf8");
+      assert.match(provider, /--proxy-server=\$\{proxy\}/);
     }
   );
 });
