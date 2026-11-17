@@ -97,6 +97,7 @@
 - **网页设置页** —— 引擎切换 + API key 配置（UI 中 key 脱敏显示「已配置」）+ 中英文切换；入口在左侧「插件」页的组件行配置（`plugins.row.config`，DSH 0.2.1-rc.2+）。远程访问（VPS / 反向代理 / 自定义域名）下也能用：桥接接口沿用宿主的 Host 围栏，`--trusted-host` 与 `--public-url` 声明的地址会放行（#84）。
 - **侧栏入口可关闭** —— 默认在左侧栏显示「免费搜索」；设置页关闭后写入配置并持久化，重启仍隐藏；隐藏时可用 `/free-search` 命令或插件页打开。
 - **斜杠命令可关闭** —— 默认注册 `/free-search-engine` 和 `/free-search`；设置页关闭 `slashCommands` 后两个命令都不再注册，设置仍在插件页，提示词也改为让模型参考插件设置。适合只想给 agent 用搜索工具的场景。
+- **优先使用免 key 档（可选）** —— 默认配了 key 的引擎一律用 key。设置页打开 `keylessFirst` 后，Exa / Tavily / Keenable / Firecrawl / Parallel / AnySearch / You.com 先走免 key 档，只有它限流、额度用尽、要求鉴权或网络失败时才改用 key（同一次请求内重试一次）；免 key 档失败后会休息一段时间（上限 45 分钟），期间直接用 key。适合 key 按量计费、想把它留作后备的场景。
 
 <img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/ui-apikeys.png" alt="全局回退优先级与每引擎 API key" width="100%" />
 <sub>▲ 全局回退优先级：每行一个引擎，右侧填该引擎的 API key（已配置会脱敏显示）</sub>
@@ -630,7 +631,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **69 个**零依赖断言脚本（合计 **1016 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
+仓库自带 **70 个**零依赖断言脚本（合计 **1032 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -645,6 +646,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-brave.mjs` | Brave Search：catalog/凭据/设置接线、请求头与 count/freshness、错误分类、HTML 清洗、ISO 日期归一化、15s 超时 | `node tools/assert-brave.mjs`（54） |
 | `assert-sidebar-entry.mjs` | 侧栏入口（#129）：`sidebarEntry` 默认开、设置页读写、条件注册/注销、`/free-search` 命令打开面板 | `node tools/assert-sidebar-entry.mjs`（4） |
 | `assert-slash-commands.mjs` | 斜杠命令开关：`slashCommands` 默认开、设置页读写、两个命令按配置注册/注销、关闭后提示词不再提 `/free-search-engine` | `node tools/assert-slash-commands.mjs`（4） |
+| `assert-keyless-first.mjs` | 免 key 优先：`keylessFirst` 默认关、开启后先走免 key 档，限流/鉴权/网络失败改用 key 并休息、其他失败不动用 key、无 key 行为不变，覆盖 Tavily、Exa 与 multi 模式 | `node tools/assert-keyless-first.mjs`（13） |
 | `assert-zhipu.mjs` | 智谱搜索：catalog/回退链、请求头与 engine/count/recency、Sogou 步进、响应映射、错误分类、无 key | `node tools/assert-zhipu.mjs`（6） |
 | `assert-deepseek-snippets.mjs` | deepseek-tools 摘要：默认 600、0 不截断、总预算上限、短条目保留 | `node tools/assert-deepseek-snippets.mjs`（4） |
 | `assert-bing-relevance.mjs` | Bing 相关性（#112）：单字中文 token 被剔除、无关替代 SERP 被拒、真正相关的结果通过、只命中通用引擎名的整批被拒、单一 token 覆盖一半时放行、单字/纯数字查询的显式行为 | `node tools/assert-bing-relevance.mjs`（6） |
@@ -817,6 +819,7 @@ This plugin solves exactly that: multiple free engines plus automatic fallback, 
 - **Web Settings UI** — Engine switching, API key configuration (keys masked as "configured" in the UI), and a Chinese/English toggle; the entry is the component-row config (`plugins.row.config`) on the sidebar Plugins page (DSH 0.2.1-rc.2+). Remote access (VPS, reverse proxy, custom domain) works too: the bridge reuses the host's own Host fence, so addresses declared with `--trusted-host` or `--public-url` are accepted (#84).
 - **Optional sidebar entry** — the left-sidebar row is shown by default; turning it off persists in the plugin config and survives restarts. The panel remains reachable through `/free-search` or the plugin page.
 - **Optional slash commands** — `/free-search-engine` and `/free-search` are registered by default; turning `slashCommands` off in settings unregisters both, settings stay on the plugin page, and the prompt points the model at the plugin settings instead. Useful when you only want the search tools for the agent.
+- **Keyless tier first (optional)** — by default an engine with a key always uses it. With `keylessFirst` on in settings, Exa / Tavily / Keenable / Firecrawl / Parallel / AnySearch / You.com try their keyless tier first and switch to the key only when that tier is rate limited, out of quota, asks for auth or fails to connect (retried once within the same request). A failed keyless tier rests for a while (at most 45 minutes), and searches go straight to the key meanwhile. Useful when the key is pay-as-you-go and should be the backup.
 
 <img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/ui-apikeys.png" alt="Global fallback priority and per-engine API keys" width="100%" />
 <sub>▲ Global fallback priority: one engine per row, its API key on the right (configured keys are masked)</sub>
@@ -1352,7 +1355,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Sixty-nine** zero-dependency assertion scripts ship with the repo (**1016 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
+**Seventy** zero-dependency assertion scripts ship with the repo (**1032 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
 
 | Script | Covers | Run (count) |
 |---|---|---|
@@ -1367,6 +1370,7 @@ Restart `dsh web` after switching to apply changes.
 | `assert-brave.mjs` | Brave Search: catalog / credential / settings wiring, request headers and count/freshness, error classification, HTML stripping, ISO date normalization, and the 15s budget | `node tools/assert-brave.mjs` (54) |
 | `assert-sidebar-entry.mjs` | Sidebar entry (#129): `sidebarEntry` defaults on, settings load/save it, registration can be disposed/recreated, and `/free-search` opens the panel | `node tools/assert-sidebar-entry.mjs` (4) |
 | `assert-slash-commands.mjs` | Slash-command switch: `slashCommands` defaults on, settings load/save it, both commands register/unregister from config, and the prompt stops naming `/free-search-engine` when off | `node tools/assert-slash-commands.mjs` (4) |
+| `assert-keyless-first.mjs` | Keyless tier first: `keylessFirst` defaults off; when on, the keyless tier runs first and a rate limit, auth demand or network failure falls back to the key (which then rests the keyless tier), other failures leave the key alone, and no-key behaviour is unchanged; covers Tavily, Exa and multi mode | `node tools/assert-keyless-first.mjs` (13) |
 | `assert-zhipu.mjs` | Zhipu Web Search: catalog/fallback wiring, auth and request engine/count/recency, Sogou count steps, response mapping, error classes, missing key | `node tools/assert-zhipu.mjs` (6) |
 | `assert-deepseek-snippets.mjs` | deepseek-tools snippets: default 600, 0 disables the cap, total budget ceiling, and short results survive | `node tools/assert-deepseek-snippets.mjs` (4) |
 | `assert-bing-relevance.mjs` | Bing relevance (#112): single-character CJK tokens removed, an unrelated substituted SERP rejected, genuinely relevant results accepted, a batch matching only a generic engine name rejected, one distinctive token covering half the query accepted, and explicit single-character/numeric behaviour | `node tools/assert-bing-relevance.mjs` (6) |
