@@ -81,10 +81,10 @@ check("legacy API: the 0.2.2-rc.2 default deepseek-search-api is replaced", () =
   assert.equal(web.fetchProviderId, "fs-quality-fetch");
 });
 
-check("legacy API: DSH's explicit DeepSeek switch (deepseek-fetch-api) is left alone", () => {
+check("legacy API: DSH's explicit DeepSeek switch keeps search but reclaims fetch", () => {
   const { web } = run({ searchProvider: "deepseek-search-api", fetchProvider: "deepseek-fetch-api" });
   assert.equal(web.searchProviderId, "deepseek-search-api");
-  assert.equal(web.fetchProviderId, "deepseek-fetch-api");
+  assert.equal(web.fetchProviderId, "fs-quality-fetch");
 });
 
 check("legacy API: an explicit foreign provider is left alone", () => {
@@ -111,9 +111,10 @@ check("rc.2 API: deepseek-search-api is treated as the factory default", () => {
   ]);
 });
 
-check("rc.2 API: the explicit DeepSeek switch is not rewritten", () => {
+check("rc.2 API: the explicit DeepSeek switch keeps search but reclaims fetch", () => {
   const { mutations } = run({ searchProvider: "deepseek-search-api", fetchProvider: "deepseek-fetch-api", hasConfigRefs: true });
-  assert.equal(mutations.length, 0);
+  assert.equal(mutations.length, 1);
+  assert.deepEqual(mutations[0].ops, [{ op: "set", path: ["fetchProvider"], value: "fs-quality-fetch" }]);
 });
 
 check("rc.2 API: no takeover when a foreign provider is selected", () => {

@@ -25,10 +25,10 @@ section("A. 契约");
 assert(provider.id === "fs-quality-fetch", "provider id = fs-quality-fetch");
 assert(provider.available() === true, "available() 为 true（seam 要求：不得网络调用）");
 
-section("B. 仅支持 https");
+section("B. http 默认被拒绝，但错误指向 allowHttp");
 let threw = null;
 try { await provider.fetch({ url: "http://example.com" }, undefined); } catch (e) { threw = e; }
-assert(threw !== null && /only https/.test(threw.message), "http:// 被拒绝（错误信息含 only https）");
+assert(threw !== null && /http URLs require allowHttp/.test(threw.message), "http:// 默认拒绝，并提示开启 allowHttp");
 
 section("C. 四层链序：T1 直连失败 → T2 exa 命中即停");
 for (const k of Object.keys(CONTROLLED_STUBS)) CONTROLLED_STUBS[k] = null;
