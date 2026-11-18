@@ -268,6 +268,8 @@ DSH 0.2.1 设置 → 网页搜索 → **DeepSeek 搜索 API** 开关会和本插
 | 关闭开关 | DSH 会把整行 `- id: web` 删掉，provider 回到当前版本的官方默认：0.2.2-rc.2 起是 `deepseek-search-api`（按 Search API 计费），旧版是 `deepseek-official`（模型搜索，一次完整 aux 请求，按 token 计费）；都不是免费引擎 |
 | 关闭后 | **0.9.8 起**：插件检测到任一官方默认会在运行时补一次接管（日志 `DSH's search switch put the web providers back to the official defaults — re-took …`），通常几秒内恢复免费链路；若没恢复，完整重启 DSH |
 
+开关打开期间，`fetchProvider` 会一直停在 `deepseek-fetch-api`，`web_fetch` 也就一直走官方计费接口，`fs-quality-fetch` 的直连/浏览器/exa/firecrawl 一层都不会被调用（报错信息来自 DeepSeek，与插件无关）。这是插件默认让路的结果，不是上游故障。想「官方搜索 + 插件抓取」同时在，打开本插件设置页「抓取」段的**强制接管 web_fetch**（写入 `fetchProviderForce: true`），保存即生效，不用重启；也可以手写 `fetchProvider: fs-quality-fetch`。
+
 想换引擎请用 `/free-search-engine` 或本插件设置页，**不要动那个开关**。打开开关再关掉，官方直连会退回模型搜索，直到插件重新接管或重启。
 
 > 如果你在 0.1.x 时代按旧文档手写过 `- id: web`，现在可以删掉：0.2.x 由运行时接管写入。手写时注意 `fetchProvider` 应该是 `fs-quality-fetch`（本插件注册的抓取 provider），不是 `http`。
@@ -379,6 +381,8 @@ DSH 0.2.1 设置 → 网页搜索 → **DeepSeek 搜索 API** 开关会和本插
 
 如果你**特意** pin 了 `fetchProvider: http`（只想要内置抓取），把 `fetchProviderTakeover` 设为 `false` 即可：本插件不再把 `http` 当成「出厂默认」去接管，但仍会在完全未设置时补上。
 
+DSH 的搜索开关会把 `fetchProvider` 写成 `deepseek-fetch-api`，默认同样让路。要把抓取抢回来又不想改 YAML，打开 `fetchProviderForce`（设置页「抓取」段的「强制接管」）：它忽略上面那条判据，保存后立即把 `web.fetchProvider` 写回 `fs-quality-fetch`。
+
 `searchProvider` 的规则相同：未设置或仍是当前版本的官方默认（`deepseek-search-api` / `deepseek-official`）时接管，显式指定其它 provider 时不抢占。
 
 #### 配置文件
@@ -410,6 +414,7 @@ promptToolsLang: ""          # 工具段那句话的语言，zh 或 en；留空�
 disabledTools: []           # 关掉的工具不再注册（例如 [domain_search]），schema 一并从上下文消失
 bingMarket: zh-CN           # Bing 市场；留空 = 自动（不发送 mkt）
 fetchProviderTakeover: true # false = 保留你显式 pin 的 fetchProvider: http
+fetchProviderForce: false # true = 连 DSH 搜索开关写进来的 deepseek-fetch-api 也接管（#142）
 browserFetch: true           # 直连失败时用系统浏览器无头渲染
 allowFakeIpCidrs: []          # 显式放行的保留网段，例如 Clash/mihomo fake-ip 的 198.18.0.0/15
 fetchPrefer: exa             # exa | firecrawl —— 两者都失败后先试哪个 keyed 抓取层
@@ -706,7 +711,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-fetch-abort.mjs` | 抓取中断（#87）：压缩响应中途断连必须 reject（不再永久 pending）、明文断连同样 reject、abort 能打断停滞的 gzip 流、complete 响应与重定向仍正常 | `node tools/assert-fetch-abort.mjs`（6） |
 | `assert-fetch-proxy.mjs` | 抓取层代理：`http_proxy` / `https_proxy` / `all_proxy` / `no_proxy` 解析（大小写与小写优先、空值视为未设置）、`NO_PROXY` 的域名 / `host:port` / `*` 匹配、loopback 恒直连、`socks5://` 忽略、`CONNECT` 隧道握手与 `Proxy-Authorization`、代理拒绝与提前断连不挂起、有 agent 时重定向每一跳仍过 SSRF 校验、浏览器 tier 的 `--proxy-server` | `node tools/assert-fetch-proxy.mjs`（12） |
 | `assert-bridge-access.mjs` | 桥接 Host 围栏（#84）：loopback 放行、remote peer 打 loopback Host 拒绝、`--trusted-host`（无端口匹配任意端口 / 带端口精确匹配）、`--public-url`、绑定地址、跨站与异源拒绝、connection 鉴权委托与 fail-closed、设置客户端按 `document.baseURI` 解析子路径 | `node tools/assert-bridge-access.mjs`（14） |
-| `assert-provider-takeover.mjs` | provider 接管：旧属性 API 与 rc.2 的 `config.*` ref 两套兼容、`settings.mutate(web)` 单批写入、显式指定的 provider 不被抢占、`fetchProviderTakeover: false` 时保留显式 `http`、describe 噪声不误报、嵌套 config 变化与 web 重建分别成行、关闭 DSH 搜索开关后重新接管（`deepseek-search-api` / `deepseek-official` 均视为官方默认）、打开 DeepSeek 开关（`deepseek-fetch-api`）时让路、apply 重入/重复注册不再中断、重复日志去重 | `node tools/assert-provider-takeover.mjs`（20） |
+| `assert-provider-takeover.mjs` | provider 接管：旧属性 API 与 rc.2 的 `config.*` ref 两套兼容、`settings.mutate(web)` 单批写入、显式指定的 provider 不被抢占、`fetchProviderTakeover: false` 时保留显式 `http`、`fetchProviderForce` 抢回 `deepseek-fetch-api` 且不动搜索、开关打开时保存设置即补接管（关闭时不动 web）、describe 噪声不误报、嵌套 config 变化与 web 重建分别成行、关闭 DSH 搜索开关后重新接管（`deepseek-search-api` / `deepseek-official` 均视为官方默认）、apply 重入/重复注册不再中断、重复日志去重 | `node tools/assert-provider-takeover.mjs`（25） |
 
 任何一个失败会以非 0 退出码结束并列出失败项；把某个旧版本文件路径作为参数传进去，可以看到修复前必红（用来证明断言不是空转）。改动发布相关逻辑后建议先跑一遍再发版。
 
@@ -1007,6 +1012,8 @@ DSH 0.2.1 has Settings → Web search → **DeepSeek search API**, which interac
 | Turn the switch off | DSH deletes the whole `- id: web` row, so the provider falls back to the shipped default for the running DSH: `deepseek-search-api` since 0.2.2-rc.2 (billed per Search API call), or `deepseek-official` on older hosts (model search: a full auxiliary request, billed per token). Neither is a free engine |
 | After turning it off | **Since 0.9.8**: the plugin notices either official default and re-takes at runtime (log line `DSH's search switch put the web providers back to the official defaults — re-took …`), normally within seconds; if it does not, restart DSH |
 
+While the switch is on, `fetchProvider` stays at `deepseek-fetch-api`, so `web_fetch` keeps going through the paid official API and none of the `fs-quality-fetch` tiers (direct / browser / exa / firecrawl) run — the error text comes from DeepSeek and never mentions the plugin. That is the plugin stepping aside on purpose, not an upstream outage. To keep official search and the plugin's fetch chain at the same time, turn on **Force the web_fetch takeover** in this plugin's settings (writes `fetchProviderForce: true`); saving applies immediately, no restart. Setting `fetchProvider: fs-quality-fetch` by hand does the same.
+
 Use `/free-search-engine` or this plugin's settings page to change engines, **not that switch**. Turning it on and then off drops you from the official direct API back to model search until the plugin re-takes over or DSH restarts.
 
 > If you hand-wrote `- id: web` back in the 0.1.x era, you can drop it now: 0.2.x writes it at runtime. If you do declare it by hand, `fetchProvider` should be `fs-quality-fetch` (the fetch provider this plugin registers), not `http`.
@@ -1118,6 +1125,8 @@ Otherwise startup can loop on "write the `web` config → the web service rebuil
 
 If you deliberately pinned `fetchProvider: http` (you only want the built-in fetcher), set `fetchProviderTakeover: false`: `http` is no longer treated as the factory default, while a completely unset provider is still filled in.
 
+DSH's search switch writes `fetchProvider: deepseek-fetch-api`, and the plugin steps aside for that too. To take fetch back without editing YAML, turn on `fetchProviderForce` ("Force the web_fetch takeover" in the settings page's fetch section): it ignores the rule above and writes `web.fetchProvider` back to `fs-quality-fetch` as soon as the setting is saved.
+
 `searchProvider` follows the same rule: taken over when unset or still the running host's official default (`deepseek-search-api` / `deepseek-official`), never when explicitly pointed elsewhere.
 
 #### Configuration File
@@ -1149,6 +1158,7 @@ promptConstraintsIndex: 0
 disabledTools: []           # tools that are not registered at all (e.g. [domain_search]); their schemas leave the context too
 bingMarket: zh-CN           # Bing market; empty = automatic (no mkt sent)
 fetchProviderTakeover: true # false = keep the fetchProvider: http you pinned yourself
+fetchProviderForce: false # true = also take over the deepseek-fetch-api written by DSH's search switch (#142)
 browserFetch: true           # use the system browser headless renderer when direct fetch fails
 allowFakeIpCidrs: []          # reserved ranges to allow explicitly, e.g. 198.18.0.0/15 for Clash/mihomo fake-ip
 fetchPrefer: exa             # exa | firecrawl — which keyed fetch tier to try first
@@ -1443,7 +1453,7 @@ Restart `dsh web` after switching to apply changes.
 | `assert-fetch-abort.mjs` | fetch interruption (#87): a compressed response cut mid-body rejects instead of hanging forever, identity truncation rejects too, abort breaks a stalled gzip stream, and complete responses plus redirects still work | `node tools/assert-fetch-abort.mjs` (6) |
 | `assert-fetch-proxy.mjs` | proxy support for the fetch tiers: `http_proxy` / `https_proxy` / `all_proxy` / `no_proxy` parsing (either case, lowercase wins, empty means unset), `NO_PROXY` domain / `host:port` / `*` matching, loopback always direct, `socks5://` ignored, the `CONNECT` tunnel handshake and `Proxy-Authorization`, a refusing proxy and an early disconnect never hanging, the SSRF guard still applied to every redirect hop when an agent is in use, and `--proxy-server` for the browser tier | `node tools/assert-fetch-proxy.mjs` (12) |
 | `assert-bridge-access.mjs` | bridge Host fence (#84): loopback allowed, a remote peer behind a loopback Host refused, `--trusted-host` (port-less matches any port, explicit port matches exactly), `--public-url`, the bind address, cross-site and foreign-Origin refused, connection-auth delegation, fail-closed behavior, and settings-client subpath resolution via `document.baseURI` | `node tools/assert-bridge-access.mjs` (14) |
-| `assert-provider-takeover.mjs` | provider takeover: both the legacy property API and the rc.2 `config.*` refs, a single batched `settings.mutate(web)`, explicit foreign providers left untouched, an explicit `http` kept when `fetchProviderTakeover` is off, describe()-triggered events ignored when nothing changed, nested config changes and web rebuilds reported separately, re-takeover after DSH's search switch is turned off (both `deepseek-search-api` and `deepseek-official` count as the factory default), stepping aside for the explicit `deepseek-fetch-api` switch, apply re-entry / duplicate registrations tolerated, and repeated logs deduplicated | `node tools/assert-provider-takeover.mjs` (20) |
+| `assert-provider-takeover.mjs` | provider takeover: both the legacy property API and the rc.2 `config.*` refs, a single batched `settings.mutate(web)`, explicit foreign providers left untouched, an explicit `http` kept when `fetchProviderTakeover` is off, `fetchProviderForce` taking `deepseek-fetch-api` back without touching search, saving the plugin settings re-taking fetch right away (and leaving web alone when off), describe()-triggered events ignored when nothing changed, nested config changes and web rebuilds reported separately, re-takeover after DSH's search switch is turned off (both `deepseek-search-api` and `deepseek-official` count as the factory default), apply re-entry / duplicate registrations tolerated, and repeated logs deduplicated | `node tools/assert-provider-takeover.mjs` (25) |
 
 Any failure exits non-zero with the failing items listed. Passing the path of an older file shows the pre-fix failures (proving the assertions are not vacuous). Worth running before a release.
 

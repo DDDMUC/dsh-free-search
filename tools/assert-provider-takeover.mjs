@@ -1,6 +1,7 @@
 ﻿// Provider takeover + registration idempotence across DSH web APIs. No network or API key.
 // Node >= 20: node tools/assert-provider-takeover.mjs
 import assert from "node:assert/strict";
+import fs from "node:fs";
 
 const { apply, ALL_ENGINES } = await import("../lib/index.js");
 let checks = 0;
@@ -85,6 +86,28 @@ check("legacy API: DSH's explicit DeepSeek switch keeps search but reclaims fetc
   const { web } = run({ searchProvider: "deepseek-search-api", fetchProvider: "deepseek-fetch-api" });
   assert.equal(web.searchProviderId, "deepseek-search-api");
   assert.equal(web.fetchProviderId, "fs-quality-fetch");
+});
+
+check("legacy API: fetchProviderForce overrides DSH's deepseek-fetch-api", () => {
+  const { web } = run({
+    searchProvider: "deepseek-search-api",
+    fetchProvider: "deepseek-fetch-api",
+    config: { fetchProviderForce: true },
+  });
+  // 搜索仍是官方（开关是用户的显式选择），只把抓取抢回来。
+  assert.equal(web.searchProviderId, "deepseek-search-api");
+  assert.equal(web.fetchProviderId, "fs-quality-fetch");
+});
+
+check("rc.2 API: fetchProviderForce writes only the fetch provider", () => {
+  const { mutations } = run({
+    searchProvider: "deepseek-search-api",
+    fetchProvider: "deepseek-fetch-api",
+    hasConfigRefs: true,
+    config: { fetchProviderForce: true },
+  });
+  assert.equal(mutations.length, 1);
+  assert.deepEqual(mutations[0].ops, [{ op: "set", path: ["fetchProvider"], value: "fs-quality-fetch" }]);
 });
 
 check("legacy API: an explicit foreign provider is left alone", () => {
@@ -261,4 +284,41 @@ await checkAsync("#86 reclaims the 0.2.2-rc.2 deepseek-search-api default after 
   assert.equal(ops.find((op) => op.path?.[0] === "fetchProvider")?.value, "fs-quality-fetch");
 });
 
+await checkAsync("saving the plugin settings with force on re-takes fetch immediately (#142)", async () => {
+  const { ctx, handlers, mutations } = makeCtx({
+    searchProvider: "deepseek-search-api",
+    fetchProvider: "deepseek-fetch-api",
+    hasConfigRefs: true,
+  });
+  apply(ctx, { ...baseConfig(), fetchProviderForce: true });
+  await tick();
+  const before = mutations.length;
+  handlers["settings/document-updated"]("web-search-free");
+  await tick();
+  assert.equal(mutations.length, before + 1, "one mutate for the forced re-takeover");
+  assert.deepEqual(mutations[mutations.length - 1].ops, [{ op: "set", path: ["fetchProvider"], value: "fs-quality-fetch" }]);
+});
+
+await checkAsync("without force, saving the plugin settings touches no web provider (#142)", async () => {
+  const { ctx, handlers, mutations } = makeCtx({
+    searchProvider: "deepseek-search-api",
+    fetchProvider: "deepseek-fetch-api",
+    hasConfigRefs: true,
+  });
+  apply(ctx, baseConfig());
+  await tick();
+  const before = mutations.length;
+  handlers["settings/document-updated"]("web-search-free");
+  await tick();
+  assert.equal(mutations.length, before);
+});
+
+check("the settings UI exposes the force switch", () => {
+  const client = fs.readFileSync(new URL("../lib/client.js", import.meta.url), "utf8");
+  assert.match(client, /path: \["fetchProviderForce"\]/);
+  assert.match(client, /t\.fetchForceLabel/);
+  assert.match(client, /t\.fetchForceHint/);
+  const index = fs.readFileSync(new URL("../lib/index.js", import.meta.url), "utf8");
+  assert.match(index, /fetchProviderForce: z\.boolean\(\)\.default\(false\)/);
+});
 console.log(`OK: ${checks} provider takeover checks passed`);
