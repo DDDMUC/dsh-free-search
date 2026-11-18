@@ -1,7 +1,7 @@
 // MCP stdio surface: initialize, tools, calls and errors. No network.
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { createMcpHandler, searchWeb, fetchWeb, multiSearchWeb, searchDomain, getWeather, searchPlatformWeb, searchVideosWeb, researchWeb } from "../lib/mcp_server.js";
+import { createMcpHandler, searchWeb, fetchWeb, multiSearchWeb, searchDomain, getWeather, searchPlatformWeb, searchVideosWeb, researchWeb, searchCachedPages, testEngines } from "../lib/mcp_server.js";
 import { MCP_ENGINE_IDS, MCP_KEYED_ENGINES, MCP_KEYLESS_ENGINES, runMcpEngine } from "../lib/mcp_engines.js";
 
 let checks = 0;
@@ -52,6 +52,8 @@ const handler = createMcpHandler({
     estimatedTokens: 123,
     quality: { level: "medium", sources: 1, domains: 1, dated: 0, fetched: 1, note: "thin evidence" },
   }),
+  cacheSearch: async () => ({ query: "cache", hits: [{ url: "https://example.test/c", title: "Cached", excerpt: "cached body", fetched_at: "2026-01-01T00:00:00Z" }] }),
+  testEngines: async () => ({ query: "test", results: [{ engine: "bing", ok: true, sources: 2, sample: "Bing result" }] }),
 });
 
 await check("initialize negotiates the protocol and advertises tools", async () => {
@@ -67,7 +69,7 @@ await check("initialize negotiates the protocol and advertises tools", async () 
 await check("tools/list exposes search, advanced, fetch, multi, domain, platform, video and weather with JSON Schema", async () => {
   const response = await handler({ jsonrpc: "2.0", id: 1, method: "tools/list" });
   const names = response.result.tools.map((tool) => tool.name);
-  assert.deepEqual(names, ["web_search", "advanced_search", "web_fetch", "multi_search", "domain_search", "weather", "platform_search", "video_search", "research"]);
+  assert.deepEqual(names, ["web_search", "advanced_search", "web_fetch", "multi_search", "domain_search", "weather", "platform_search", "video_search", "research", "cache_search", "free_search_test"]);
   assert.deepEqual(response.result.tools[0].inputSchema.required, ["query"]);
   assert.equal(response.result.tools[0].inputSchema.additionalProperties, false);
   assert.deepEqual(response.result.tools[1].inputSchema.required, ["query"]);
@@ -78,6 +80,8 @@ await check("tools/list exposes search, advanced, fetch, multi, domain, platform
   assert.deepEqual(response.result.tools[6].inputSchema.required, ["platform", "query"]);
   assert.deepEqual(response.result.tools[7].inputSchema.required, ["query"]);
   assert.deepEqual(response.result.tools[8].inputSchema.required, ["question"]);
+  assert.deepEqual(response.result.tools[9].inputSchema.required, ["query"]);
+  assert.deepEqual(response.result.tools[10].inputSchema.required, ["engines"]);
   assert.equal(response.result.tools[3].inputSchema.properties.engines.type, "array");
   assert.ok(response.result.tools[4].inputSchema.properties.engine.enum.includes("pypi"));
   assert.ok(response.result.tools[6].inputSchema.properties.platform.enum.includes("github"));
@@ -159,6 +163,22 @@ await check("tools/call returns text content", async () => {
   assert.match(research.result.content[0].text, /# Research: why/);
   assert.match(research.result.content[0].text, /Body text/);
   assert.match(research.result.content[0].text, /thin evidence/);
+  const cache = await handler({
+    jsonrpc: "2.0",
+    id: 10,
+    method: "tools/call",
+    params: { name: "cache_search", arguments: { query: "cache" } },
+  });
+  assert.match(cache.result.content[0].text, /Cached pages matching/);
+  assert.match(cache.result.content[0].text, /cached body/);
+  const tests = await handler({
+    jsonrpc: "2.0",
+    id: 11,
+    method: "tools/call",
+    params: { name: "free_search_test", arguments: { engines: ["bing"] } },
+  });
+  assert.match(tests.result.content[0].text, /Engine test/);
+  assert.match(tests.result.content[0].text, /bing: ok/);
 });
 
 await check("tool failures are isError results, protocol errors stay errors", async () => {
@@ -191,6 +211,9 @@ await check("the real search/fetch entry points validate required arguments", as
   await assert.rejects(() => searchPlatformWeb({ query: "q", platform: "nope" }), /unknown platform/);
   await assert.rejects(() => searchVideosWeb({}), /query is required/);
   await assert.rejects(() => researchWeb({}), /question is required/);
+  await assert.rejects(() => searchCachedPages({}), /query is required/);
+  await assert.rejects(() => testEngines({}), /engines must be a non-empty array/);
+  await assert.rejects(() => testEngines({ engines: ["nope"] }), /unknown engine/);
 });
 
 await check("multi_search merges duplicate URLs and reports partial engine failures", async () => {
