@@ -70,10 +70,14 @@ await check("localhost and IP literals are blocked without DNS", async () => {
   await assert.rejects(() => assertPublicUrl("https://localhost/", { lookup: privateLookup }), /SSRF blocked/);
 });
 
-await check("non-HTTPS and credential URLs are rejected", async () => {
-  await assert.rejects(() => assertPublicUrl("http://example.com/", { lookup: publicLookup }), /only https/);
-  const httpUrl = await assertPublicUrl("http://example.com/", { lookup: publicLookup, allowedProtocols: ["https:", "http:"] });
-  assert.equal(httpUrl.protocol, "http:");
+await check("a plain-http host resolving to a private address is still blocked", async () => {
+  await assert.rejects(() => assertPublicUrl("http://evil.test/", { lookup: privateLookup }), /SSRF blocked/);
+});
+
+await check("http(s) URLs pass the guard, other schemes and credentials are rejected", async () => {
+  const url = await assertPublicUrl("http://example.com/", { lookup: publicLookup });
+  assert.equal(url.protocol, "http:");
+  await assert.rejects(() => assertPublicUrl("ftp://example.com/", { lookup: publicLookup }), /only http/);
   await assert.rejects(() => assertPublicUrl("https://user:pass@example.com/", { lookup: publicLookup }), /credentials/);
 });
 
@@ -81,7 +85,7 @@ await check("the provider wires the guard and both settings", async () => {
   const fs = await import("node:fs");
   const provider = fs.readFileSync(new URL("../lib/fetch_provider.js", import.meta.url), "utf8");
   assert.match(provider, /validateUrl = assertPublicUrl/);
-  assert.match(provider, /await validateUrl\(url, \{ allowedCidrs: allowed, allowedProtocols:/);
+  assert.match(provider, /await validateUrl\(url, \{ allowedCidrs: allowed \}\)/);
   assert.match(provider, /lookup: makeSafeLookup\(allowed\)/);
   assert.match(provider, /browserEnabled\(\) && browserPath/);
   assert.match(provider, /prefer\(\) === "firecrawl"/);
