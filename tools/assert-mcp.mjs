@@ -54,6 +54,7 @@ const handler = createMcpHandler({
   }),
   cacheSearch: async () => ({ query: "cache", hits: [{ url: "https://example.test/c", title: "Cached", excerpt: "cached body", fetched_at: "2026-01-01T00:00:00Z" }] }),
   testEngines: async () => ({ query: "test", results: [{ engine: "bing", ok: true, sources: 2, sample: "Bing result" }] }),
+  doctor: async () => "doctor stub",
 });
 
 await check("initialize negotiates the protocol and advertises tools", async () => {
@@ -69,7 +70,7 @@ await check("initialize negotiates the protocol and advertises tools", async () 
 await check("tools/list exposes search, advanced, fetch, multi, domain, platform, video and weather with JSON Schema", async () => {
   const response = await handler({ jsonrpc: "2.0", id: 1, method: "tools/list" });
   const names = response.result.tools.map((tool) => tool.name);
-  assert.deepEqual(names, ["web_search", "advanced_search", "web_fetch", "multi_search", "domain_search", "weather", "platform_search", "video_search", "research", "cache_search", "free_search_test"]);
+  assert.deepEqual(names, ["web_search", "advanced_search", "web_fetch", "multi_search", "domain_search", "weather", "platform_search", "video_search", "research", "cache_search", "free_search_test", "doctor"]);
   assert.deepEqual(response.result.tools[0].inputSchema.required, ["query"]);
   assert.equal(response.result.tools[0].inputSchema.additionalProperties, false);
   assert.deepEqual(response.result.tools[1].inputSchema.required, ["query"]);
@@ -82,6 +83,7 @@ await check("tools/list exposes search, advanced, fetch, multi, domain, platform
   assert.deepEqual(response.result.tools[8].inputSchema.required, ["question"]);
   assert.deepEqual(response.result.tools[9].inputSchema.required, ["query"]);
   assert.deepEqual(response.result.tools[10].inputSchema.required, ["engines"]);
+  assert.equal(response.result.tools[11].inputSchema.required, undefined);
   assert.equal(response.result.tools[3].inputSchema.properties.engines.type, "array");
   assert.ok(response.result.tools[4].inputSchema.properties.engine.enum.includes("pypi"));
   assert.ok(response.result.tools[6].inputSchema.properties.platform.enum.includes("github"));
@@ -179,6 +181,13 @@ await check("tools/call returns text content", async () => {
   });
   assert.match(tests.result.content[0].text, /Engine test/);
   assert.match(tests.result.content[0].text, /bing: ok/);
+  const doctor = await handler({
+    jsonrpc: "2.0",
+    id: 12,
+    method: "tools/call",
+    params: { name: "doctor", arguments: {} },
+  });
+  assert.equal(doctor.result.content[0].text, "doctor stub");
 });
 
 await check("tool failures are isError results, protocol errors stay errors", async () => {
