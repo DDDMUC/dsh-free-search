@@ -77,7 +77,7 @@
 
 #### 抓取与工具
 
-- **网页抓取（web_fetch）** —— 让 agent 抓取网页内容（官方 `dsh-web-fetch-http` provider，纯 JS，零额外依赖），可自动接管 `web.fetchProvider` 为插件的直连 → 浏览器渲染 → exa / firecrawl → crawl4ai 质量链。T1.5 浏览器渲染可在设置页关闭，exa 与 firecrawl 的先后顺序也可切换；私网、回环和云元数据地址一律拒绝（SSRF 防护）。Clash / mihomo TUN 的 fake-ip 网段（常见 198.18.0.0/15）可在「额外允许的网段」里显式放行，否则系统 DNS 返回的占位地址会被当成私网拒绝。
+- **网页抓取（web_fetch）** —— 让 agent 抓取网页内容（官方 `dsh-web-fetch-http` provider，纯 JS，零额外依赖），可自动接管 `web.fetchProvider` 为插件的直连 → 浏览器渲染 → exa / firecrawl → crawl4ai 质量链。T1.5 浏览器渲染可在设置页关闭，exa 与 firecrawl 的先后顺序也可切换；默认只抓 HTTPS，设置页可开启 `allowHttp`（HTTP 目标先尝试 HTTPS 升级，再走 HTTP / 浏览器 / 云端）；私网、回环和云元数据地址一律拒绝（SSRF 防护）。Clash / mihomo TUN 的 fake-ip 网段（常见 198.18.0.0/15）可在「额外允许的网段」里显式放行，否则系统 DNS 返回的占位地址会被当成私网拒绝。
 
 <img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/ui-fetch.png" alt="抓取与平台：web_fetch 接管、Key 存储位置与平台搜索开关" width="100%" />
 <sub>▲ 抓取：自动接管 web_fetch、Key 存储位置与平台搜索开关</sub>
@@ -264,7 +264,7 @@ DSH 0.2.1 设置 → 网页搜索 → **DeepSeek 搜索 API** 开关会和本插
 
 | 操作 | 结果 |
 |---|---|
-| 打开开关 | `web.searchProvider` 写成 `deepseek-search-api`（属于「显式选择其他 provider」），**本插件主动让路**，搜索走官方直连 API；抓取同时变成 `deepseek-fetch-api` |
+| 打开开关 | `web.searchProvider` 写成 `deepseek-search-api`（属于「显式选择其他 provider」），**本插件主动让路**，搜索走官方直连 API；抓取同时变成 `deepseek-fetch-api`。**0.9.62 起**抓取侧仍会接管为 `fs-quality-fetch`，搜索侧保持官方选择 |
 | 关闭开关 | DSH 会把整行 `- id: web` 删掉，provider 回到当前版本的官方默认：0.2.2-rc.2 起是 `deepseek-search-api`（按 Search API 计费），旧版是 `deepseek-official`（模型搜索，一次完整 aux 请求，按 token 计费）；都不是免费引擎 |
 | 关闭后 | **0.9.8 起**：插件检测到任一官方默认会在运行时补一次接管（日志 `DSH's search switch put the web providers back to the official defaults — re-took …`），通常几秒内恢复免费链路；若没恢复，完整重启 DSH |
 
@@ -533,6 +533,7 @@ Search engine test:
 
 - 自动跟随重定向、解码正文（HTML 转文本）
 - 支持超时和大小限制
+- 默认只抓 HTTPS；HTTP 目标默认被拒绝。设置页开启「允许抓取 http 页面」后，会先尝试 HTTPS 升级，失败再走 HTTP / 浏览器 / 云端 tier
 - ⚠️ 注意：`web_fetch` 默认拒绝回环、私网、链路本地和云元数据地址。若使用 Clash / mihomo TUN 的 fake-ip DNS，请把对应网段（常见 `198.18.0.0/15`）加入设置页的「额外允许的网段」，否则所有被代理域名都会被判成私网而抓取失败；只放行 fake-ip 网段，不要放行 RFC1918；IPv6 fake-ip 常用 ULA（如 `fdfe:dcba:9876::/64`），需要显式加入才会放行。
 
 #### MCP server（stdio）
@@ -705,7 +706,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-fetch-abort.mjs` | 抓取中断（#87）：压缩响应中途断连必须 reject（不再永久 pending）、明文断连同样 reject、abort 能打断停滞的 gzip 流、complete 响应与重定向仍正常 | `node tools/assert-fetch-abort.mjs`（6） |
 | `assert-fetch-proxy.mjs` | 抓取层代理：`http_proxy` / `https_proxy` / `all_proxy` / `no_proxy` 解析（大小写与小写优先、空值视为未设置）、`NO_PROXY` 的域名 / `host:port` / `*` 匹配、loopback 恒直连、`socks5://` 忽略、`CONNECT` 隧道握手与 `Proxy-Authorization`、代理拒绝与提前断连不挂起、有 agent 时重定向每一跳仍过 SSRF 校验、浏览器 tier 的 `--proxy-server` | `node tools/assert-fetch-proxy.mjs`（12） |
 | `assert-bridge-access.mjs` | 桥接 Host 围栏（#84）：loopback 放行、remote peer 打 loopback Host 拒绝、`--trusted-host`（无端口匹配任意端口 / 带端口精确匹配）、`--public-url`、绑定地址、跨站与异源拒绝、connection 鉴权委托与 fail-closed、设置客户端按 `document.baseURI` 解析子路径 | `node tools/assert-bridge-access.mjs`（14） |
-| `assert-provider-takeover.mjs` | provider 接管：旧属性 API 与 rc.2 的 `config.*` ref 两套兼容、`settings.mutate(web)` 单批写入、显式指定的 provider 不被抢占、`fetchProviderTakeover: false` 时保留显式 `http`、describe 噪声不误报、嵌套 config 变化与 web 重建分别成行、关闭 DSH 搜索开关后重新接管（`deepseek-search-api` / `deepseek-official` 均视为官方默认）、打开 DeepSeek 开关（`deepseek-fetch-api`）时让路、apply 重入/重复注册不再中断、重复日志去重 | `node tools/assert-provider-takeover.mjs`（20） |
+| `assert-provider-takeover.mjs` | provider 接管：旧属性 API 与 rc.2 的 `config.*` ref 两套兼容、`settings.mutate(web)` 单批写入、显式指定的 provider 不被抢占、`fetchProviderTakeover: false` 时保留显式 `http`、describe 噪声不误报、嵌套 config 变化与 web 重建分别成行、关闭 DSH 搜索开关后重新接管（`deepseek-search-api` / `deepseek-official` 均视为官方默认）、打开 DeepSeek 开关（`deepseek-fetch-api`）时搜索让路但抓取仍接管、apply 重入/重复注册不再中断、重复日志去重 | `node tools/assert-provider-takeover.mjs`（20） |
 
 任何一个失败会以非 0 退出码结束并列出失败项；把某个旧版本文件路径作为参数传进去，可以看到修复前必红（用来证明断言不是空转）。改动发布相关逻辑后建议先跑一遍再发版。
 
@@ -812,7 +813,7 @@ This plugin solves exactly that: multiple free engines plus automatic fallback, 
 
 #### Fetch and tools
 
-- **Webpage Fetching (`web_fetch`)** — Allows the agent to read full webpage contents (official `dsh-web-fetch-http` provider, pure JS, zero extra dependencies); it can take over `web.fetchProvider` with the plugin's direct → browser render → exa / firecrawl → crawl4ai quality chain. The headless browser tier can be switched off in Settings and the exa/firecrawl order is configurable; loopback, private-network and cloud-metadata addresses are rejected (SSRF guard). Clash / mihomo TUN fake-ip ranges (usually 198.18.0.0/15) can be allowed explicitly under extra allowed networks, otherwise the placeholder addresses returned by system DNS are rejected as private.
+- **Webpage Fetching (`web_fetch`)** — Allows the agent to read full webpage contents (official `dsh-web-fetch-http` provider, pure JS, zero extra dependencies); it can take over `web.fetchProvider` with the plugin's direct → browser render → exa / firecrawl → crawl4ai quality chain. The headless browser tier can be switched off in Settings and the exa/firecrawl order is configurable; only HTTPS is fetched by default and the API target first tries HTTPS, then HTTP / browser / cloud tiers when `allowHttp` is enabled in Settings; loopback, private-network and cloud-metadata addresses are rejected (SSRF guard). Clash / mihomo TUN fake-ip ranges (usually 198.18.0.0/15) can be allowed explicitly under extra allowed networks, otherwise the placeholder addresses returned by system DNS are rejected as private.
 
 <img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/ui-fetch.png" alt="Fetch and platforms: web_fetch takeover, key storage and platform switches" width="100%" />
 <sub>▲ Fetch: web_fetch takeover, key storage location and platform search switches</sub>
@@ -1001,7 +1002,7 @@ DSH 0.2.1 has Settings → Web search → **DeepSeek search API**, which interac
 
 | Action | Result |
 |---|---|
-| Turn the switch on | `web.searchProvider` becomes `deepseek-search-api` (an explicit choice), so **this plugin steps aside** and search goes through the official direct API; fetch becomes `deepseek-fetch-api` as well |
+| Turn the switch on | `web.searchProvider` becomes `deepseek-search-api` (an explicit choice), so search goes through the official direct API; fetch becomes `deepseek-fetch-api`. **Since 0.9.62** the fetch side is still taken over as `fs-quality-fetch`, while search stays on the official choice |
 | Turn the switch off | DSH deletes the whole `- id: web` row, so the provider falls back to the shipped default for the running DSH: `deepseek-search-api` since 0.2.2-rc.2 (billed per Search API call), or `deepseek-official` on older hosts (model search: a full auxiliary request, billed per token). Neither is a free engine |
 | After turning it off | **Since 0.9.8**: the plugin notices either official default and re-takes at runtime (log line `DSH's search switch put the web providers back to the official defaults — re-took …`), normally within seconds; if it does not, restart DSH |
 
@@ -1270,6 +1271,7 @@ After searching, the agent can **read full webpage content** (e.g., *"Open the f
 
 - Automatically follows redirects and decodes HTML to plain text.
 - Supports timeout and response size limits.
+- Fetches HTTPS only by default; plain HTTP URLs are rejected until "Allow plain HTTP fetches" is enabled in Settings, then it first tries an HTTPS upgrade before HTTP / browser / cloud tiers.
 - ⚠️ Note: `web_fetch` rejects loopback, private, link-local and cloud-metadata addresses by default. Under Clash / mihomo TUN fake-ip DNS, add the fake-ip range (usually `198.18.0.0/15`) to extra allowed networks in Settings, otherwise every proxied host resolves to a placeholder address and is rejected; only allow the fake-ip ranges, never RFC1918; IPv6 fake-ip often uses a ULA such as `fdfe:dcba:9876::/64`, which must be listed explicitly.
 
 #### MCP server (stdio)
@@ -1440,7 +1442,7 @@ Restart `dsh web` after switching to apply changes.
 | `assert-fetch-abort.mjs` | fetch interruption (#87): a compressed response cut mid-body rejects instead of hanging forever, identity truncation rejects too, abort breaks a stalled gzip stream, and complete responses plus redirects still work | `node tools/assert-fetch-abort.mjs` (6) |
 | `assert-fetch-proxy.mjs` | proxy support for the fetch tiers: `http_proxy` / `https_proxy` / `all_proxy` / `no_proxy` parsing (either case, lowercase wins, empty means unset), `NO_PROXY` domain / `host:port` / `*` matching, loopback always direct, `socks5://` ignored, the `CONNECT` tunnel handshake and `Proxy-Authorization`, a refusing proxy and an early disconnect never hanging, the SSRF guard still applied to every redirect hop when an agent is in use, and `--proxy-server` for the browser tier | `node tools/assert-fetch-proxy.mjs` (12) |
 | `assert-bridge-access.mjs` | bridge Host fence (#84): loopback allowed, a remote peer behind a loopback Host refused, `--trusted-host` (port-less matches any port, explicit port matches exactly), `--public-url`, the bind address, cross-site and foreign-Origin refused, connection-auth delegation, fail-closed behavior, and settings-client subpath resolution via `document.baseURI` | `node tools/assert-bridge-access.mjs` (14) |
-| `assert-provider-takeover.mjs` | provider takeover: both the legacy property API and the rc.2 `config.*` refs, a single batched `settings.mutate(web)`, explicit foreign providers left untouched, an explicit `http` kept when `fetchProviderTakeover` is off, describe()-triggered events ignored when nothing changed, nested config changes and web rebuilds reported separately, re-takeover after DSH's search switch is turned off (both `deepseek-search-api` and `deepseek-official` count as the factory default), stepping aside for the explicit `deepseek-fetch-api` switch, apply re-entry / duplicate registrations tolerated, and repeated logs deduplicated | `node tools/assert-provider-takeover.mjs` (20) |
+| `assert-provider-takeover.mjs` | provider takeover: both the legacy property API and the rc.2 `config.*` refs, a single batched `settings.mutate(web)`, explicit foreign providers left untouched, an explicit `http` kept when `fetchProviderTakeover` is off, describe()-triggered events ignored when nothing changed, nested config changes and web rebuilds reported separately, re-takeover after DSH's search switch is turned off (both `deepseek-search-api` and `deepseek-official` count as the factory default), stepping aside for search but still taking over fetch on the explicit `deepseek-fetch-api` switch, apply re-entry / duplicate registrations tolerated, and repeated logs deduplicated | `node tools/assert-provider-takeover.mjs` (20) |
 
 Any failure exits non-zero with the failing items listed. Passing the path of an older file shows the pre-fix failures (proving the assertions are not vacuous). Worth running before a release.
 
