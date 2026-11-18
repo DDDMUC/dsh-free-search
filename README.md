@@ -636,7 +636,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **71 个**零依赖断言脚本（合计 **1045 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
+仓库自带 **71 个**零依赖断言脚本（合计 **1060 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -653,7 +653,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-slash-commands.mjs` | 斜杠命令开关：`slashCommands` 默认开、设置页读写、两个命令按配置注册/注销、关闭后提示词不再提 `/free-search-engine` | `node tools/assert-slash-commands.mjs`（4） |
 | `assert-keyless-first.mjs` | 免 key 优先：`keylessFirst` 默认关、开启后先走免 key 档，限流/鉴权/网络失败改用 key 并休息、其他失败不动用 key、无 key 行为不变，覆盖 Tavily、Exa 与 multi 模式 | `node tools/assert-keyless-first.mjs`（13） |
 | `assert-zhipu.mjs` | 智谱搜索：catalog/回退链、请求头与 engine/count/recency、Sogou 步进、响应映射、错误分类、无 key | `node tools/assert-zhipu.mjs`（6） |
-| `assert-deepseek-snippets.mjs` | deepseek-tools 摘要：默认 600、0 不截断、总预算上限、短条目保留 | `node tools/assert-deepseek-snippets.mjs`（4） |
+| `assert-deepseek-snippets.mjs` | deepseek-tools 摘要：默认 600、0 不截断、总预算上限、短条目保留 | `node tools/assert-deepseek-snippets.mjs`（5） |
 | `assert-bing-relevance.mjs` | Bing 相关性（#112）：单字中文 token 被剔除、无关替代 SERP 被拒、真正相关的结果通过、只命中通用引擎名的整批被拒、单一 token 覆盖一半时放行、单字/纯数字查询的显式行为 | `node tools/assert-bing-relevance.mjs`（6） |
 | `assert-relevance-pools.mjs` | 相关性守卫与语言池（#132/#133）：AnySearch 无关批次判空、相关批次保留、shared.js 守卫被 anysearch/searxng/ddg/ddg-lite/degoog/keenable 使用、doctor 地区默认文案与语言池告警、缓存 key 随 zhPool/enPool 变化 | `node tools/assert-relevance-pools.mjs`（5） |
 | `assert-quality.mjs` | 研究证据闸门：8 源 / 3 域 / 3 正文 / 2 日期为 high，3 源 / 2 域 / 1 正文为 medium，单源与失败注记为 low，空包为 low，research 的 schema/输出/brief 接线 | `node tools/assert-quality.mjs`（6） |
@@ -1380,7 +1380,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Seventy-one** zero-dependency assertion scripts ship with the repo (**1045 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
+**Seventy-one** zero-dependency assertion scripts ship with the repo (**1060 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
 
 | Script | Covers | Run (count) |
 |---|---|---|
@@ -1397,7 +1397,7 @@ Restart `dsh web` after switching to apply changes.
 | `assert-slash-commands.mjs` | Slash-command switch: `slashCommands` defaults on, settings load/save it, both commands register/unregister from config, and the prompt stops naming `/free-search-engine` when off | `node tools/assert-slash-commands.mjs` (4) |
 | `assert-keyless-first.mjs` | Keyless tier first: `keylessFirst` defaults off; when on, the keyless tier runs first and a rate limit, auth demand or network failure falls back to the key (which then rests the keyless tier), other failures leave the key alone, and no-key behaviour is unchanged; covers Tavily, Exa and multi mode | `node tools/assert-keyless-first.mjs` (13) |
 | `assert-zhipu.mjs` | Zhipu Web Search: catalog/fallback wiring, auth and request engine/count/recency, Sogou count steps, response mapping, error classes, missing key | `node tools/assert-zhipu.mjs` (6) |
-| `assert-deepseek-snippets.mjs` | deepseek-tools snippets: default 600, 0 disables the cap, total budget ceiling, and short results survive | `node tools/assert-deepseek-snippets.mjs` (4) |
+| `assert-deepseek-snippets.mjs` | deepseek-tools snippets: default 600, 0 disables the cap, total budget ceiling, short results survive, summary+snippet joining, and site labels | `node tools/assert-deepseek-snippets.mjs` (5) |
 | `assert-bing-relevance.mjs` | Bing relevance (#112): single-character CJK tokens removed, an unrelated substituted SERP rejected, genuinely relevant results accepted, a batch matching only a generic engine name rejected, one distinctive token covering half the query accepted, and explicit single-character/numeric behaviour | `node tools/assert-bing-relevance.mjs` (6) |
 | `assert-relevance-pools.mjs` | Relevance guard and language pools (#132/#133): AnySearch drops an unrelated batch but keeps a matching one, the shared guard is used by anysearch/searxng/ddg/ddg-lite/degoog/keenable, doctor reports the geo default and warns about unused pools, and the cache key changes with zhPool/enPool | `node tools/assert-relevance-pools.mjs` (5) |
 | `assert-quality.mjs` | Research evidence gate: 8 sources / 3 domains / 3 bodies / 2 dates is high, 3 / 2 / 1 is medium, a single source or a degraded note is low, an empty package is low, and research wires the gate into schema, output and brief | `node tools/assert-quality.mjs` (6) |
