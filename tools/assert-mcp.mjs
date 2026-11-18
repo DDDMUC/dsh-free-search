@@ -220,6 +220,10 @@ await check("keyed engines are explicit and include the new providers", async ()
     assert.ok(MCP_ENGINE_IDS.includes(id), id);
     assert.ok(MCP_KEYED_ENGINES.includes(id), id);
   }
+  for (const id of ["perplexity", "serpbase", "serply", "outcrawl", "tinyfish", "jina", "kimi", "aliyun", "doubao", "zhihu-global", "zhihu-site", "specstream", "deepseek-official"]) {
+    assert.ok(MCP_ENGINE_IDS.includes(id), id);
+    assert.ok(MCP_KEYED_ENGINES.includes(id), id);
+  }
   assert.equal(MCP_ENGINE_IDS.includes("auto"), true);
   assert.equal(MCP_KEYED_ENGINES.includes("bing"), false);
   for (const id of ["anysearch", "searxng", "exa", "tavily", "keenable", "firecrawl", "parallel", "you"]) {
