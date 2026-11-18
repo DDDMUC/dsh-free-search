@@ -70,8 +70,14 @@ await check("localhost and IP literals are blocked without DNS", async () => {
   await assert.rejects(() => assertPublicUrl("https://localhost/", { lookup: privateLookup }), /SSRF blocked/);
 });
 
-await check("non-HTTPS and credential URLs are rejected", async () => {
-  await assert.rejects(() => assertPublicUrl("http://example.com/", { lookup: publicLookup }), /only https/);
+await check("a plain-http host resolving to a private address is still blocked", async () => {
+  await assert.rejects(() => assertPublicUrl("http://evil.test/", { lookup: privateLookup }), /SSRF blocked/);
+});
+
+await check("http(s) URLs pass the guard, other schemes and credentials are rejected", async () => {
+  const url = await assertPublicUrl("http://example.com/", { lookup: publicLookup });
+  assert.equal(url.protocol, "http:");
+  await assert.rejects(() => assertPublicUrl("ftp://example.com/", { lookup: publicLookup }), /only http/);
   await assert.rejects(() => assertPublicUrl("https://user:pass@example.com/", { lookup: publicLookup }), /credentials/);
 });
 

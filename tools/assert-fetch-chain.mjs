@@ -19,16 +19,22 @@ const provider = createFetchProvider({
   logger: { info() {}, warn() {}, error() {}, debug() {} },
   // Exercise the tier order offline: the real guard rejects 127.0.0.1 by design.
   validateUrl: async () => {},
+  // 无头浏览器会把 127.0.0.1 上的连接尝试变成一次子进程启动，这里只测 tier 顺序。
+  browserEnabled: () => false,
 });
 
 section("A. 契约");
 assert(provider.id === "fs-quality-fetch", "provider id = fs-quality-fetch");
 assert(provider.available() === true, "available() 为 true（seam 要求：不得网络调用）");
 
-section("B. 仅支持 https");
+section("B. http 目标不再被 provider 级断言拒绝（#143）");
 let threw = null;
-try { await provider.fetch({ url: "http://example.com" }, undefined); } catch (e) { threw = e; }
-assert(threw !== null && /only https/.test(threw.message), "http:// 被拒绝（错误信息含 only https）");
+let httpExaCalls = 0;
+for (const k of Object.keys(CONTROLLED_STUBS)) CONTROLLED_STUBS[k] = null;
+CONTROLLED_STUBS.exa = async () => { httpExaCalls += 1; return "e".repeat(500); };
+const rHttp = await provider.fetch({ url: "http://127.0.0.1:1/nothing" }, undefined);
+assert(rHttp.statusCode === 200 && rHttp.body.kind === "text", "http 目标走完 T1 失败后由 exa 承接");
+assert(httpExaCalls === 1, `http 目标到达 T2（exa=${httpExaCalls}）`);
 
 section("C. 四层链序：T1 直连失败 → T2 exa 命中即停");
 for (const k of Object.keys(CONTROLLED_STUBS)) CONTROLLED_STUBS[k] = null;

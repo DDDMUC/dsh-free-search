@@ -77,7 +77,7 @@
 
 #### 抓取与工具
 
-- **网页抓取（web_fetch）** —— 让 agent 抓取网页内容（官方 `dsh-web-fetch-http` provider，纯 JS，零额外依赖），可自动接管 `web.fetchProvider` 为插件的直连 → 浏览器渲染 → exa / firecrawl → crawl4ai 质量链。T1.5 浏览器渲染可在设置页关闭，exa 与 firecrawl 的先后顺序也可切换；私网、回环和云元数据地址一律拒绝（SSRF 防护）。Clash / mihomo TUN 的 fake-ip 网段（常见 198.18.0.0/15）可在「额外允许的网段」里显式放行，否则系统 DNS 返回的占位地址会被当成私网拒绝。
+- **网页抓取（web_fetch）** —— 让 agent 抓取网页内容（官方 `dsh-web-fetch-http` provider，纯 JS，零额外依赖），可自动接管 `web.fetchProvider` 为插件的直连 → 浏览器渲染 → exa / firecrawl → crawl4ai 质量链。直连层同时支持 `http://` 与 `https://` 目标，并按每一跳的协议选择传输；只有 `http(s)` 以外的协议会被拒绝。T1.5 浏览器渲染可在设置页关闭，exa 与 firecrawl 的先后顺序也可切换；私网、回环和云元数据地址一律拒绝（SSRF 防护）。Clash / mihomo TUN 的 fake-ip 网段（常见 198.18.0.0/15）可在「额外允许的网段」里显式放行，否则系统 DNS 返回的占位地址会被当成私网拒绝。
 
 <img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/ui-fetch.png" alt="抓取与平台：web_fetch 接管、Key 存储位置与平台搜索开关" width="100%" />
 <sub>▲ 抓取：自动接管 web_fetch、Key 存储位置与平台搜索开关</sub>
@@ -659,8 +659,9 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-prompt-contract.mjs` | 系统提示词契约：**检索≠抓取**、不可信边界、模型内置搜索只在显式选中时运行 | `node tools/assert-prompt-contract.mjs`（9） |
 | `assert-research-degradation.mjs` | research 无 key 全降级、`node:sqlite` no-op、90s 预算隔离、缓存目录可配置、`budget.exhausted` 契约名 | `node tools/assert-research-degradation.mjs`（19） |
 | `assert-research-call-wrappers.mjs` | research 四个 `call*` 包装层的替身/底层透传（#75 回归） | `node tools/assert-research-call-wrappers.mjs`（23） |
-| `assert-fetch-chain.mjs` | `fs-quality-fetch` 四层链序、任一层命中即停、exa 失败静默降级 firecrawl、全层失败聚合报错 | `node tools/assert-fetch-chain.mjs`（8） |
-| `assert-fetch-ssrf.mjs` | 抓取 SSRF 防护：公网/私网/保留地址判定、DNS 解析到私网拒绝、localhost 与 IP 字面量拒绝、非 HTTPS 与带凭据 URL 拒绝、fake-ip 网段默认拒绝且仅按配置放行、IPv6 ULA 显式放行、放行后仍拒绝回环/IPv4 私网/链路本地、provider 接线与设置项 | `node tools/assert-fetch-ssrf.mjs`（8） |
+| `assert-fetch-chain.mjs` | `fs-quality-fetch` 四层链序、任一层命中即停、exa 失败静默降级 firecrawl、全层失败聚合报错、http 目标进到 tier 链而不是被入口断言拒绝 | `node tools/assert-fetch-chain.mjs`（9） |
+| `assert-fetch-ssrf.mjs` | 抓取 SSRF 防护：公网/私网/保留地址判定、DNS 解析到私网拒绝、localhost 与 IP 字面量拒绝、`http://` 与 `https://` 放行而其他协议与带凭据 URL 拒绝、http 目标解析到私网同样拒绝、fake-ip 网段默认拒绝且仅按配置放行、IPv6 ULA 显式放行、放行后仍拒绝回环/IPv4 私网/链路本地、provider 接线与设置项 | `node tools/assert-fetch-ssrf.mjs`（10） |
+| `assert-fetch-http.mjs` | 明文 http 目标（#143）：直连层按协议选 transport、http 重定向可跟随、provider 不再在入口拒绝 http 而交给 tier 链、全层失败报直连原因而不再报 only https、非 http(s) 协议仍拒、`agentForUrl` 为 http 目标选明文隧道 agent、经 `CONNECT` 隧道抓取 http 页面 | `node tools/assert-fetch-http.mjs`（7） |
 | `assert-mcp.mjs` | MCP stdio 面：initialize 协议协商、tools/list 的 JSON Schema、tools/call 文本结果、工具错误与 JSON-RPC 错误区分、必填参数校验、显式付费引擎与新 provider、advanced/multi/domain/platform/video/research/weather 新工具、bin/files 打包 | `node tools/assert-mcp.mjs`（10） |
 | `assert-mcp.mjs` | MCP stdio surface: initialize negotiation, tools/list JSON Schema, tools/call text results, tool errors vs JSON-RPC errors, required arguments, explicit keyed engines and new providers, advanced/multi/domain/platform/video/research/weather tools, bin/files packaging | `node tools/assert-mcp.mjs` (10) |
 | `assert-baidu.mjs` | 百度千帆：key 必填、web_search 首请求、403 或 results.code 额度错误回退 chat/completions（stream:false）、401 不回退、双端失败合并报错 | `node tools/assert-baidu.mjs`（6） |
@@ -727,6 +728,7 @@ export NO_PROXY=localhost,127.0.0.1,::1    # 可选
 ```
 
 - 只支持 `http://` / `https://` 代理（可带 Basic 认证）；`socks5://` 会被忽略并直连。
+- `http://` 目标同样走代理：隧道建立后直接用明文 socket，不会对不支持 TLS 的站点叠一层 TLS 握手。
 - loopback 地址（`localhost`、`127.0.0.1`、`::1`、`127.0.0.0/8`）恒直连。
 - `NO_PROXY` 支持逗号分隔的域名、`host:port` 与 `*`。
 - 走代理时域名由代理端解析，`lookup` 钩子失效；因此重定向的每一跳都会先显式过一遍 SSRF 校验，`allowFakeIpCidrs` 等设置继续生效。
@@ -812,7 +814,7 @@ This plugin solves exactly that: multiple free engines plus automatic fallback, 
 
 #### Fetch and tools
 
-- **Webpage Fetching (`web_fetch`)** — Allows the agent to read full webpage contents (official `dsh-web-fetch-http` provider, pure JS, zero extra dependencies); it can take over `web.fetchProvider` with the plugin's direct → browser render → exa / firecrawl → crawl4ai quality chain. The headless browser tier can be switched off in Settings and the exa/firecrawl order is configurable; loopback, private-network and cloud-metadata addresses are rejected (SSRF guard). Clash / mihomo TUN fake-ip ranges (usually 198.18.0.0/15) can be allowed explicitly under extra allowed networks, otherwise the placeholder addresses returned by system DNS are rejected as private.
+- **Webpage Fetching (`web_fetch`)** — Allows the agent to read full webpage contents (official `dsh-web-fetch-http` provider, pure JS, zero extra dependencies); it can take over `web.fetchProvider` with the plugin's direct → browser render → exa / firecrawl → crawl4ai quality chain. The direct tier handles `http://` as well as `https://` targets and picks the transport per hop; only schemes other than `http(s)` are refused. The headless browser tier can be switched off in Settings and the exa/firecrawl order is configurable; loopback, private-network and cloud-metadata addresses are rejected (SSRF guard). Clash / mihomo TUN fake-ip ranges (usually 198.18.0.0/15) can be allowed explicitly under extra allowed networks, otherwise the placeholder addresses returned by system DNS are rejected as private.
 
 <img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/ui-fetch.png" alt="Fetch and platforms: web_fetch takeover, key storage and platform switches" width="100%" />
 <sub>▲ Fetch: web_fetch takeover, key storage location and platform search switches</sub>
@@ -1397,7 +1399,8 @@ Restart `dsh web` after switching to apply changes.
 | `assert-research-degradation.mjs` | research degrades fully without keys, `node:sqlite` no-op, 90s budget isolation, configurable cache dir, `budget.exhausted` contract names | `node tools/assert-research-degradation.mjs` (19) |
 | `assert-research-call-wrappers.mjs` | the four research `call*` wrappers proxy to stubs / the real layer (#75 regression) | `node tools/assert-research-call-wrappers.mjs` (23) |
 | `assert-fetch-chain.mjs` | `fs-quality-fetch` tier ordering, stop-on-first-success, silent firecrawl degradation, aggregated all-tiers failure | `node tools/assert-fetch-chain.mjs` (8) |
-| `assert-fetch-ssrf.mjs` | Fetch SSRF guard: public/private/reserved address classification, DNS resolving to a private address rejected, localhost and IP literals rejected, non-HTTPS and credential URLs rejected, fake-ip ranges blocked by default and allowed only when configured, IPv6 ULA allowed only when listed, loopback/IPv4-private/link-local still blocked after opt-in, provider wiring and settings | `node tools/assert-fetch-ssrf.mjs` (8) |
+| `assert-fetch-ssrf.mjs` | Fetch SSRF guard: public/private/reserved address classification, DNS resolving to a private address rejected, localhost and IP literals rejected, `http://` accepted while other schemes and credential URLs are refused, an http host resolving to a private address rejected, fake-ip ranges blocked by default and allowed only when configured, IPv6 ULA allowed only when listed, loopback/IPv4-private/link-local still blocked after opt-in, provider wiring and settings | `node tools/assert-fetch-ssrf.mjs` (10) |
+| `assert-fetch-http.mjs` | Plain-http targets (#143): the direct tier picks its transport per protocol, http redirects are followed, the provider no longer refuses http up front and lets the tier chain run, an all-tiers failure reports the direct error instead of an https-only assertion, other schemes still refused, `agentForUrl` hands http targets a plain tunnel agent, and an http page is fetched through a `CONNECT` tunnel | `node tools/assert-fetch-http.mjs` (7) |
 | `assert-baidu.mjs` | Baidu Qianfan: key required, web_search first, 403 or results.code quota fallback to chat/completions (stream:false), no fallback on 401, combined error when both fail | `node tools/assert-baidu.mjs` (6) |
 | `assert-deepseek-endpoint.mjs` | DeepSeek search endpoint: default URL, base/full-URL normalization, custom endpoint receives bearer/key/query, config and settings wiring | `node tools/assert-deepseek-endpoint.mjs` (4) |
 | `assert-yuanbao.mjs` | key required, Bearer gateway and Query/Mode/Site/FromTime, natural and VR page parsing, date normalization, error classes, registration and explicit-only | `node tools/assert-yuanbao.mjs` (6) |
