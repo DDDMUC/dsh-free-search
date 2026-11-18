@@ -26,7 +26,7 @@ check("allowed entries are normalised like the disabled ones", () => {
   assert.deepEqual(normalizeAllowedEngines("exa"), []);
 });
 
-check("allowlist is the only enabled set; legacy blacklist derives it", () => {
+check("an empty whitelist keeps the old disabled list exactly", () => {
   assert.deepEqual(effectiveDisabledEngines({}), []);
   assert.deepEqual(effectiveDisabledEngines({ disabledEngines: ["ddg"] }), ["ddg"]);
   assert.deepEqual(effectiveDisabledEngines({ allowedEngines: [] }), []);
@@ -41,11 +41,11 @@ check("a whitelist disables every other engine, including future ones", () => {
   }
 });
 
-check("disabledEngines no longer subtracts from an explicit whitelist", () => {
-  const disabled = effectiveDisabledEngines({ allowedEngines: ["exa"], disabledEngines: ["tavily"] });
+check("explicit disables win inside the whitelist", () => {
+  const disabled = effectiveDisabledEngines({ allowedEngines: ["exa", "tavily"], disabledEngines: ["tavily"] });
   assert.equal(disabled.includes("exa"), false);
-  assert.equal(disabled.length, ALL_ENGINES.length - 1);
   assert.equal(disabled.includes("tavily"), true);
+  assert.equal(disabled.length, ALL_ENGINES.length - 1);
 });
 
 check("a typo-only whitelist behaves like no whitelist instead of killing search", () => {
@@ -80,7 +80,7 @@ check("the built-in prompt lists only allowed engines and an empty fallback", ()
   assert.equal(zh.includes("tavily"), false);
 });
 
-check("the schema keeps an empty default as the legacy migration signal", () => {
+check("the schema exposes the whitelist with an empty default", () => {
   assert.deepEqual(Config({}).allowedEngines.get(), []);
   assert.deepEqual(Config({ allowedEngines: ["exa"] }).allowedEngines.get(), ["exa"]);
 });

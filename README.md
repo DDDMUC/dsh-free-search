@@ -36,7 +36,7 @@
 - **零成本** —— 多个免费引擎，无需 key、无需注册
 - **42 个引擎可选**：DuckDuckGo（html/lite）、Bing、SearXNG（元搜索，支持自定义实例）、AnySearch、Exa、Tavily、Keenable、Firecrawl、Parallel、Brave（`brave`，官方 Search API，需 `BRAVE_API_KEY`）、智谱（`zhipu`，官方 Web Search API，需 `ZHIPU_API_KEY`）、Perplexity、SerpBase、Serply、Outcrawl、SpecStream（`specstream`，官方 Search API，需 `SPECSTREAM_API_KEY`）、Google 自定义搜索（`google`，需 API key + CSE ID）、秘塔搜索（`metaso`，官方 API，按点数计费）、Yandex 搜索（`yandex`，官方 API，按请求计费，需 folder ID）、腾讯元宝搜索（`yuanbao`，API key 网关，有活动免费额度）、DeepSeek 官方、DeepSeek 原生搜索 API、You.com、百度千帆、Kimi、阿里云百炼、火山联网搜索（豆包搜索）、知乎全网/站内（`zhihu_global`/`zhihu_site`，经知乎开放平台 MCP）、Antigravity CLI 搜索（`agy`，需本机安装）、OpenAI / Gemini / Claude 模型内置搜索。默认自动回退链覆盖其中 30 个；5 个 HTML SERP 引擎默认不参与，OpenAI / Gemini / Claude 三个模型引擎、Metaso、Yandex、Yuanbao 和 SpecStream 都只在显式点名时运行。
 - **5 个 HTML 搜索页引擎（默认关闭）** —— 把传统搜索页并入同一套引擎 / 回退 / 冷却 / 设置体系：`baidu-html`（百度网页）、`so360`、`sogou`、`wechat`（微信文章）、`toutiao`。免 key、免额度，代价是抓页面：验证码/反爬按 `bot-wall` 归类并让整个家族冷却 10 分钟（整段出口 IP 都会被打标），结果也没有 API 摘要。它们默认不进 auto / 回退链 / 语言池，只在显式 `engine=` 或加入语言池时运行。
-- **启用引擎白名单** —— 插件只维护一份 `allowedEngines` 启用列表；未勾选的引擎从所有搜索链、Auto / Multi 路由、引擎测试和提示词中移除。升级新增的引擎默认不启用，需要手动勾选。
+- **引擎白名单** —— 设置页「只使用勾选的引擎」开启后，只有勾选的引擎可用，升级新增的引擎默认不启用；配置里对应 `allowedEngines`（非空时等价于把其余引擎全部禁用）。
 - **全局引擎开关与回退优先级** —— 设置页可勾选/取消引擎（取消后全局生效：普通搜索 / Auto / `advanced_search` / `multi_search` / 引擎测试都不再用它），并可用 ↑↓ 调整全局回退顺序（一键恢复默认）。
 - **弹出式切换命令** —— 聊天框输入 `/free-search-engine`，弹出引擎选择窗口，点选即切换（等效设置页 + 保存）。
 - **免费标注** —— 设置页中免费引擎带绿色 `FREE` 徽章，付费引擎带橙色 `API KEY` 徽章。
@@ -428,7 +428,7 @@ degoogApiKey: ...           # 可选：实例开启 API Key 时使用的 Bearer 
 safeSearch: off              # 安全搜索：off（默认）/ moderate / strict，作用于 bing / ddg / ddg-lite
 blockedDomains:              # 域名黑名单（可选）：命中的域名不会进入结果
   - spam-example.com
-allowedEngines: [...ALL]      # 唯一启用列表；默认全部当前引擎，升级新增的引擎需手动加入
+allowedEngines: []           # 白名单（可选）：非空时只有这些引擎可用，其余全部禁用
 multiMaxEngines: 0           # multi 并发上限（0 = 不限，跑完整语言池）；设置页有 Fast/Balanced/Deep 档位
 multiMinSources: 1           # multi 目标成功源数（只用于触发补跑，不是硬下限）
 multiMaxResults: 20          # multi 合并去重后的结果上限（1-100）
@@ -779,7 +779,7 @@ This plugin solves exactly that: multiple free engines plus automatic fallback, 
 - **Zero Cost** — Multiple free engines with no API key or registration required
 - **42 engines available** — DuckDuckGo (HTML / Lite), Bing, AnySearch AI, SearXNG (meta-search with custom instances), Exa, Tavily, Keenable, Firecrawl, Parallel, Brave (`brave`, official Search API, needs `BRAVE_API_KEY`), Zhipu (`zhipu`, official Web Search API, needs `ZHIPU_API_KEY`), Perplexity, SerpBase, Serply, Outcrawl, SpecStream (`specstream`, official Search API, needs `SPECSTREAM_API_KEY`), Google Programmable Search (`google`, needs an API key plus a CSE ID), Metaso (秘塔搜索, official API, billed per call), Yandex Search (official API, billed per request, folder ID required), Tencent Yuanbao Search (API-key gateway with a limited free-quota activity), DeepSeek Official, DeepSeek Native Search API, You.com, Baidu Qianfan, Kimi, Aliyun Bailian, Volcano Doubao, Zhihu web-wide/site search (`zhihu_global`/`zhihu_site`, via the Zhihu open-platform MCP), Antigravity CLI search (`agy`, requires the local CLI), and the model-based OpenAI / Gemini / Claude searches. The default auto-fallback chain covers 30 of them; the 5 HTML SERP engines stay out by default and the per-call billed OpenAI / Gemini / Claude engines, Metaso, Yandex, Yuanbao and SpecStream run only when explicitly named.
 - **5 HTML SERP engines (off by default)** — Traditional result pages join the same engine / fallback / cooldown / settings machinery: `baidu-html` (Baidu web), `so360`, `sogou`, `wechat` (WeChat articles) and `toutiao`. No key, no quota — the trade-off is scraping: captcha/anti-bot pages are classified as `bot-wall` and cool the whole family down for 10 minutes (the egress IP gets flagged as a whole), and results carry no API snippets. They never join auto routing, the fallback chain or the language pools; they only run when named via `engine=` or added to a pool.
-- **Engine allowlist** — the plugin keeps a single `allowedEngines` enable list. Unchecked engines are removed from every search chain, Auto / Multi routing, engine tests and prompts. Engines added by later versions stay off until checked.
+- **Engine whitelist** — turn on Use only the checked engines and only those engines stay usable; engines added by later versions stay off. It maps to `allowedEngines` in the config (a non-empty list is equivalent to disabling every other engine).
 - **Global engine enable/disable & fallback priority** — uncheck engines you never want (applies everywhere: web_search fallback, Auto routing, advanced_search, multi_search, engine tests) and reorder the global fallback chain with ↑↓ (one-click reset).
 - **Popup Switch Command** — Type `/free-search-engine` in the chat: a picker opens with all engines; click one to switch (equivalent to the settings page + save).
 - **Visual Badges** — Free engines feature a green `FREE` badge, while paid engines show an orange `API KEY` badge in the settings UI.
@@ -1173,7 +1173,7 @@ degoogApiKey: ...          # Optional: bearer key, only when your instance enabl
 safeSearch: off              # Safe search: off (default) / moderate / strict; applies to bing / ddg / ddg-lite
 blockedDomains:              # Domain blocklist (optional): matching domains never enter the results
   - spam-example.com
-allowedEngines: [...ALL]      # The only enable list; defaults to all current engines, new engines need manual opt-in
+allowedEngines: []           # Whitelist (optional): when non-empty only these engines are usable
 multiMaxEngines: 0           # multi concurrency cap (0 = unlimited, whole language pool); the settings UI has Fast/Balanced/Deep presets
 multiMinSources: 1           # multi target source count (only triggers top-up runs; not a hard minimum)
 multiMaxResults: 20          # ceiling for unique results after merge (1-100)
