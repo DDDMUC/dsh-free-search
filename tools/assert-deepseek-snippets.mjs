@@ -14,6 +14,8 @@ const rows = (length) =>
     title: `r${i}`,
     url: `https://example.com/${i}`,
     summary: "x".repeat(length),
+    snippet: "y".repeat(20),
+    site: "Example News",
     date: "2026-11-01T00:00:00Z",
   }));
 const realFetch = globalThis.fetch;
@@ -35,9 +37,9 @@ await check("default remains 600 characters", async () => {
   assert.equal(result.sources[0].snippet.length, 600);
 });
 
-await check("snippetMaxChars 0 keeps the full summary", async () => {
+await check("snippetMaxChars 0 keeps the full combined summary+snippet", async () => {
   const result = await run(1000, 0, 0);
-  assert.equal(result.sources[0].snippet.length, 1000);
+  assert.equal(result.sources[0].snippet.length, 1021);
 });
 
 await check("a total budget is respected", async () => {
@@ -50,6 +52,12 @@ await check("a total budget is respected", async () => {
 await check("small entries survive the budget", async () => {
   const result = await run(2000, 2000, 12000);
   assert.ok(result.sources.every((source) => source.snippet.length > 0));
+});
+
+await check("summary and snippet are joined when both exist, and site is kept", async () => {
+  const result = await run(10, 0, 0);
+  assert.equal(result.sources[0].snippet, `${"x".repeat(10)}\n${"y".repeat(20)}`);
+  assert.equal(result.sources[0].site, "Example News");
 });
 
 console.log(`OK: ${checks} deepseek snippet checks passed`);
