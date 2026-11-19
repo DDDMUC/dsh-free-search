@@ -366,7 +366,7 @@ DSH 0.2.1 设置 → 网页搜索 → **DeepSeek 搜索 API** 开关会和本插
 
 插件运行时会尝试接管 `web.fetchProvider`：
 
-- 未设置、或仍是出厂默认 `http` → 接管为 `fs-quality-fetch`（直连 → exa contents → firecrawl → crawl4ai）；
+- 未设置、或仍是出厂默认 `http` → 接管为 `fs-quality-fetch`（DeepSeek 兼容抓取端点（可选）→ 直连 → exa contents → firecrawl → crawl4ai）；
 - 已被**显式指向其它 provider**（例如 `playwright`）→ **不抢占**，只记一条日志（进程内只打一次）。
 
 如果你同时装了也会注册 fetch provider 的插件（例如 `dsh-web-fetch-playwright`、`dsh-chatgpt-subscription`），**请在 profile 的 `cordis.patch.yml` 里明确让一方退出**：
@@ -418,6 +418,8 @@ fetchProviderForce: false # true = 连 DSH 搜索开关写进来的 deepseek-fet
 browserFetch: true           # 直连失败时用系统浏览器无头渲染
 allowFakeIpCidrs: []          # 显式放行的保留网段，例如 Clash/mihomo fake-ip 的 198.18.0.0/15
 fetchPrefer: exa             # exa | firecrawl —— 两者都失败后先试哪个 keyed 抓取层
+deepseekFetchBaseUrl: ""    # 可选：自定义 DeepSeek 兼容抓取端点（…/fetch），留空不启用；失败自动回落直连 / exa / firecrawl
+deepseekFetchApiKey: ...     # 可选：只给这个抓取端点用；留空依次复用工具 key、DEEPSEEK_API_KEY
 region: cn-zh               # DuckDuckGo 区域（可选）
 searxngInstances:           # 自定义 SearXNG 实例（可选）
   - https://your-instance.example
@@ -636,7 +638,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **71 个**零依赖断言脚本（合计 **1064 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
+仓库自带 **74 个**零依赖断言脚本（合计 **1072 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -666,6 +668,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-research-degradation.mjs` | research 无 key 全降级、`node:sqlite` no-op、90s 预算隔离、缓存目录可配置、`budget.exhausted` 契约名 | `node tools/assert-research-degradation.mjs`（19） |
 | `assert-research-call-wrappers.mjs` | research 四个 `call*` 包装层的替身/底层透传（#75 回归） | `node tools/assert-research-call-wrappers.mjs`（23） |
 | `assert-fetch-chain.mjs` | `fs-quality-fetch` 四层链序、任一层命中即停、exa 失败静默降级 firecrawl、全层失败聚合报错、http 目标进到 tier 链而不是被入口断言拒绝 | `node tools/assert-fetch-chain.mjs`（9） |
+| `assert-deepseek-fetch.mjs` | #124 自定义 DeepSeek 兼容抓取端点：base/完整 URL 归一化、作为第一档命中即停、失败回落、未配置不出现、短内容被拒、明文 http 请求形状与鉴权、401/429/空正文的错误分类、配置/MCP/设置页接线 | `node tools/assert-deepseek-fetch.mjs`（8） |
 | `assert-fetch-ssrf.mjs` | 抓取 SSRF 防护：公网/私网/保留地址判定、DNS 解析到私网拒绝、localhost 与 IP 字面量拒绝、`http://` 与 `https://` 放行而其他协议与带凭据 URL 拒绝、http 目标解析到私网同样拒绝、fake-ip 网段默认拒绝且仅按配置放行、IPv6 ULA 显式放行、放行后仍拒绝回环/IPv4 私网/链路本地、provider 接线与设置项 | `node tools/assert-fetch-ssrf.mjs`（10） |
 | `assert-fetch-http.mjs` | 明文 http 目标（#143）：直连层按协议选 transport、http 重定向可跟随、provider 不再在入口拒绝 http 而交给 tier 链、全层失败报直连原因而不再报 only https、非 http(s) 协议仍拒、`agentForUrl` 为 http 目标选明文隧道 agent、经 `CONNECT` 隧道抓取 http 页面 | `node tools/assert-fetch-http.mjs`（7） |
 | `assert-mcp.mjs` | MCP stdio 面：initialize 协议协商、tools/list 的 JSON Schema、tools/call 文本结果、工具错误与 JSON-RPC 错误区分、必填参数校验、显式付费引擎与新 provider、advanced/multi/domain/platform/video/research/weather 新工具、bin/files 打包 | `node tools/assert-mcp.mjs`（10） |
@@ -1381,7 +1384,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Seventy-one** zero-dependency assertion scripts ship with the repo (**1064 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
+**Seventy-four** zero-dependency assertion scripts ship with the repo (**1072 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
 
 | Script | Covers | Run (count) |
 |---|---|---|
