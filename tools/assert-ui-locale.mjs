@@ -7,6 +7,7 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import React from "react";
 import TestRenderer, { act } from "react-test-renderer";
+import { ALL_ENGINES } from "../lib/engine_meta.js";
 
 const require = createRequire(import.meta.url);
 const root = new URL("../", import.meta.url);
@@ -157,6 +158,20 @@ const selectLanguage = (card) => card.root.findAllByType("select").find((node) =
 const saveButton = (card) => card.root.findByProps({ className: "dshfs-btn dshfs-save" });
 const cardText = (r) => text(r.toJSON());
 const sidebarLabel = (f) => f.slot("sidebar.panellist").meta.label();
+const engineIds = new Set(["auto", "multi", ...ALL_ENGINES]);
+const nodeText = (node) => text({ children: node.children });
+const engineOptions = (card) => card.root.findAllByType("option").filter((node) => engineIds.has(node.props.value));
+const engineUiText = (card) => [
+  ...engineOptions(card).map(nodeText),
+  ...card.root.findAllByProps({ className: "dshfs-priorityName" }).map(nodeText),
+  ...card.root.findAllByProps({ className: "dshfs-platform" }).filter((node) => /\((FREE|API KEY|HTML|CLI)\)/.test(nodeText(node))).map(nodeText),
+  ...card.root.findAll((node) => typeof node.type === "string" && node.props["aria-label"]).map((node) => node.props["aria-label"]),
+  ...card.root.findAllByProps({ className: "dshfs-priorityHandle" }).map((node) => node.props.title),
+];
+const noCjk = (labels) => {
+  assert.ok(labels.length > 0);
+  for (const label of labels) assert.doesNotMatch(label, /\p{Script=Han}/u, label);
+};
 
 await check("loading and mounted surfaces follow host locale, not browser/search language", async () => {
   const f = fixture({ deferDescribe: true });
@@ -300,5 +315,59 @@ await check("unavailable settings and unknown browser locale default to English"
   assert.equal(sidebarLabel(f), "Free Search");
   await r.close();
 });
+
+await check("all engine UI surfaces follow the host and retain Chinese labels and engine ids", async () => {
+  const f = fixture({ value: { uiLang: "auto", provider: "multi", allowedEngines: ALL_ENGINES } });
+  const r = await render(f);
+  const before = clone(f.config);
+  const englishLabels = engineUiText(r.card);
+  noCjk(englishLabels);
+  const optionsEn = await f.command("free-search-engine").ui.options();
+  noCjk(optionsEn.map((option) => option.label));
+  assert.deepEqual(clone(optionsEn.map((option) => option.id).sort()), [...engineIds].sort());
+  const originalIds = engineOptions(r.card).map((node) => node.props.value);
+  assert.ok(englishLabels.some((label) => label.includes("Baidu · Qianfan")), "Chinese pool/fallback rows are localized");
+  assert.ok(englishLabels.some((label) => label.includes("Tencent Yuanbao · Search")), "explicit-only rows are localized");
+  assert.ok(englishLabels.some((label) => label.includes("OpenAI · Built-in search")), "model-only rows are localized");
+  assert.ok(englishLabels.includes("Drag to reorder"));
+  await act(async () => f.switchLocale("zh-CN"));
+  const optionsZh = await f.command("free-search-engine").ui.options();
+  const expectedZh = {
+    auto: "Auto · 智能路由", multi: "Multi Search · 多引擎", searxng: "SearXNG · 元搜索", degoog: "Degoog · 自建聚合",
+    zhipu: "Zhipu · 智谱搜索", google: "Google · 自定义搜索", metaso: "Metaso · 秘塔搜索", yandex: "Yandex · 搜索 API",
+    yuanbao: "腾讯元宝 · 搜索", baidu: "Baidu · 百度千帆", "baidu-html": "Baidu · 百度网页", so360: "360 搜索",
+    sogou: "搜狗", wechat: "微信文章 · 搜狗", toutiao: "今日头条", aliyun: "Aliyun · 百炼", doubao: "Doubao · 豆包搜索",
+    jina: "Jina · 搜索", zhihu_global: "Zhihu · 知乎全网", zhihu_site: "Zhihu · 知乎站内",
+    openai: "OpenAI · 内置搜索", gemini: "Gemini · 内置搜索", claude: "Claude · 内置搜索",
+  };
+  for (const [id, label] of Object.entries(expectedZh)) {
+    assert.ok(optionsZh.find((option) => option.id === id).label.startsWith(label + " · "), id);
+    assert.ok(engineOptions(r.card).filter((node) => node.props.value === id).every((node) => nodeText(node).startsWith(label + " (")), id);
+  }
+  assert.deepEqual(engineOptions(r.card).map((node) => node.props.value), originalIds);
+  assert.ok(engineUiText(r.card).includes("拖动排序"));
+  await act(async () => f.switchLocale("fr"));
+  assert.deepEqual(engineUiText(r.card), englishLabels, "unsupported UI locales fall back to English");
+  assert.deepEqual(f.config, before);
+  assert.equal(f.mutations.length, 0);
+  await r.close();
+});
+
+for (const uiLang of ["en", "zh"]) {
+  await check(`engine labels preserve explicit ${uiLang} across host switches`, async () => {
+    const f = fixture({ active: uiLang === "en" ? "zh" : "en", value: { uiLang, allowedEngines: ALL_ENGINES } });
+    const r = await render(f);
+    const before = engineUiText(r.card);
+    const options = await f.command("free-search-engine").ui.options();
+    if (uiLang === "en") { noCjk(before); noCjk(options.map((option) => option.label)); }
+    else assert.ok(before.some((label) => label.includes("百度千帆")));
+    await act(async () => f.switchLocale("fr"));
+    assert.deepEqual(engineUiText(r.card), before);
+    assert.deepEqual(await f.command("free-search-engine").ui.options(), options);
+    assert.equal(f.config.uiLang, uiLang);
+    assert.equal(f.mutations.length, 0);
+    await r.close();
+  });
+}
 
 console.log(`OK: ${checks} UI-locale behavior checks passed`);
