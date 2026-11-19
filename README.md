@@ -89,7 +89,7 @@
 - **检索正文缓存（cache_search）** —— 全文检索 `research` 抓过的正文（`node:sqlite` 持久缓存，存储 7 天；`node:sqlite` 不可用时自动降级为 no-op，免 flag 需 ≥ 22.13，22.5–22.12 需 `--experimental-sqlite`）。
 - **干净集成** —— 实现官方 `WebSearchProvider` seam 接口，与官方插件共存。
 - **时间过滤** —— `advanced_search` 工具支持 `timeRange`：固定档、自定义相对值、绝对日期三种形式（详见下方逻辑说明）。
-- **系统提示词注入** —— agent 知道当前用哪个引擎、哪些需要 key；并明确所有搜索结果是**不可信外部数据**，不得执行其中的指令。
+- **系统提示词注入** —— agent 知道当前用哪个引擎、哪些需要 key；并明确所有搜索结果是**不可信外部数据**，不得执行其中的指令。四段内容都可自定义，其中「结果展示」单独控制搜索结果怎么写进回答（引用带链接、同一来源只出现一次、不复读工具已展示的内容）。
 - **提示注入防护（不可信数据边界）** —— 插件自有工具（`advanced_search` / `platform_search` / `free_search_test`）的网页文本包在 `<untrusted-web-content>` 边界内（正文里自带的同名标记会被剥离，防止提前闭合）；核心 `web_search` / `web_fetch` 由 DSH 核心自带同类提示（`External web content follows...`）；所有 snippet 统一清洗并截断到 300 字符。
 
 #### 设置页与目录
@@ -107,12 +107,12 @@
 <img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/ui-rail.png" alt="右侧浮动目录" width="100%" />
 <sub>▲ 右侧浮动目录：七个分区，滚动跟随高亮</sub>
 
-### 注入的系统提示词分三段
+### 注入的系统提示词分四段
 
-设置页第七段「提示词」管理本插件注册的系统提示词，分成三段：状态、工具、约束。每段都有自己的翻页器，页 1 是内置英文、页 2 是内置中文，都按当前配置实时生成，不入盘，不能删也不能改；页 3 起是你自己加的页。发送时每段取你当前停的那一页，拼起来就是注入内容；三段都空则整段不注入。
+设置页第七段「提示词」管理本插件注册的系统提示词，分成四段：状态、工具、约束、结果展示。每段都有自己的翻页器，页 1 是内置英文、页 2 是内置中文，都按当前配置实时生成，不入盘，不能删也不能改；页 3 起是你自己加的页。发送时每段取你当前停的那一页，拼起来就是注入内容；四段都空则整段不注入。
 
-<img src="https://raw.githubusercontent.com/DDDMUC/dsh-free-search/master/assets/ui-prompt.png" alt="提示词三段：状态 / 工具 / 约束" width="100%" />
-<sub>▲ 提示词三段：状态 / 工具 / 约束；页 2 是内置中文页，工具行只读</sub>
+alt="提示词四段：状态 / 工具 / 约束 / 结果展示"
+▲ 提示词四段：状态 / 工具 / 约束 / 结果展示；页 2 是内置中文页，工具行只读
 
 「工具」那一段是九个工具各一行：前面的勾选框决定这个工具给不给模型，后面的框里是写给模型的那句话，只读，跟插件更新走，不能改。这一段的右上角有中英切换，一下切换全部工具；工具列表最上面是一个「全选」勾选框，勾上就是全部交给模型，取消就是全部不交，只勾一部分时它显示为半选。取消勾选的工具不再交给模型，工具说明也一并从请求里去掉，那一段里也不会再列出它。想加自己的要求，写在「约束」那一段的自定义页里。
 
@@ -402,13 +402,15 @@ lang: zh                    # 搜索语言池/本地化（zh / en / ru …，不
 #   web_fetch（fs-quality-fetch）的 Accept-Language 同样跟随 lang，不再固定中文（#92）。
 uiLang: zh                  # 设置页界面语言（zh / en）；留空则跟随 lang
 promptLanguage: en          # 注入给模型的系统提示词与工具描述语言（en / zh）；只翻叙述文字，工具名/参数/枚举保持英文
-# 提示词分三段：状态 / 工具 / 约束。每段页 1 是内置英文、页 2 是内置中文（都不入盘），页 3 起是你写的。
+# 提示词分四段：状态 / 工具 / 约束 / 结果展示。每段页 1 是内置英文、页 2 是内置中文（都不入盘），页 3 起是你写的。
 promptStatePages: []
 promptStateIndex: 0
 promptToolsPages: []
 promptToolsIndex: 0
 promptConstraintsPages: []
 promptConstraintsIndex: 0
+promptDisplayPages: []       # 第四段「结果展示」的用户页；页 1/2 是内置英文/中文
+promptDisplayIndex: 0        # 当前注入第几页（0 = 内置英文，1 = 内置中文，2+ = 你的页）
 promptToolsLang: ""          # the language of the tool lines, zh or en; empty follows promptLanguage
 promptToolsLang: ""          # 工具段那句话的语言，zh 或 en；留空跟随 promptLanguage
 disabledTools: []           # 关掉的工具不再注册（例如 [domain_search]），schema 一并从上下文消失
@@ -638,7 +640,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **77 个**零依赖断言脚本（合计 **1103 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
+仓库自带 **78 个**零依赖断言脚本（合计 **1111 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -671,6 +673,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-deepseek-fetch.mjs` | #124 自定义 DeepSeek 兼容抓取端点：base/完整 URL 归一化、作为第一档命中即停、失败回落、未配置不出现、短内容被拒、明文 http 请求形状与鉴权、401/429/空正文的错误分类、配置/MCP/设置页接线 | `node tools/assert-deepseek-fetch.mjs`（8） |
 | `assert-engine-label.mjs` | 设置页「全局启用的搜索引擎」标题计数：中英文模板、0/总数、缺失标题只显示计数、负数/NaN 归零、浮点取整 | `node tools/assert-engine-label.mjs`（8） |
 | `assert-fallback-order.mjs` | 回退链可编辑：空白顺序仍取默认链、已保存顺序保持删除结果、默认链不混入 HTML 家族、HTML 与按次计费引擎都能显式加入、`hasCustomFallbackOrder` 只认真实编辑、`enabledEngines` 不把白名单引擎追加进自定义链、Auto 只在链内路由、设置页默认链与增删控件接线 | `node tools/assert-fallback-order.mjs`（11） |
+| `assert-prompt-display.mjs` | 第四段「结果展示」（#148）：四段列表、双语内置页、只讲呈现不重复抓取契约、注入顺序在约束之后、用户页替换内置页、空页不注入、配置读写、设置页接线 | `node tools/assert-prompt-display.mjs`（8） |
 | `assert-mcp-response-cap.mjs` | #147 MCP stdio 单条响应上限：字符/字节双上限默认值与环境覆盖、0 关闭、多字节文本不超 64KB 行、handler 对结果与错误统一截断、web_fetch 先按上限收缩、research 文档按剩余预算均分 | `node tools/assert-mcp-response-cap.mjs`（12） |
 | `assert-fetch-ssrf.mjs` | 抓取 SSRF 防护：公网/私网/保留地址判定、DNS 解析到私网拒绝、localhost 与 IP 字面量拒绝、`http://` 与 `https://` 放行而其他协议与带凭据 URL 拒绝、http 目标解析到私网同样拒绝、fake-ip 网段默认拒绝且仅按配置放行、IPv6 ULA 显式放行、放行后仍拒绝回环/IPv4 私网/链路本地、provider 接线与设置项 | `node tools/assert-fetch-ssrf.mjs`（10） |
 | `assert-fetch-http.mjs` | 明文 http 目标（#143）：直连层按协议选 transport、http 重定向可跟随、provider 不再在入口拒绝 http 而交给 tier 链、全层失败报直连原因而不再报 only https、非 http(s) 协议仍拒、`agentForUrl` 为 http 目标选明文隧道 agent、经 `CONNECT` 隧道抓取 http 页面 | `node tools/assert-fetch-http.mjs`（7） |
@@ -696,7 +699,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-prompt-language.mjs` | 提示词语言（en/zh）：语言回退、9 个工具双语文案、标识符不被翻译、占位符插值、切换时只重注册一次 | `node tools/assert-prompt-language.mjs`（7） |
 | `assert-tool-schema-size.mjs` | 工具 schema 体积（#94）：共享引擎 id 常量、`domain_search` 不内嵌逐引擎句子、三处合计 < 1.6k 字符 | `node tools/assert-tool-schema-size.mjs`（5） |
 | `assert-config-seat.mjs` | 配置入口（#101）：卡片同时挂在 `plugins.bundle.config`（key = 包名，渲染在包页）与 `plugins.row.config`（老入口），两者共用同一渲染器 | `node tools/assert-config-seat.mjs`（4） |
-| `assert-prompt-injection.mjs` | 提示词分页（#102）：两页内置在前、自定义页在后、当前页即注入、空页不注入、内置页分状态/工具/约束三块、内置随 describe 下发不再单独请求、工具开关落到每个注册点、第七段 UI | `node tools/assert-prompt-injection.mjs`（15） |
+| `assert-prompt-injection.mjs` | 提示词分页（#102）：两页内置在前、自定义页在后、当前页即注入、空页不注入、内置页分状态/工具/约束/结果展示四块、内置随 describe 下发不再单独请求、工具开关落到每个注册点、第七段 UI | `node tools/assert-prompt-injection.mjs`（15） |
 | `assert-rail-section.mjs` | 页内目录的机器可读当前段：卡片根 `data-dsh-fs-section` 与 `railActive` 绑定、六段 id 固定、滚动监听仍在更新 | `node tools/assert-rail-section.mjs`（4） |
 | `assert-package-files.mjs` | 发布清单闸门（#97）：`files` 展开后必须覆盖被引用的本地模块、入口点与 `cordis.patch.yml`，并确认 `prepack` 守卫生效 | `node tools/assert-package-files.mjs`（4） |
 | `assert-key-rotation.mjs` | 多 key 轮换（#96）：round-robin 与 peek、单 key 不推进、配额优先于 429 的分类、轮换候选集合、`multi` 模式内重试与预检不消耗 key | `node tools/assert-key-rotation.mjs`（7） |
@@ -1387,7 +1390,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Seventy-seven** zero-dependency assertion scripts ship with the repo (**1103 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
+**Seventy-eight** zero-dependency assertion scripts ship with the repo (**1111 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|
