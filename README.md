@@ -300,8 +300,6 @@ DSH 0.2.1 设置 → 网页搜索 → **DeepSeek 搜索 API** 开关会和本插
 - **Platform search**：勾选启用 GitHub / V2EX / Bilibili / Reddit / Hacker News / Stack Overflow / 维基百科 / npm / YouTube / Vimeo / 掘金 / 豆瓣 / Qiita / X (Twitter) 平台搜索（`platform_search` 工具按此过滤）
 - **界面语言 / Interface language**：选择「跟随应用 / Follow app」、English 或中文。默认（`uiLang` 未设置、空字符串或 `auto`）实时跟随 DSH 当前界面语言；已有 `en` / `zh` 设置继续固定语言。卡片预览不丢失未保存编辑，保存后侧栏、插件摘要和斜杠命令文案使用该设置，撤销则恢复已保存值。界面文案只有中英两套（其它语言回落英文），标题保留已有多语言翻译。旧宿主没有 locale 服务时回落浏览器语言，再回落英文；服务稍后可用时自动接入。不会修改搜索 `lang`、Bing 市场、provider 或提示词语言。
 
-Locale regression fixture: `node tools/assert-ui-locale.mjs` runs the exported client bundle against offline settings and host-locale fixtures; it makes no provider requests.
-
 <table align="center" style="border: none; border-collapse: collapse;">
   <tr style="border: none;">
     <td align="center" width="50%" style="border: none; padding: 6px;">
