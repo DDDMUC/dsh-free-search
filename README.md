@@ -564,7 +564,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 }
 ```
 
-环境变量：`MCP_SEARCH_ENGINE`（默认 auto，也可指定任意引擎 id）、`MCP_MAX_RESULTS`、`MCP_SAFE_SEARCH`、`MCP_LANG`、`MCP_BING_MARKET`、`MCP_BROWSER_FETCH`、`MCP_ALLOW_FAKE_IP_CIDRS`。付费/可选 key 引擎按需读取：`GOOGLE_CSE_API_KEY` + `GOOGLE_CSE_ID`、`BAIDU_API_KEY`、`BRAVE_API_KEY`、`METASO_API_KEY` / `MCP_METASO_SCOPE`、`YANDEX_API_KEY` + `YANDEX_FOLDER_ID`、`TENCENTCLOUD_WSA_APIKEY` / `MCP_YUANBAO_MODE` / `MCP_YUANBAO_SITE`、`DEEPSEEK_TOOLS_API_KEY` 或 `DEEPSEEK_API_KEY`、`ZHIPU_API_KEY` / `MCP_ZHIPU_SEARCH_ENGINE`；免 key 档可选 `ANYSEARCH_API_KEY`、`MCP_SEARXNG_INSTANCES` / `MCP_SEARXNG_BEARER_TOKEN`、`EXA_API_KEY`、`TAVILY_API_KEY`、`KEENABLE_API_KEY`、`FIRECRAWL_API_KEY`、`PARALLEL_API_KEY`、`YDC_API_KEY`（旧名 `YOUCOM_API_KEY` 亦可）。
+环境变量：`MCP_SEARCH_ENGINE`（默认 auto，也可指定任意引擎 id）、`MCP_MAX_RESULTS`、`MCP_SAFE_SEARCH`、`MCP_LANG`、`MCP_BING_MARKET`、`MCP_BROWSER_FETCH`、`MCP_ALLOW_FAKE_IP_CIDRS`、`MCP_DEEPSEEK_FETCH_URL`、`MCP_MAX_RESPONSE_CHARS` / `MCP_MAX_RESPONSE_BYTES`。付费/可选 key 引擎按需读取：`GOOGLE_CSE_API_KEY` + `GOOGLE_CSE_ID`、`BAIDU_API_KEY`、`BRAVE_API_KEY`、`METASO_API_KEY` / `MCP_METASO_SCOPE`、`YANDEX_API_KEY` + `YANDEX_FOLDER_ID`、`TENCENTCLOUD_WSA_APIKEY` / `MCP_YUANBAO_MODE` / `MCP_YUANBAO_SITE`、`DEEPSEEK_TOOLS_API_KEY` 或 `DEEPSEEK_API_KEY`、`ZHIPU_API_KEY` / `MCP_ZHIPU_SEARCH_ENGINE`；免 key 档可选 `ANYSEARCH_API_KEY`、`MCP_SEARXNG_INSTANCES` / `MCP_SEARXNG_BEARER_TOKEN`、`EXA_API_KEY`、`TAVILY_API_KEY`、`KEENABLE_API_KEY`、`FIRECRAWL_API_KEY`、`PARALLEL_API_KEY`、`YDC_API_KEY`（旧名 `YOUCOM_API_KEY` 亦可）。
 
 #### 平台搜索（platform_search）
 
@@ -638,7 +638,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **74 个**零依赖断言脚本（合计 **1072 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
+仓库自带 **75 个**零依赖断言脚本（合计 **1084 项**），**不需要 API key、不联网、不需要测试框架**，Node ≥ 20 即可跑。一次跑全部：`npm test`。
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -669,6 +669,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-research-call-wrappers.mjs` | research 四个 `call*` 包装层的替身/底层透传（#75 回归） | `node tools/assert-research-call-wrappers.mjs`（23） |
 | `assert-fetch-chain.mjs` | `fs-quality-fetch` 四层链序、任一层命中即停、exa 失败静默降级 firecrawl、全层失败聚合报错、http 目标进到 tier 链而不是被入口断言拒绝 | `node tools/assert-fetch-chain.mjs`（9） |
 | `assert-deepseek-fetch.mjs` | #124 自定义 DeepSeek 兼容抓取端点：base/完整 URL 归一化、作为第一档命中即停、失败回落、未配置不出现、短内容被拒、明文 http 请求形状与鉴权、401/429/空正文的错误分类、配置/MCP/设置页接线 | `node tools/assert-deepseek-fetch.mjs`（8） |
+| `assert-mcp-response-cap.mjs` | #147 MCP stdio 单条响应上限：字符/字节双上限默认值与环境覆盖、0 关闭、多字节文本不超 64KB 行、handler 对结果与错误统一截断、web_fetch 先按上限收缩、research 文档按剩余预算均分 | `node tools/assert-mcp-response-cap.mjs`（12） |
 | `assert-fetch-ssrf.mjs` | 抓取 SSRF 防护：公网/私网/保留地址判定、DNS 解析到私网拒绝、localhost 与 IP 字面量拒绝、`http://` 与 `https://` 放行而其他协议与带凭据 URL 拒绝、http 目标解析到私网同样拒绝、fake-ip 网段默认拒绝且仅按配置放行、IPv6 ULA 显式放行、放行后仍拒绝回环/IPv4 私网/链路本地、provider 接线与设置项 | `node tools/assert-fetch-ssrf.mjs`（10） |
 | `assert-fetch-http.mjs` | 明文 http 目标（#143）：直连层按协议选 transport、http 重定向可跟随、provider 不再在入口拒绝 http 而交给 tier 链、全层失败报直连原因而不再报 only https、非 http(s) 协议仍拒、`agentForUrl` 为 http 目标选明文隧道 agent、经 `CONNECT` 隧道抓取 http 页面 | `node tools/assert-fetch-http.mjs`（7） |
 | `assert-mcp.mjs` | MCP stdio 面：initialize 协议协商、tools/list 的 JSON Schema、tools/call 文本结果、工具错误与 JSON-RPC 错误区分、必填参数校验、显式付费引擎与新 provider、advanced/multi/domain/platform/video/research/weather 新工具、bin/files 打包 | `node tools/assert-mcp.mjs`（10） |
@@ -1310,7 +1311,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 }
 ```
 
-Environment: `MCP_SEARCH_ENGINE` (auto by default, or any explicit engine id), `MCP_MAX_RESULTS`, `MCP_SAFE_SEARCH`, `MCP_LANG`, `MCP_BING_MARKET`, `MCP_BROWSER_FETCH`, `MCP_ALLOW_FAKE_IP_CIDRS`. Keyed/optional engines read their own env: `GOOGLE_CSE_API_KEY` + `GOOGLE_CSE_ID`, `BAIDU_API_KEY`, `BRAVE_API_KEY`, `METASO_API_KEY` / `MCP_METASO_SCOPE`, `YANDEX_API_KEY` + `YANDEX_FOLDER_ID`, `TENCENTCLOUD_WSA_APIKEY` / `MCP_YUANBAO_MODE` / `MCP_YUANBAO_SITE`, `DEEPSEEK_TOOLS_API_KEY` or `DEEPSEEK_API_KEY`, `ZHIPU_API_KEY` / `MCP_ZHIPU_SEARCH_ENGINE`; keyless-capable engines can use `ANYSEARCH_API_KEY`, `MCP_SEARXNG_INSTANCES` / `MCP_SEARXNG_BEARER_TOKEN`, `EXA_API_KEY`, `TAVILY_API_KEY`, `KEENABLE_API_KEY`, `FIRECRAWL_API_KEY`, `PARALLEL_API_KEY`, `YDC_API_KEY` (the old `YOUCOM_API_KEY` alias also works).
+Environment: `MCP_SEARCH_ENGINE` (auto by default, or any explicit engine id), `MCP_MAX_RESULTS`, `MCP_SAFE_SEARCH`, `MCP_LANG`, `MCP_BING_MARKET`, `MCP_BROWSER_FETCH`, `MCP_ALLOW_FAKE_IP_CIDRS`, `MCP_DEEPSEEK_FETCH_URL`, `MCP_MAX_RESPONSE_CHARS` / `MCP_MAX_RESPONSE_BYTES`. Keyed/optional engines read their own env: `GOOGLE_CSE_API_KEY` + `GOOGLE_CSE_ID`, `BAIDU_API_KEY`, `BRAVE_API_KEY`, `METASO_API_KEY` / `MCP_METASO_SCOPE`, `YANDEX_API_KEY` + `YANDEX_FOLDER_ID`, `TENCENTCLOUD_WSA_APIKEY` / `MCP_YUANBAO_MODE` / `MCP_YUANBAO_SITE`, `DEEPSEEK_TOOLS_API_KEY` or `DEEPSEEK_API_KEY`, `ZHIPU_API_KEY` / `MCP_ZHIPU_SEARCH_ENGINE`; keyless-capable engines can use `ANYSEARCH_API_KEY`, `MCP_SEARXNG_INSTANCES` / `MCP_SEARXNG_BEARER_TOKEN`, `EXA_API_KEY`, `TAVILY_API_KEY`, `KEENABLE_API_KEY`, `FIRECRAWL_API_KEY`, `PARALLEL_API_KEY`, `YDC_API_KEY` (the old `YOUCOM_API_KEY` alias also works).
 
 #### Platform Search (`platform_search`)
 
@@ -1384,7 +1385,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Seventy-four** zero-dependency assertion scripts ship with the repo (**1072 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
+**Seventy-four** zero-dependency assertion scripts ship with the repo (**1084 assertions** total): **no API keys, no network, no test framework**, Node ≥ 20. Run everything with `npm test`.
 
 | Script | Covers | Run (count) |
 |---|---|---|
