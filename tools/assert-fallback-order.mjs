@@ -44,9 +44,17 @@ await check("html serp engines can be added explicitly", () => {
   assert.deepEqual(normalizeFallbackOrder(["sogou", "exa"]), ["sogou", "exa"]);
 });
 
-await check("billed explicit-only engines never join the chain", () => {
-  assert.deepEqual(normalizeFallbackOrder(["openai"]), DEFAULT_FALLBACK_ORDER.filter((id) => !EXPLICIT_ONLY_ENGINES.includes(id)));
-  assert.deepEqual(normalizeFallbackOrder(["exa", "openai"]), ["exa"]);
+await check("billed explicit-only engines can be added to the chain on purpose", () => {
+  // 默认链仍然不含它们；但用户显式加进回退链就是明确的付费意图，必须生效。
+  assert.equal(DEFAULT_FALLBACK_ORDER.includes("openai"), false);
+  assert.deepEqual(normalizeFallbackOrder(["exa", "openai"]), ["exa", "openai"]);
+  assert.deepEqual(normalizeFallbackOrder(["specstream", "metaso"]), ["specstream", "metaso"]);
+});
+
+check("every engine id can be added to the chain", () => {
+  const added = normalizeFallbackOrder(ALL_ENGINES);
+  assert.deepEqual(added, ALL_ENGINES);
+  for (const id of ALL_ENGINES) assert.equal(added.includes(id), true, id);
 });
 
 await check("hasCustomFallbackOrder tracks real edits only", () => {
