@@ -298,7 +298,9 @@ DSH 0.2.1 设置 → 网页搜索 → **DeepSeek 搜索 API** 开关会和本插
 - **Test engine**：直测当前引擎可用性（不走回退链，付费引擎无 key 会明确报错）
 - **Use Bing default**：把当前搜索引擎切回稳定的免费 Bing；`Discard` 只撤销尚未保存的编辑
 - **Platform search**：勾选启用 GitHub / V2EX / Bilibili / Reddit / Hacker News / Stack Overflow / 维基百科 / npm / YouTube / Vimeo / 掘金 / 豆瓣 / Qiita / X (Twitter) 平台搜索（`platform_search` 工具按此过滤）
-- **EN / 中文**：切换界面语言（默认中文）
+- **界面语言 / Interface language**：选择「跟随应用 / Follow app」、English 或中文。默认（`uiLang` 未设置、空字符串或 `auto`）实时跟随 DSH 当前界面语言；已有 `en` / `zh` 设置继续固定语言。卡片预览不丢失未保存编辑，保存后侧栏、插件摘要和斜杠命令文案使用该设置，撤销则恢复已保存值。界面文案只有中英两套（其它语言回落英文），标题保留已有多语言翻译。旧宿主没有 locale 服务时回落浏览器语言，再回落英文；服务稍后可用时自动接入。不会修改搜索 `lang`、Bing 市场、provider 或提示词语言。
+
+Locale regression fixture: `node tools/assert-ui-locale.mjs` runs the exported client bundle against offline settings and host-locale fixtures; it makes no provider requests.
 
 <table align="center" style="border: none; border-collapse: collapse;">
   <tr style="border: none;">
@@ -400,7 +402,7 @@ lang: zh                    # 搜索语言池/本地化（zh / en / ru …，不
 #   我们自己渲染的文案只有中文/英文两套，其它语言（ja/ru/de…）一律走英文，避免回答前先塞一段中文（#92）；
 #   weather 例外，另有日文（ja 得到日文天气，ru/de… 仍走英文）。
 #   web_fetch（fs-quality-fetch）的 Accept-Language 同样跟随 lang，不再固定中文（#92）。
-uiLang: zh                  # 设置页界面语言（zh / en）；留空则跟随 lang
+uiLang: ""                  # 界面语言（zh / en）；未设置、空字符串或 auto 跟随 DSH 界面语言
 promptLanguage: en          # 注入给模型的系统提示词与工具描述语言（en / zh）；只翻叙述文字，工具名/参数/枚举保持英文
 # 提示词分三段：状态 / 工具 / 约束。每段页 1 是内置英文、页 2 是内置中文（都不入盘），页 3 起是你写的。
 promptStatePages: []
@@ -1049,7 +1051,9 @@ The config page provides:
 - **Test engine**: Tests the selected engine directly (no fallback chain; paid engines without a key report an explicit error).
 - **Use Bing default**: stage a switch back to the stable free Bing engine; `Discard` only cancels unsaved edits
 - **Platform search**: check platforms (GitHub / V2EX / Bilibili / Reddit / HN / Stack Overflow / Wikipedia / npm / YouTube / Vimeo / Juejin / Douban / Qiita / X (Twitter)) to enable them for the `platform_search` tool (unchecked platforms are skipped, and X needs Grok Build signed in).
-- **EN / 中文**: toggle the interface language (default Chinese).
+- **Interface language**: choose Follow app, English, or 中文. Missing, empty, or `auto` `uiLang` follows the current DSH locale reactively; explicit `en` / `zh` stays fixed. Unsaved choices preview in the card; saving updates the sidebar, summaries, and slash commands, while Discard restores the saved choice. UI copy falls back to English for other languages, retaining the existing translated panel titles. Older hosts without a locale service use the browser language, then English. Search `lang`, Bing market, provider, and prompt language remain independent.
+
+Locale regression fixture: `node tools/assert-ui-locale.mjs` renders the exported client bundle against offline settings and host-locale fixtures; it makes no provider requests.
 
 <table align="center" style="border: none; border-collapse: collapse;">
   <tr style="border: none;">
@@ -1151,7 +1155,7 @@ lang: zh                    # search language pools / localization (zh / en / ru
 #   text this plugin renders itself only exists in Chinese and English, so other languages (ja/ru/de…) get English rather than a wall of Chinese (#92);
 #   weather also has Japanese (ja gets Japanese weather text, ru/de… still get English).
 #   web_fetch (fs-quality-fetch) sends the same Accept-Language instead of a fixed Chinese one (#92).
-uiLang: zh                  # settings UI language (zh / en); empty = follow lang
+uiLang: ""                  # UI language (zh / en); missing, empty or auto = follow DSH locale
 promptLanguage: en          # language of the system prompt section and tool descriptions (en / zh); prose only - tool names, params and enums stay English
 # The prompt has three segments: state, tools, constraints. In each one page 1 is the
 # built-in English page and page 2 the built-in Chinese one (neither is stored);
