@@ -640,7 +640,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **78 个**零依赖断言脚本（合计 **1112 项**）
+仓库自带 **79 个**零依赖断言脚本（合计 **1117 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -674,6 +674,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-engine-label.mjs` | 设置页「全局启用的搜索引擎」标题计数：中英文模板、0/总数、缺失标题只显示计数、负数/NaN 归零、浮点取整 | `node tools/assert-engine-label.mjs`（8） |
 | `assert-fallback-order.mjs` | 回退链可编辑：空白顺序仍取默认链、已保存顺序保持删除结果、默认链不混入 HTML 家族、HTML 与按次计费引擎都能显式加入、`hasCustomFallbackOrder` 只认真实编辑、`enabledEngines` 不把白名单引擎追加进自定义链、Auto 只在链内路由、设置页默认链与增删控件接线 | `node tools/assert-fallback-order.mjs`（11） |
 `node tools/assert-prompt-display.mjs`（9）
+| `assert-prompt-pager.mjs` | 提示词分页可保存：翻页（‹ / ›）会置 dirty 并清掉旧的失败提示、增删页同样置 dirty、保存按钮仍由 dirty 控制 | `node tools/assert-prompt-pager.mjs`（5） |
 | `assert-mcp-response-cap.mjs` | #147 MCP stdio 单条响应上限：字符/字节双上限默认值与环境覆盖、0 关闭、多字节文本不超 64KB 行、handler 对结果与错误统一截断、web_fetch 先按上限收缩、research 文档按剩余预算均分 | `node tools/assert-mcp-response-cap.mjs`（12） |
 | `assert-fetch-ssrf.mjs` | 抓取 SSRF 防护：公网/私网/保留地址判定、DNS 解析到私网拒绝、localhost 与 IP 字面量拒绝、`http://` 与 `https://` 放行而其他协议与带凭据 URL 拒绝、http 目标解析到私网同样拒绝、fake-ip 网段默认拒绝且仅按配置放行、IPv6 ULA 显式放行、放行后仍拒绝回环/IPv4 私网/链路本地、provider 接线与设置项 | `node tools/assert-fetch-ssrf.mjs`（10） |
 | `assert-fetch-http.mjs` | 明文 http 目标（#143）：直连层按协议选 transport、http 重定向可跟随、provider 不再在入口拒绝 http 而交给 tier 链、全层失败报直连原因而不再报 only https、非 http(s) 协议仍拒、`agentForUrl` 为 http 目标选明文隧道 agent、经 `CONNECT` 隧道抓取 http 页面 | `node tools/assert-fetch-http.mjs`（7） |
@@ -1390,7 +1391,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Seventy-eight** zero-dependency assertion scripts ship with the repo (**1112 assertions** total)
+**Seventy-nine** zero-dependency assertion scripts ship with the repo (**1117 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|
