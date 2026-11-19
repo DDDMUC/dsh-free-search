@@ -640,7 +640,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **78 个**零依赖断言脚本（合计 **1111 项**）
+仓库自带 **78 个**零依赖断言脚本（合计 **1112 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -673,7 +673,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-deepseek-fetch.mjs` | #124 自定义 DeepSeek 兼容抓取端点：base/完整 URL 归一化、作为第一档命中即停、失败回落、未配置不出现、短内容被拒、明文 http 请求形状与鉴权、401/429/空正文的错误分类、配置/MCP/设置页接线 | `node tools/assert-deepseek-fetch.mjs`（8） |
 | `assert-engine-label.mjs` | 设置页「全局启用的搜索引擎」标题计数：中英文模板、0/总数、缺失标题只显示计数、负数/NaN 归零、浮点取整 | `node tools/assert-engine-label.mjs`（8） |
 | `assert-fallback-order.mjs` | 回退链可编辑：空白顺序仍取默认链、已保存顺序保持删除结果、默认链不混入 HTML 家族、HTML 与按次计费引擎都能显式加入、`hasCustomFallbackOrder` 只认真实编辑、`enabledEngines` 不把白名单引擎追加进自定义链、Auto 只在链内路由、设置页默认链与增删控件接线 | `node tools/assert-fallback-order.mjs`（11） |
-| `assert-prompt-display.mjs` | 第四段「结果展示」（#148）：四段列表、双语内置页、只讲呈现不重复抓取契约、注入顺序在约束之后、用户页替换内置页、空页不注入、配置读写、设置页接线 | `node tools/assert-prompt-display.mjs`（8） |
+`node tools/assert-prompt-display.mjs`（9）
 | `assert-mcp-response-cap.mjs` | #147 MCP stdio 单条响应上限：字符/字节双上限默认值与环境覆盖、0 关闭、多字节文本不超 64KB 行、handler 对结果与错误统一截断、web_fetch 先按上限收缩、research 文档按剩余预算均分 | `node tools/assert-mcp-response-cap.mjs`（12） |
 | `assert-fetch-ssrf.mjs` | 抓取 SSRF 防护：公网/私网/保留地址判定、DNS 解析到私网拒绝、localhost 与 IP 字面量拒绝、`http://` 与 `https://` 放行而其他协议与带凭据 URL 拒绝、http 目标解析到私网同样拒绝、fake-ip 网段默认拒绝且仅按配置放行、IPv6 ULA 显式放行、放行后仍拒绝回环/IPv4 私网/链路本地、provider 接线与设置项 | `node tools/assert-fetch-ssrf.mjs`（10） |
 | `assert-fetch-http.mjs` | 明文 http 目标（#143）：直连层按协议选 transport、http 重定向可跟随、provider 不再在入口拒绝 http 而交给 tier 链、全层失败报直连原因而不再报 only https、非 http(s) 协议仍拒、`agentForUrl` 为 http 目标选明文隧道 agent、经 `CONNECT` 隧道抓取 http 页面 | `node tools/assert-fetch-http.mjs`（7） |
@@ -699,7 +699,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-prompt-language.mjs` | 提示词语言（en/zh）：语言回退、9 个工具双语文案、标识符不被翻译、占位符插值、切换时只重注册一次 | `node tools/assert-prompt-language.mjs`（7） |
 | `assert-tool-schema-size.mjs` | 工具 schema 体积（#94）：共享引擎 id 常量、`domain_search` 不内嵌逐引擎句子、三处合计 < 1.6k 字符 | `node tools/assert-tool-schema-size.mjs`（5） |
 | `assert-config-seat.mjs` | 配置入口（#101）：卡片同时挂在 `plugins.bundle.config`（key = 包名，渲染在包页）与 `plugins.row.config`（老入口），两者共用同一渲染器 | `node tools/assert-config-seat.mjs`（4） |
-| `assert-prompt-injection.mjs` | 提示词分页（#102）：两页内置在前、自定义页在后、当前页即注入、空页不注入、内置页分状态/工具/约束/结果展示四块、内置随 describe 下发不再单独请求、工具开关落到每个注册点、第七段 UI | `node tools/assert-prompt-injection.mjs`（15） |
+`node tools/assert-prompt-injection.mjs`（15）
 | `assert-rail-section.mjs` | 页内目录的机器可读当前段：卡片根 `data-dsh-fs-section` 与 `railActive` 绑定、六段 id 固定、滚动监听仍在更新 | `node tools/assert-rail-section.mjs`（4） |
 | `assert-package-files.mjs` | 发布清单闸门（#97）：`files` 展开后必须覆盖被引用的本地模块、入口点与 `cordis.patch.yml`，并确认 `prepack` 守卫生效 | `node tools/assert-package-files.mjs`（4） |
 | `assert-key-rotation.mjs` | 多 key 轮换（#96）：round-robin 与 peek、单 key 不推进、配额优先于 429 的分类、轮换候选集合、`multi` 模式内重试与预检不消耗 key | `node tools/assert-key-rotation.mjs`（7） |
@@ -1390,7 +1390,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Seventy-eight** zero-dependency assertion scripts ship with the repo (**1111 assertions** total)
+**Seventy-eight** zero-dependency assertion scripts ship with the repo (**1112 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|
