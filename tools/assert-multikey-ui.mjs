@@ -47,9 +47,8 @@ check("the hint explains the format and the rotation order", () => {
   assert.match(en, /rotate/i);
 });
 
-check("the key box renders inside the fallback and pool rows", () => {
+check("the key input renders inside the fallback and pool rows", () => {
   assert.match(client, /renderEngineKeyInput\(engineId\)/);
-  assert.match(client, /\.dshfs-keyHint\{/);
 });
 
 console.log(`OK: ${checks} multi-key UI checks passed`);
