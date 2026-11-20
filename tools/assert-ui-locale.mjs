@@ -156,13 +156,37 @@ async function render(f) {
   });
   return { card, summary, async close() { await act(async () => { card.unmount(); summary.unmount(); f.dispose(); }); } };
 }
-const selectLanguage = (card) => card.root.findAllByType("select").find((node) => node.props["aria-label"] === "Interface language" || node.props["aria-label"] === "界面语言");
+const dropdowns = (card) =>
+  card.root.findAll(
+    (node) =>
+      typeof node.type === "function" &&
+      node.props &&
+      Object.prototype.hasOwnProperty.call(node.props, "value") &&
+      typeof node.props.onChange === "function" &&
+      node.props.children !== undefined
+  );
+const collectOptions = (node, out = []) => {
+  if (Array.isArray(node)) {
+    for (const item of node) collectOptions(item, out);
+    return out;
+  }
+  if (!node || typeof node !== "object") return out;
+  if (node.type === "option") {
+    out.push({ props: { value: String(node.props.value ?? ""), disabled: node.props.disabled }, children: node.props.children });
+    return out;
+  }
+  if (node.props && node.props.children !== undefined) collectOptions(node.props.children, out);
+  return out;
+};
+const allOptions = (card) => dropdowns(card).flatMap((node) => collectOptions(node.props.children));
+const selectLanguage = (card) =>
+  dropdowns(card).find((node) => node.props["aria-label"] === "Interface language" || node.props["aria-label"] === "界面语言");
 const saveButton = (card) => card.root.findByProps({ className: "dshfs-btn dshfs-save" });
 const cardText = (r) => text(r.toJSON());
 const sidebarLabel = (f) => f.slot("sidebar.panellist").meta.label();
 const engineIds = new Set(["auto", "multi", ...ALL_ENGINES]);
 const nodeText = (node) => text({ children: node.children });
-const engineOptions = (card) => card.root.findAllByType("option").filter((node) => engineIds.has(node.props.value));
+const engineOptions = (card) => allOptions(card).filter((node) => engineIds.has(node.props.value));
 const engineUiText = (card) => [
   ...engineOptions(card).map(nodeText),
   ...card.root.findAllByProps({ className: "dshfs-priorityName" }).map(nodeText),
