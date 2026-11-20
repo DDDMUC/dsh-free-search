@@ -13,8 +13,10 @@ const require = createRequire(import.meta.url);
 const root = new URL("../", import.meta.url);
 const pkg = JSON.parse(fs.readFileSync(new URL("package.json", root), "utf8"));
 const clientPath = pkg.exports["./client"];
-const source = process.argv.includes("--baseline")
-  ? execFileSync("git", ["show", `HEAD:${clientPath.replace(/^\.\//, "")}`], { cwd: fileURLToPath(root), encoding: "utf8" })
+const baseline = process.argv.find((arg) => arg.startsWith("--baseline="))?.slice("--baseline=".length)
+  || (process.argv.includes("--baseline") ? "HEAD" : "");
+const source = baseline
+  ? execFileSync("git", ["show", `${baseline}:${clientPath.replace(/^\.\//, "")}`], { cwd: fileURLToPath(root), encoding: "utf8" })
   : fs.readFileSync(new URL(clientPath, root), "utf8");
 let checks = 0;
 async function check(name, fn) {
@@ -172,6 +174,60 @@ const noCjk = (labels) => {
   assert.ok(labels.length > 0);
   for (const label of labels) assert.doesNotMatch(label, /\p{Script=Han}/u, label);
 };
+
+await check("rail children render without missing-key warnings across live locale changes", async () => {
+  const errors = [];
+  const originalError = console.error;
+  let rendered;
+  console.error = (...args) => { errors.push(args.map(String).join(" ")); };
+  try {
+    const f = fixture();
+    rendered = await render(f);
+    const links = () => rendered.card.root.findAllByType("a").filter((node) => node.props.className?.split(/\s+/).includes("dshfs-railItem"));
+    const before = links().map((node) => node.props.href);
+    assert.equal(before.length, 7, "the warning check must render the complete rail");
+    await act(async () => f.switchLocale("zh-CN"));
+    assert.deepEqual(links().map((node) => node.props.href), before, "locale changes preserve navigation identities");
+    await act(async () => f.switchLocale("en"));
+    assert.deepEqual(errors, [], "React must render the rail without warnings");
+  } finally {
+    try { if (rendered) await rendered.close(); }
+    finally { console.error = originalError; }
+  }
+});
+
+await check("expanded engine settings retain drafts and field identity without React warnings", async () => {
+  const errors = [];
+  const originalError = console.error;
+  let rendered;
+  console.error = (...args) => { errors.push(args.map(String).join(" ")); };
+  try {
+    const f = fixture({ value: { allowedEngines: ALL_ENGINES, fallbackOrder: ["deepseek-tools", "yandex"] } });
+    rendered = await render(f);
+    const settingsButton = rendered.card.root.findAllByProps({ className: "dshfs-btn dshfs-engineSettingsBtn" })[0];
+    assert.ok(settingsButton, "fixture must expose engine settings");
+    await act(async () => settingsButton.props.onClick());
+    const field = () => rendered.card.root.findAllByType("input").find((node) => node.props.placeholder === "https://api.deepseek.com/v1/tools/search");
+    const input = field();
+    assert.ok(input, "fixture must open the multi-field DeepSeek settings");
+    const draft = "https://example.invalid/unsaved-tools";
+    await act(async () => input.props.onChange({ target: { value: draft } }));
+    const before = clone(f.config);
+    const requests = f.requests.length;
+    for (const language of ["zh-CN", "en"]) {
+      await act(async () => f.switchLocale(language));
+      assert.equal(field(), input, "translating labels must not remount fields");
+      assert.equal(field().props.value, draft);
+    }
+    assert.deepEqual(f.config, before);
+    assert.equal(f.requests.length, requests);
+    assert.deepEqual(f.mutations, []);
+    assert.deepEqual(errors, [], "expanded settings must render without warnings");
+  } finally {
+    try { if (rendered) await rendered.close(); }
+    finally { console.error = originalError; }
+  }
+});
 
 await check("loading and mounted surfaces follow host locale, not browser/search language", async () => {
   const f = fixture({ deferDescribe: true });
