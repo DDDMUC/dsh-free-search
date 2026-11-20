@@ -642,7 +642,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **89 个**零依赖断言脚本（合计 **1185 项**）
+仓库自带 **90 个**零依赖断言脚本（合计 **1189 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -681,6 +681,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-engine-settings-ids.mjs` | 设置按钮可达性（#153 回归）：`ENGINE_SETTINGS_IDS` 必须包含所有写了 `renderEngineSettings` 分支的引擎，按钮仍由该列表控制 | `node tools/assert-engine-settings-ids.mjs`（3） |
 | `assert-serper.mjs` | Serper.dev 引擎（#157）：端点常量、`X-API-KEY` 鉴权（非 Bearer）、`num` 上限 100、`tbs` 时间语法（含绝对日期 `cd_min`）、`organic` 映射、401/403/429 错误分类、缺 key 快速失败、catalog 与 MCP/设置页接线 | `node tools/assert-serper.mjs`（10） |
 | `assert-tavily-endpoint.mjs` | Tavily 兼容端点（#153）：留空 = 官方地址、base 自动补 `/search`、query/hash 被剥离、非 http(s) 拒绝、key 只走 Authorization 头、401 点名端点、配置与设置页接线 | `node tools/assert-tavily-endpoint.mjs`（8） |
+| `assert-header-description.mjs` | 卡片标题区只显示插件名（去掉副标题那一行）；摘要文案仍保留给插件列表行使用；废弃样式已清 | `node tools/assert-header-description.mjs`（4） |
 | `assert-multikey-layout.mjs` | 多 key 输入的行高（#154 回归）：输入框是裸 textarea 不带提示段落、格式说明只在 placeholder / title、双语提示仍完整、废弃样式已删 | `node tools/assert-multikey-layout.mjs`（4） |
 | `assert-multikey-ui.mjs` | 多 key 输入（#154）：后端支持换行/逗号/分号分隔、设置页为 textarea 而非单行密码框、提示写明格式与轮换顺序 | `node tools/assert-multikey-ui.mjs`（4） |
 | `assert-pool-policy.mjs` | 按次计费引擎入池（#152）：7 个引擎全覆盖、策略归一化（含大小写与非法值）、`off` 保持现状、`auto`/`multi` 放行、Auto 可把按次计费引擎排到首位、`off` 写进池也不生效、策略进入缓存键 | `node tools/assert-pool-policy.mjs`（9） |
@@ -1406,7 +1407,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Eighty-nine** zero-dependency assertion scripts ship with the repo (**1185 assertions** total)
+**Ninety** zero-dependency assertion scripts ship with the repo (**1189 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|
