@@ -37,7 +37,11 @@ check("every engine that has a settings branch is reachable", () => {
 });
 
 check("the settings button is gated by that list", () => {
-  assert.match(client, /if \(!engineHasSettings\(id\)\) return null;/);
+  // Rows without settings now render an invisible placeholder so every row keeps
+  // the same columns; the gate still decides whether the button is usable.
+  assert.match(client, /const hasSettings = engineHasSettings\(id\);/);
+  assert.match(client, /disabled: !ready \|\| saving \|\| !hasSettings/);
+  assert.match(client, /if \(!hasSettings\) return;/);
 });
 
 console.log(`OK: ${checks} engine settings reachability checks passed`);
