@@ -165,7 +165,7 @@ check("each segment has a title, a pager, two read-only built-in pages and its o
   assert.match(client, /title: t\.segConstraints,/);
   assert.match(client, /const total = 2 \+ segment\.pages\.length;/);
   assert.match(client, /const renderToolRow = \(toolId\) => \{/);
-  assert.match(client, /\.\.\.TOOL_TOGGLES\.map\(renderToolRow\),/);
+  assert.match(client, /^\s+TOOL_TOGGLES\.map\(renderToolRow\),/m);
   assert.match(client, /className: "dshfs-toolLine", children: toolLines\[toolId\] \}/);
   assert.equal(client.includes("promptToolTexts"), false);
   assert.equal(client.includes("promptToolsPages"), false);
@@ -184,7 +184,7 @@ check("each segment has a title, a pager, two read-only built-in pages and its o
 check("the nine tool switches live inside the tools segment, not in a block of their own", () => {
   assert.match(client, /const renderToolsSegment = \(\) =>/);
   assert.match(client, /className: "dshfs-platforms",/);
-  assert.match(client, /\.\.\.TOOL_TOGGLES\.map\(renderToolRow\),/);
+  assert.match(client, /^\s+TOOL_TOGGLES\.map\(renderToolRow\),/m);
   assert.equal(client.includes("dshfs-divider"), false);
   assert.equal(client.includes("toolsLabel"), false);
   assert.equal(client.includes("toolsHint"), false);
