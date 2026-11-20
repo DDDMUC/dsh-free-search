@@ -58,7 +58,8 @@ check("a pasted section URL scrolls there, and the page never writes the URL", (
 check("the sidebar label follows the DSH locale", () => {
   assert.match(client, /const PANEL_LABELS = \{/);
   assert.match(client, /ja: "無料検索"/);
-  assert.match(client, /localeFace\?\.getLocale\?\.\(\)\.active/);
+  assert.match(client, /localeFace\?\.getSnapshot\?\.\(\) \?\? localeFace\?\.getLocale\?\.\(\)/);
+  assert.match(client, /localeId\(snapshot\?\.active\)/);
 });
 
 check("current section is the one being read, not a guess at the last one", () => {
