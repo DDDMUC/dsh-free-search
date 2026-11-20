@@ -330,6 +330,7 @@ DSH 0.2.1 设置 → 网页搜索 → **DeepSeek 搜索 API** 开关会和本插
 设置页有这些块（都会保存进条目 config）：
 
 - **全局启用的搜索引擎（n/m）**：`n` 是已勾选数量、`m` 是当前版本引擎总数（不含 Auto / Multi），标题会随勾选实时变化。这就是启用白名单本身，勾选即启用、取消即禁用；未启用的引擎会从普通 `web_search` 回退链、Auto 智能路由、`advanced_search`、`multi_search` 和引擎测试中**全局排除**。至少要保留一个引擎，新版本新增的引擎默认不启用。
+- **按次计费引擎入池（#152）**：语言池默认只接受普通引擎，按次计费的 7 个引擎（OpenAI / Gemini / Claude / Metaso / Yandex / Yuanbao / SpecStream）既不出现也不生效。设置页可切三档：`off`（默认，保持现状）/ `auto`（只允许 Auto 路由使用，每次最多挑一个、计费一次）/ `multi`（Auto 与 Multi 都允许，Multi 会并发整池，每次搜索每个引擎各计费一次）。非 `off` 档会显示按次计费提示。
 - **全局回退优先级**：用 ↑↓ 调整先后顺序，下方的下拉框可以把**任意引擎**（含 HTML 家族和按次计费的 OpenAI / Gemini / Claude / Metaso / Yandex / Yuanbao / SpecStream）加进链里，每行右侧的 − 可以移出（至少保留一个）。已保存的顺序就是权威链，删掉的引擎不会被默认链自动补回。首选引擎仍先尝试；Auto 保留"语言/时间"路由规则，但自定义后同一分组内及后续回退按此顺序。被禁用的引擎保留在列表里（标记「已禁用」）但不执行；「恢复默认顺序」一键还原。
 - **中文查询池（zhPool）/ 英文查询池（enPool）**：Auto 路由的起始组，也是 Multi 模式的并发池。按查询语言自动二选一（检测到中日韩文字走中文池，其余走英文池）；两池都可用 ↑↓ 排序、下拉添加引擎、「−」移除（**每池最低 2 个引擎，无上限**）。默认中文池 `bing / baidu / aliyun / anysearch`，默认英文池 `bing / exa / tavily`；禁用/冷却/缺 key 的引擎运行时自动跳过。
 - **搜索引擎下拉里的 `Multi Search`**：选中后 `web_search` 会并发查询**查询语言对应池的全部**已启用引擎（不再是前 3 个），URL 去重合并、跨源命中的结果排前面。注意整池并发会成倍消耗额度（池里含按额度计费引擎时尤其注意）；Multi 失败时会自动退回普通单引擎回退链并在结果里注明。
@@ -640,7 +641,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **82 个**零依赖断言脚本（合计 **1142 项**）
+仓库自带 **84 个**零依赖断言脚本（合计 **1156 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -676,6 +677,8 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 `node tools/assert-prompt-display.mjs`（9）
 | `assert-prompt-pager.mjs` | 提示词分页可保存：翻页（‹ / ›）会置 dirty 并清掉旧的失败提示、增删页同样置 dirty、保存按钮仍由 dirty 控制 | `node tools/assert-prompt-pager.mjs`（5） |
 | `assert-ui-locale.mjs` | 界面语言跟随宿主 locale（#150）：`uiLang` 为空 / `auto` / 大小写变体都跟随实时切换、显式 en/zh/EN-us/zh_TW 锁定不动、草稿/撤销/保存不改搜索与提示词设置、斜杠命令只写 provider、缺 locale 服务与旧宿主 `getLocale` + disposer 清理、rail 与引擎设置无 React key 警告 | `node tools/assert-ui-locale.mjs`（19） |
+| `assert-pool-policy.mjs` | 按次计费引擎入池（#152）：7 个引擎全覆盖、策略归一化（含大小写与非法值）、`off` 保持现状、`auto`/`multi` 放行、Auto 可把按次计费引擎排到首位、`off` 写进池也不生效、策略进入缓存键 | `node tools/assert-pool-policy.mjs`（9） |
+| `assert-pool-prompt.mjs` | 入池策略与提示词一致（#152）：`off` 保留「只在显式选择时运行」、`auto` 改写为「最多一个、计费一次」、`multi` 改写为「每个引擎各计费一次」、Multi 池只在 `multi` 档列出按次计费引擎、中文文案同步 | `node tools/assert-pool-prompt.mjs`（5） |
 | `assert-fetch-ssrf-wiring.mjs` | #156 回归：`lib/index.js` 必须以 provider 自己的选项名 `allowedCidrs` 传白名单（写成 `allowFakeIpCidrs` 会被静默丢弃）、白名单能到达 `validateUrl`、错拼的键回退为空列表 | `node tools/assert-fetch-ssrf-wiring.mjs`（3） |
 | `assert-rail-keys.mjs` | 侧栏目录的渲染 key：每项圆点与文字两个子元素都必须带稳定 key，避免 React 在每次渲染时报 unique key 警告 | `node tools/assert-rail-keys.mjs`（3） |
 | `assert-mcp-response-cap.mjs` | #147 MCP stdio 单条响应上限：字符/字节双上限默认值与环境覆盖、0 关闭、多字节文本不超 64KB 行、handler 对结果与错误统一截断、web_fetch 先按上限收缩、research 文档按剩余预算均分 | `node tools/assert-mcp-response-cap.mjs`（12） |
@@ -1396,7 +1399,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Eighty-two** zero-dependency assertion scripts ship with the repo (**1142 assertions** total)
+**Eighty-four** zero-dependency assertion scripts ship with the repo (**1156 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|
