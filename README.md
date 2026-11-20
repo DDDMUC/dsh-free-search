@@ -640,7 +640,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **81 个**零依赖断言脚本（合计 **1123 项**）
+仓库自带 **82 个**零依赖断言脚本（合计 **1142 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -675,6 +675,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-fallback-order.mjs` | 回退链可编辑：空白顺序仍取默认链、已保存顺序保持删除结果、默认链不混入 HTML 家族、HTML 与按次计费引擎都能显式加入、`hasCustomFallbackOrder` 只认真实编辑、`enabledEngines` 不把白名单引擎追加进自定义链、Auto 只在链内路由、设置页默认链与增删控件接线 | `node tools/assert-fallback-order.mjs`（11） |
 `node tools/assert-prompt-display.mjs`（9）
 | `assert-prompt-pager.mjs` | 提示词分页可保存：翻页（‹ / ›）会置 dirty 并清掉旧的失败提示、增删页同样置 dirty、保存按钮仍由 dirty 控制 | `node tools/assert-prompt-pager.mjs`（5） |
+| `assert-ui-locale.mjs` | 界面语言跟随宿主 locale（#150）：`uiLang` 为空 / `auto` / 大小写变体都跟随实时切换、显式 en/zh/EN-us/zh_TW 锁定不动、草稿/撤销/保存不改搜索与提示词设置、斜杠命令只写 provider、缺 locale 服务与旧宿主 `getLocale` + disposer 清理、rail 与引擎设置无 React key 警告 | `node tools/assert-ui-locale.mjs`（19） |
 | `assert-fetch-ssrf-wiring.mjs` | #156 回归：`lib/index.js` 必须以 provider 自己的选项名 `allowedCidrs` 传白名单（写成 `allowFakeIpCidrs` 会被静默丢弃）、白名单能到达 `validateUrl`、错拼的键回退为空列表 | `node tools/assert-fetch-ssrf-wiring.mjs`（3） |
 | `assert-rail-keys.mjs` | 侧栏目录的渲染 key：每项圆点与文字两个子元素都必须带稳定 key，避免 React 在每次渲染时报 unique key 警告 | `node tools/assert-rail-keys.mjs`（3） |
 | `assert-mcp-response-cap.mjs` | #147 MCP stdio 单条响应上限：字符/字节双上限默认值与环境覆盖、0 关闭、多字节文本不超 64KB 行、handler 对结果与错误统一截断、web_fetch 先按上限收缩、research 文档按剩余预算均分 | `node tools/assert-mcp-response-cap.mjs`（12） |
@@ -1395,7 +1396,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Eighty-one** zero-dependency assertion scripts ship with the repo (**1123 assertions** total)
+**Eighty-two** zero-dependency assertion scripts ship with the repo (**1142 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|
