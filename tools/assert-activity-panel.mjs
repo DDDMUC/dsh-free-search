@@ -109,9 +109,9 @@ check("clear drops the session's records", () => {
   assert.equal(activity.snapshot("s1").latest, null);
 });
 
-check("the panel is opt-in and defaults to off", () => {
-  assert.match(indexSrc, /activityPanel: z\.boolean\(\)\.default\(false\)\.volatile\(\)/);
-  assert.match(clientSrc, /view\?\.value\?\.activityPanel === true/);
+check("the panel is on by default and only an explicit false turns it off", () => {
+  assert.match(indexSrc, /activityPanel: z\.boolean\(\)\.default\(true\)\.volatile\(\)/);
+  assert.match(clientSrc, /view\?\.value\?\.activityPanel !== false/);
 });
 
 check("hosts without the right sidebar simply get no panel", () => {

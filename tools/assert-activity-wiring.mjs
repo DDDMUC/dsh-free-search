@@ -17,16 +17,16 @@ const check = (name, fn) => {
   console.log(`  ok  ${name}`);
 };
 
-check("the config key is declared and defaults off", () => {
-  assert.match(index, /activityPanel: z\.boolean\(\)\.default\(false\)\.volatile\(\)/);
+check("the config key is declared and defaults on", () => {
+  assert.match(index, /activityPanel: z\.boolean\(\)\.default\(true\)\.volatile\(\)/);
 });
 
 check("the settings card round-trips the key", () => {
-  assert.match(client, /const \[activityPanel, setActivityPanel\] = react\.useState\(false\)/);
-  assert.match(client, /setActivityPanel\(v\.activityPanel === true\)/);
-  assert.match(client, /path: \["activityPanel"\], value: activityPanel === true/);
-  assert.match(client, /activityPanelController\?\.\(v\.activityPanel === true\)/);
-  assert.match(client, /activityPanelController\?\.\(activityPanel === true\)/);
+  assert.match(client, /const \[activityPanel, setActivityPanel\] = react\.useState\(true\)/);
+  assert.match(client, /setActivityPanel\(v\.activityPanel !== false\)/);
+  assert.match(client, /path: \["activityPanel"\], value: activityPanel !== false/);
+  assert.match(client, /activityPanelController\?\.\(v\.activityPanel !== false\)/);
+  assert.match(client, /activityPanelController\?\.\(activityPanel !== false\)/);
 });
 
 check("the registration is gated on the service, not on a stale flag", () => {
@@ -40,7 +40,7 @@ check("the registration is gated on the service, not on a stale flag", () => {
 check("the panel registers even when it is already enabled at load", () => {
   // The load path calls mountActivity directly; the settings sync path calls the
   // controller. Both must exist, or enabling it in a previous session does nothing.
-  assert.match(client, /if \(view\?\.value\?\.activityPanel === true\) mountActivity\(\)/);
+  assert.match(client, /if \(view\?\.value\?\.activityPanel !== false\) mountActivity\(\)/);
   assert.match(client, /activityPanelController = \(enabled\) => \{/);
 });
 
