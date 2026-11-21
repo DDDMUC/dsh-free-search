@@ -642,7 +642,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **99 个**零依赖断言脚本（合计 **1264 项**）
+仓库自带 **100 个**零依赖断言脚本（合计 **1272 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -683,6 +683,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-tavily-endpoint.mjs` | Tavily 兼容端点（#153）：留空 = 官方地址、base 自动补 `/search`、query/hash 被剥离、非 http(s) 拒绝、key 只走 Authorization 头、401 点名端点、配置与设置页接线 | `node tools/assert-tavily-endpoint.mjs`（8） |
 | `assert-hint-card.mjs` | 字段说明悬停卡：长说明不再占正文、卡片经 portal 挂到 body（否则被卡片 `overflow:clip` 裁掉）、Esc 关闭、聚焦打开/失焦关闭、悬停有延迟、触屏可点、卡片不越出视口、深浅色都覆盖、标签文字在图标按钮外（否则被压成一字一行）、点图标不连带切换复选框 | `node tools/assert-hint-card.mjs`（14） |
 | `assert-activity-panel.mjs` | 右侧栏搜索动态（#144）：记录只在内存不落盘、历史上限 50、来源上限 8、按会话隔离、进行中/完成状态、引擎结果分类（成功/失败类别/跳过原因）、清空、默认关闭、旧宿主无右侧栏服务时整体跳过、tab 正文+标题+引导入口注册、bridge 路由走统一守卫、工具分发携带会话、轮询随卸载停止、中英文案 | `node tools/assert-activity-panel.mjs`（15） |
+| `assert-activity-wiring.mjs` | 搜索动态接线（#144 回归）：配置项默认关闭且能完整往返、座位标志只在服务注入后才置位、加载时已开启也能挂载、tab id 三处共用、引导入口带 commandId 且标题/描述是函数、package.json 声明 `dsh-client-ui-sidebar-right` 为可选 peer 与 client inject、服务缺失时有 try/catch 兜底 | `node tools/assert-activity-wiring.mjs`（8） |
 | `assert-control-chrome.mjs` | 字段标题与复选框外观：标题字号/字重要高于正文、复选框由样式绘制（`appearance:none` + CSS 勾）、不确定态有独立横线、聚焦有描边、深浅色都覆盖、分组自动换行、全选不拉满整行、工具行复选框不再固定 150px | `node tools/assert-control-chrome.mjs`（9） |
 | `assert-checkbox-labels.mjs` | 复选框不再重复标签：左侧栏入口 / 斜杠命令 / 免 key 优先三项各只出现一次标签、标签位于复选框同一行、其它输入类字段仍保留独立标题 | `node tools/assert-checkbox-labels.mjs`（5） |
 | `assert-dropdown.mjs` | 自绘下拉：设置页不再有原生 `<select>`、11 处全部走同一个组件、保留 `onChange({ target })` 契约与 listbox 语义、键盘（↑↓/Home/End/Enter/Esc/Tab）可用、浮层限高滚动、深浅色都有样式 | `node tools/assert-dropdown.mjs`（6） |
@@ -1416,7 +1417,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Ninety-nine** zero-dependency assertion scripts ship with the repo (**1264 assertions** total)
+**One hundred** zero-dependency assertion scripts ship with the repo (**1272 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|
