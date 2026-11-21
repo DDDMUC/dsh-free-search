@@ -3,7 +3,15 @@
 // stdio is line-delimited) and not touching normalizeDisabledTools (which never
 // serialises anything).
 import assert from "node:assert/strict";
-import { createMcpHandler, responseCapChars, responseCapBytes, clipResponse, perDocumentBudget } from "../lib/mcp_server.js";
+import {
+  createMcpHandler,
+  responseCapChars,
+  responseCapBytes,
+  responseCapLine,
+  fitResponseLine,
+  clipResponse,
+  perDocumentBudget,
+} from "../lib/mcp_server.js";
 
 let checks = 0;
 const check = async (name, fn) => {
@@ -181,6 +189,82 @@ await check("research sizes each document from the remaining response budget", a
   await withEnv("0", async () => {
     assert.equal(perDocumentBudget(8), 8000);
   });
+});
+
+// The byte cap above measures the raw text. What actually goes over stdout is one
+// JSON line, where every `"` becomes `\"` and every newline becomes `\n` - up to
+// ~2x the bytes. These three shapes are what slipped through before the line cap.
+const lineBytes = (response) => Buffer.byteLength(JSON.stringify(response), "utf8");
+
+await check("quote-dense text stays under the stdio line", async () => {
+  await withEnv("48000", async () => {
+    const handler = createMcpHandler({ fetchPage: async () => ('{"k":"v","a\\\\b"}').repeat(6000), version: "test" });
+    const response = await callTool(handler, "web_fetch", { url: "https://example.com" });
+    assert.ok(lineBytes(response) <= responseCapLine(), `line is ${lineBytes(response)} bytes`);
+    assert.match(response.result.content[0].text, /MCP_MAX_RESPONSE_LINE_BYTES/);
+  });
+});
+
+await check("newline-dense text stays under the stdio line", async () => {
+  await withEnv("48000", async () => {
+    const handler = createMcpHandler({ fetchPage: async () => "x\n".repeat(24000), version: "test" });
+    const response = await callTool(handler, "web_fetch", { url: "https://example.com" });
+    assert.ok(lineBytes(response) <= responseCapLine(), `line is ${lineBytes(response)} bytes`);
+  });
+});
+
+await check("backslash-dense text stays under the stdio line", async () => {
+  await withEnv("48000", async () => {
+    const handler = createMcpHandler({ fetchPage: async () => "\\".repeat(48000), version: "test" });
+    const response = await callTool(handler, "web_fetch", { url: "https://example.com" });
+    assert.ok(lineBytes(response) <= responseCapLine(), `line is ${lineBytes(response)} bytes`);
+  });
+});
+
+await check("a response that already fits is not given a second truncation note", async () => {
+  await withEnv("48000", async () => {
+    const handler = createMcpHandler({ fetchPage: async () => "a".repeat(40000), version: "test" });
+    const response = await callTool(handler, "web_fetch", { url: "https://example.com" });
+    const notes = response.result.content[0].text.match(/\[truncated/g) ?? [];
+    assert.equal(notes.length, 0, "no truncation note should be added");
+  });
+});
+
+await check("the line cap never splits a surrogate pair", async () => {
+  await withEnv("48000", async () => {
+    // Emoji are 4 UTF-8 bytes and 2 UTF-16 code units; a naive cut leaves a lone high surrogate.
+    const handler = createMcpHandler({ fetchPage: async () => "😀".repeat(20000), version: "test" });
+    const response = await callTool(handler, "web_fetch", { url: "https://example.com" });
+    const text = response.result.content[0].text;
+    assert.ok(lineBytes(response) <= responseCapLine(), `line is ${lineBytes(response)} bytes`);
+    assert.equal(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/.test(text), false, "response contains a lone high surrogate");
+  });
+});
+
+await check("the line cap honours its environment override and 0", async () => {
+  const previous = process.env.MCP_MAX_RESPONSE_LINE_BYTES;
+  try {
+    process.env.MCP_MAX_RESPONSE_LINE_BYTES = "8000";
+    assert.equal(responseCapLine(), 8000);
+    const handler = createMcpHandler({ fetchPage: async () => ('{"k":"v"}').repeat(5000), version: "test" });
+    const response = await callTool(handler, "web_fetch", { url: "https://example.com" });
+    assert.ok(lineBytes(response) <= 8000, `line is ${lineBytes(response)} bytes`);
+
+    process.env.MCP_MAX_RESPONSE_LINE_BYTES = "0";
+    assert.equal(responseCapLine(), 0);
+    // 0 only disables the extra line pass; the char cap still applies.
+    const unlimited = await callTool(
+      createMcpHandler({ fetchPage: async () => "a".repeat(90000), version: "test" }),
+      "web_fetch",
+      { url: "https://example.com" }
+    );
+    const text = unlimited.result.content[0].text;
+    assert.equal(text, clipResponse("a".repeat(90000)), "line cap 0 must only skip the extra pass");
+    assert.equal(/MCP_MAX_RESPONSE_LINE_BYTES/.test(text), false, "no line-cap note should be added");
+  } finally {
+    if (previous === undefined) delete process.env.MCP_MAX_RESPONSE_LINE_BYTES;
+    else process.env.MCP_MAX_RESPONSE_LINE_BYTES = previous;
+  }
 });
 
 console.log(`OK: ${checks} mcp response-cap checks passed`);
