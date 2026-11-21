@@ -642,7 +642,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **98 个**零依赖断言脚本（合计 **1243 项**）
+仓库自带 **98 个**零依赖断言脚本（合计 **1249 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -696,7 +696,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-pool-prompt.mjs` | 入池策略与提示词一致（#152）：`off` 保留「只在显式选择时运行」、`auto` 改写为「最多一个、计费一次」、`multi` 改写为「每个引擎各计费一次」、Multi 池只在 `multi` 档列出按次计费引擎、中文文案同步 | `node tools/assert-pool-prompt.mjs`（5） |
 | `assert-fetch-ssrf-wiring.mjs` | #156 回归：`lib/index.js` 必须以 provider 自己的选项名 `allowedCidrs` 传白名单（写成 `allowFakeIpCidrs` 会被静默丢弃）、白名单能到达 `validateUrl`、错拼的键回退为空列表 | `node tools/assert-fetch-ssrf-wiring.mjs`（3） |
 | `assert-rail-keys.mjs` | 侧栏目录的渲染 key：每项圆点与文字两个子元素都必须带稳定 key，避免 React 在每次渲染时报 unique key 警告 | `node tools/assert-rail-keys.mjs`（3） |
-| `assert-mcp-response-cap.mjs` | #147 MCP stdio 单条响应上限：字符/字节双上限默认值与环境覆盖、0 关闭、多字节文本不超 64KB 行、handler 对结果与错误统一截断、web_fetch 先按上限收缩、research 文档按剩余预算均分 | `node tools/assert-mcp-response-cap.mjs`（12） |
+| `assert-mcp-response-cap.mjs` | #147 MCP stdio 单条响应上限：字符/字节/整行三重上限默认值与环境覆盖、0 关闭、多字节文本不超 64KB 行、**JSON 转义后的整行不超 64KB**（引号/换行/反斜杠密集三种形状）、不重复叠加截断提示、不切在代理对中间、handler 对结果与错误统一截断、web_fetch 先按上限收缩、research 文档按剩余预算均分 | `node tools/assert-mcp-response-cap.mjs`（18） |
 | `assert-fetch-ssrf.mjs` | 抓取 SSRF 防护：公网/私网/保留地址判定、DNS 解析到私网拒绝、localhost 与 IP 字面量拒绝、`http://` 与 `https://` 放行而其他协议与带凭据 URL 拒绝、http 目标解析到私网同样拒绝、fake-ip 网段默认拒绝且仅按配置放行、IPv6 ULA 显式放行、放行后仍拒绝回环/IPv4 私网/链路本地、provider 接线与设置项 | `node tools/assert-fetch-ssrf.mjs`（10） |
 | `assert-fetch-http.mjs` | 明文 http 目标（#143）：直连层按协议选 transport、http 重定向可跟随、provider 不再在入口拒绝 http 而交给 tier 链、全层失败报直连原因而不再报 only https、非 http(s) 协议仍拒、`agentForUrl` 为 http 目标选明文隧道 agent、经 `CONNECT` 隧道抓取 http 页面 | `node tools/assert-fetch-http.mjs`（7） |
 | `assert-mcp.mjs` | MCP stdio 面：initialize 协议协商、tools/list 的 JSON Schema、tools/call 文本结果、工具错误与 JSON-RPC 错误区分、必填参数校验、显式付费引擎与新 provider、advanced/multi/domain/platform/video/research/weather 新工具、bin/files 打包 | `node tools/assert-mcp.mjs`（10） |
@@ -1415,7 +1415,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Ninety-eight** zero-dependency assertion scripts ship with the repo (**1243 assertions** total)
+**Ninety-eight** zero-dependency assertion scripts ship with the repo (**1249 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|
