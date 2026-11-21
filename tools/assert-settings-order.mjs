@@ -16,16 +16,16 @@ const indexOf = (needle) => client.indexOf(needle);
 
 check("the prompt section comes before the toggles", () => {
   const prompt = indexOf('"data-dsh-section": "prompt"');
-  const sidebar = indexOf("t.sidebarEntryLabel,");
+  const sidebar = indexOf("children: t.sidebarEntryLabel");
   assert.ok(prompt > 0, "prompt section not found");
   assert.ok(sidebar > 0, "sidebar toggle not found");
   assert.ok(prompt < sidebar, "toggles must render after the prompt section");
 });
 
 check("the toggles stay together and in order", () => {
-  const sidebar = indexOf("t.sidebarEntryLabel,");
-  const slash = indexOf("t.slashCommandsLabel,");
-  const keyless = indexOf("t.keylessFirstLabel,");
+  const sidebar = indexOf("children: t.sidebarEntryLabel");
+  const slash = indexOf("children: t.slashCommandsLabel");
+  const keyless = indexOf("children: t.keylessFirstLabel");
   assert.ok(sidebar < slash && slash < keyless, "toggle order changed");
   // They must be adjacent: no other field label between them.
   const between = client.slice(sidebar, keyless);
