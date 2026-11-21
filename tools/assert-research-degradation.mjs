@@ -5,6 +5,7 @@
 // 运行：node tools/assert-research-degradation.mjs
 import { readFileSync, existsSync, rmSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { createRequire } from "node:module";
 import { execFileSync } from "node:child_process";
 
 let pass = 0;
@@ -65,10 +66,23 @@ assert(!/DEADLINE_MS/.test(indexSrc), "index.js 不引用 DEADLINE_MS（普通�
 section("④ 缓存路径可配置");
 const cacheSrc = readFileSync(new URL("../lib/cache.js", import.meta.url), "utf8");
 assert(/process\.env\.RESEARCH_CACHE_DIR/.test(cacheSrc), "cache.js 读取 RESEARCH_CACHE_DIR");
-// 真跑一次：指向临时目录，确认 db 建在那
+// 真跑一次：指向临时目录，确认 db 建在那。node:sqlite 是 22.5 才有的，
+// package.json 只要求 >=20，所以 Node 20 上 cache.js 会走 no-op 分支，
+// 这时「文件不存在」是预期结果，不能算失败。
+const sqliteAvailable = (() => {
+  try {
+    const { DatabaseSync } = createRequire(import.meta.url)("node:sqlite");
+    return typeof DatabaseSync === "function";
+  } catch {
+    return false;
+  }
+})();
 const dbThere = existsSync(`${CACHE_DIR}/research.db`);
-assert(dbThere, "RESEARCH_CACHE_DIR 生效：research.db 建在指定目录（本机 Node 支持 node:sqlite 时）");
-if (!dbThere) console.log("      （若本机 Node <22.5，无 node:sqlite 属预期 no-op，此项会 FAIL——请按环境判读）");
+if (sqliteAvailable) {
+  assert(dbThere, "RESEARCH_CACHE_DIR 生效：research.db 建在指定目录");
+} else {
+  assert(!dbThere, "无 node:sqlite 时按预期降级：不建 research.db");
+}
 cleanupCacheDir();
 
 // ---------- ⑤ budget.exhausted 契约 ----------
