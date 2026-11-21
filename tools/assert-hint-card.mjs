@@ -103,4 +103,32 @@ check("the panel never overflows the viewport", () => {
   assert.match(block, /window\.innerHeight - margin/);
 });
 
+check("the label text sits beside the icon button, not inside it", () => {
+  // The button is 15px wide (icon only). Putting the label inside it squeezes
+  // the label into a one-character-wide column.
+  const start = client.indexOf("function HintCard(");
+  const end = client.indexOf("\n    function FreeSearchSummary()", start);
+  const block = client.slice(start, end);
+  const buttonStart = block.indexOf("const trigger =");
+  const buttonEnd = block.indexOf("return react_jsx_runtime.jsxs(\"span\", {", buttonStart);
+  const button = block.slice(buttonStart, buttonEnd);
+  assert.equal(/dshfs-hintText/.test(button), false, "the label text must not live inside the icon button");
+  // The host lists the text span first, then the button.
+  const host = block.slice(buttonEnd);
+  const textAt = host.indexOf('className: "dshfs-hintText"');
+  const triggerAt = host.indexOf("trigger,", textAt);
+  assert.ok(textAt > 0, "the label text span is missing from the host");
+  assert.ok(triggerAt > textAt, "the label text must render before the icon button");
+});
+
+check("clicking the icon does not toggle the surrounding checkbox", () => {
+  // The icon lives inside <label class="dshfs-platform">, so a click would
+  // otherwise flip the checkbox as a side effect.
+  const start = client.indexOf("function HintCard(");
+  const end = client.indexOf("\n    function FreeSearchSummary()", start);
+  const block = client.slice(start, end);
+  assert.match(block, /event\.preventDefault\(\)/);
+  assert.match(block, /event\.stopPropagation\(\)/);
+});
+
 console.log(`OK: ${checks} hint card checks passed`);
