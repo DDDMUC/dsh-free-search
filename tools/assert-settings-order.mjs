@@ -44,4 +44,19 @@ check("the nav rail order still matches the page", () => {
   assert.deepEqual(nav, ["engines", "fallback", "pools", "behavior", "fetch", "performance", "prompt"]);
 });
 
+check("the three global toggles share one row", () => {
+  // They are one visual group at the bottom of the page, so they must sit in a
+  // single flex row rather than three stacked fields.
+  assert.match(client, /className: "dshfs-toggles"/);
+  const row = client.match(/\.dshfs-toggles\{[^}]*\}/)?.[0] ?? "";
+  assert.ok(row.includes("display:flex"), "the toggle row must be a flex container");
+  assert.ok(row.includes("flex-wrap:wrap"), "the toggle row must wrap on narrow screens");
+  // All three labels must live inside that one container.
+  const at = client.indexOf("className: \"dshfs-toggles\"");
+  const toggles = client.slice(at, client.indexOf("dshfs-resultRow", at));
+  for (const label of ["t.sidebarEntryLabel", "t.slashCommandsLabel", "t.keylessFirstLabel"]) {
+    assert.ok(toggles.includes("children: " + label), label + " is not inside the toggle row");
+  }
+});
+
 console.log(`OK: ${checks} settings order checks passed`);

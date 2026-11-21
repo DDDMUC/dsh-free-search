@@ -642,7 +642,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **98 个**零依赖断言脚本（合计 **1242 项**）
+仓库自带 **98 个**零依赖断言脚本（合计 **1243 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -687,7 +687,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-dropdown.mjs` | 自绘下拉：设置页不再有原生 `<select>`、11 处全部走同一个组件、保留 `onChange({ target })` 契约与 listbox 语义、键盘（↑↓/Home/End/Enter/Esc/Tab）可用、浮层限高滚动、深浅色都有样式 | `node tools/assert-dropdown.mjs`（6） |
 | `assert-engine-setting-fields.mjs` | 引擎设置字段签名：每个 `engineSettingField` 调用都按 `(id, label, value, setter, options)` 传参、没有把 label 当 id、Tavily 端点字段接线正确 | `node tools/assert-engine-setting-fields.mjs`（3） |
 | `assert-fallback-row-layout.mjs` | 回退优先级行对齐：没有高级设置的引擎也渲染不可见占位按钮、占位不参与交互、设置按钮列固定宽度、key 输入框不再撑满剩余空间 | `node tools/assert-fallback-row-layout.mjs`（4） |
-| `assert-settings-order.mjs` | 设置页顺序：提示词段在三个全局开关之前、开关彼此相邻且保持原顺序、提示词是最后一个带分区的段、右侧目录顺序与页面一致 | `node tools/assert-settings-order.mjs`（4） |
+| `assert-settings-order.mjs` | 设置页顺序：提示词段在三个全局开关之前、开关彼此相邻且保持原顺序、提示词是最后一个带分区的段、右侧目录顺序与页面一致 | `node tools/assert-settings-order.mjs`（5） |
 | `assert-header-description.mjs` | 卡片标题区只显示插件名（去掉副标题那一行）；摘要文案仍保留给插件列表行使用；废弃样式已清 | `node tools/assert-header-description.mjs`（4） |
 | `assert-mobile-layout.mjs` | 移动端布局（≤560px）：桌面 150px 分区留白由 `dshfs-page` 类承载而非内联样式、移动端只覆盖该类 padding、移动端块不含已删除的 `.dshfs-description` / `.dshfs-select` 规则、分区 Tab 在文档流内不依赖宿主头部高度 | `node tools/assert-mobile-layout.mjs`（8） |
 | `assert-multikey-layout.mjs` | 多 key 输入的行高（#154 回归）：输入框是裸 textarea 不带提示段落、格式说明只在 placeholder / title、双语提示仍完整、废弃样式已删 | `node tools/assert-multikey-layout.mjs`（4） |
@@ -1415,7 +1415,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Ninety-eight** zero-dependency assertion scripts ship with the repo (**1242 assertions** total)
+**Ninety-eight** zero-dependency assertion scripts ship with the repo (**1243 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|
