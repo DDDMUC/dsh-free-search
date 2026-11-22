@@ -246,4 +246,45 @@ check("the history list shows a turn when one is known", () => {
   assert.match(client, /turnN: "Turn \{n\}"/);
 });
 
+check("a cache hit names its engine at the hit site, not only at finish", () => {
+  activity.resetForTests();
+  hook({ agent: { id: session } }, () => {
+    const run = activity.begin({ query: "hit-site" });
+    // The provider's early-return path calls this before any engine loop runs.
+    activity.noteCacheHit(run, "bing", 10);
+    activity.finish(run, {
+      result: { provider: "bing", sources: new Array(10).fill({ url: "https://x.example.com" }), _cache: "hit" },
+    });
+  });
+  const latest = activity.snapshot(session).latest;
+  assert.equal(latest.engines.length, 1, "the hit site must record the engine");
+  assert.equal(latest.engines[0].id, "bing");
+  assert.equal(latest.engines[0].cached, true);
+  assert.equal(latest.engines[0].count, 10);
+});
+
+check("a repeated cache hit does not duplicate the engine", () => {
+  activity.resetForTests();
+  hook({ agent: { id: session } }, () => {
+    const run = activity.begin({ query: "twice" });
+    activity.noteCacheHit(run, "bing", 10);
+    activity.noteCacheHit(run, "bing", 10);
+    activity.finish(run, { result: { provider: "bing", sources: [], _cache: "hit" } });
+  });
+  assert.equal(activity.snapshot(session).latest.engines.length, 1, "the same engine must appear once");
+});
+
+check("a cache hit with no stored provider still says cache, not nothing", () => {
+  activity.resetForTests();
+  hook({ agent: { id: session } }, () => {
+    const run = activity.begin({ query: "unknown-engine" });
+    activity.noteCacheHit(run, undefined, 4);
+    activity.finish(run, { result: { sources: [], _cache: "hit" } });
+  });
+  const engines = activity.snapshot(session).latest.engines;
+  assert.equal(engines.length, 1);
+  assert.equal(engines[0].id, "cache", "an unknown provider falls back to a cache label");
+  assert.equal(engines[0].cached, true);
+});
+
 console.log(`OK: ${checks} activity pipeline checks passed`);
