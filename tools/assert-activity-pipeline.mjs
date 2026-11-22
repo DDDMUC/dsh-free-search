@@ -173,4 +173,41 @@ check("unattributed records are only shared when nothing is attributed", () => {
   assert.equal(other.latest, null);
 });
 
+check("engine events survive the concurrency queue", () => {
+  // engineRuntime.run() queues the callback, so the AsyncLocalStorage scope is
+  // gone by the time it executes. Without the module-level fallback every engine
+  // event was dropped and the panel read "no engines" next to real results.
+  activity.resetForTests();
+  hook({ agent: { id: session } }, () => {
+    const run = activity.begin({ query: "queued" });
+    // Simulate leaving the run's ALS scope before the engine events fire.
+    activity.engineStart(null, "bing");
+    activity.engineEnd(null, "bing", { count: 9 });
+    activity.finish(run, { result: { sources: [{ url: "https://a.example.com", title: "a" }] } });
+  });
+  const latest = activity.snapshot(session).latest;
+  assert.equal(latest.engines.length, 1, "the engine event must attach to the active run");
+  assert.equal(latest.engines[0].id, "bing");
+  assert.equal(latest.engines[0].count, 9);
+});
+
+check("a cache hit reports the engine that filled the cache", () => {
+  activity.resetForTests();
+  hook({ agent: { id: session } }, () => {
+    const run = activity.begin({ query: "cached" });
+    activity.finish(run, {
+      result: {
+        provider: "bing",
+        sources: [{ url: "https://c.example.com", title: "c" }],
+        _cache: "hit",
+      },
+    });
+  });
+  const latest = activity.snapshot(session).latest;
+  assert.equal(latest.cache, "hit");
+  assert.equal(latest.engines.length, 1, "a cache hit must name the engine behind it");
+  assert.equal(latest.engines[0].id, "bing");
+  assert.equal(latest.engines[0].cached, true);
+});
+
 console.log(`OK: ${checks} activity pipeline checks passed`);
