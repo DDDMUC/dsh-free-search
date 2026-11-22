@@ -15,10 +15,19 @@ const check = (name, fn) => {
 
 const session = "session-04a2982a";
 
-const hook = (exec, next) =>
-  typeof exec?.agent?.sessionId === "string" && exec.agent.sessionId !== ""
-    ? activity.runWith({ sessionId: exec.agent.sessionId }, () => next())
-    : next();
+// Mirror of the plugin's hook: the host Agent exposes `id` (a SessionId), and
+// only older/newer shapes would carry `sessionId`, so both are accepted.
+const sessionOf = (exec) => {
+  const agent = exec?.agent;
+  if (typeof agent?.sessionId === "string" && agent.sessionId !== "") return agent.sessionId;
+  if (typeof agent?.id === "string") return agent.id;
+  return "";
+};
+
+const hook = (exec, next) => {
+  const sessionId = sessionOf(exec);
+  return sessionId === "" ? next() : activity.runWith({ sessionId }, () => next());
+};
 
 const runSearch = () => {
   const run = activity.begin({ query: "deepseek 4.1 pro release date" });
@@ -42,7 +51,7 @@ const runSearch = () => {
 check("the hook exposes the session to the search chain", () => {
   activity.resetForTests();
   let seen = "";
-  hook({ agent: { sessionId: session } }, () => {
+  hook({ agent: { id: session } }, () => {
     seen = activity.ctxSession();
   });
   assert.equal(seen, session);
@@ -50,7 +59,7 @@ check("the hook exposes the session to the search chain", () => {
 
 check("a record made under the hook is owned by that session", () => {
   activity.resetForTests();
-  hook({ agent: { sessionId: session } }, runSearch);
+  hook({ agent: { id: session } }, runSearch);
   const snap = activity.snapshot(session);
   assert.equal(snap.history.length, 1);
   assert.equal(snap.latest.sessionId, session);
@@ -59,7 +68,7 @@ check("a record made under the hook is owned by that session", () => {
 
 check("the in-flight run is visible with its current engine", () => {
   activity.resetForTests();
-  hook({ agent: { sessionId: session } }, () => {
+  hook({ agent: { id: session } }, () => {
     const run = activity.begin({ query: "live" });
     activity.runWith(run, () => {
       activity.engineStart(run, "searxng");
@@ -75,7 +84,7 @@ check("the in-flight run is visible with its current engine", () => {
 
 check("outcomes, counts and sources survive", () => {
   activity.resetForTests();
-  hook({ agent: { sessionId: session } }, runSearch);
+  hook({ agent: { id: session } }, runSearch);
   const latest = activity.snapshot(session).latest;
   assert.equal(latest.totalResults, 2);
   assert.equal(latest.sources[0].host, "a.example.com");
@@ -97,11 +106,11 @@ check("an unattributed call stays visible instead of vanishing", () => {
 
 check("one session does not read another session's records", () => {
   activity.resetForTests();
-  hook({ agent: { sessionId: "s1" } }, () => {
+  hook({ agent: { id: "s1" } }, () => {
     const run = activity.begin({ query: "q1" });
     activity.finish(run, { result: { sources: [] } });
   });
-  hook({ agent: { sessionId: "s2" } }, () => {
+  hook({ agent: { id: "s2" } }, () => {
     const run = activity.begin({ query: "q2" });
     activity.finish(run, { query: "q2", result: { sources: [] } });
   });
@@ -112,7 +121,7 @@ check("one session does not read another session's records", () => {
 check("the counters the footer prints are wired", () => {
   activity.resetForTests();
   activity.noteHook();
-  hook({ agent: { sessionId: session } }, runSearch);
+  hook({ agent: { id: session } }, runSearch);
   const stats = activity.stats();
   assert.equal(stats.sawHook, 1);
   assert.equal(stats.began, 1);
@@ -139,6 +148,29 @@ check("the panel component polls and stops on unmount", () => {
   assert.match(client, /timer = setTimeout\(loop, 2000\)/);
   assert.match(client, /if \(timer !== null\) clearTimeout\(timer\)/);
   assert.match(client, /bridgeActivity\(sessionId\)/);
+});
+
+check("the host's Agent shape is what the hook reads", () => {
+  // dsh-agent declares `readonly id: SessionId` and nothing else; reading
+  // `sessionId` alone made every record unattributed, so the panel showed
+  // every session's history. Keep both shapes accepted and pin the real one.
+  const index = fs.readFileSync(`${repo}/lib/index.js`, "utf8");
+  const at = index.indexOf('sctx.on("tools/execute"');
+  const body = index.slice(at, at + 700);
+  assert.match(body, /agent\.id/, "the hook must fall back to agent.id");
+  assert.match(body, /agent\.sessionId/, "agent.sessionId is still accepted for other hosts");
+});
+
+check("unattributed records are only shared when nothing is attributed", () => {
+  activity.resetForTests();
+  // One attributed record is enough to make attribution authoritative.
+  hook({ agent: { id: "s1" } }, () => {
+    const run = activity.begin({ query: "q1" });
+    activity.finish(run, { result: { sources: [] } });
+  });
+  const other = activity.snapshot("s2");
+  assert.equal(other.history.length, 0, "s2 must not see s1's records");
+  assert.equal(other.latest, null);
 });
 
 console.log(`OK: ${checks} activity pipeline checks passed`);
