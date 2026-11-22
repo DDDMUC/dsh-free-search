@@ -45,7 +45,7 @@ check("dynamic inject dependency lists only name real services", () => {
   assert.equal(deps.length >= 8, true, "expected the known inject blocks");
   for (const list of deps) {
     for (const name of [...list.matchAll(/"([^"]+)"/g)].map((m) => m[1])) {
-      assert.match(name, /^(webServer|settings|tools|systemPrompt|webStartup|connection\.authentication)$/, `unexpected inject dependency ${name}`);
+      assert.match(name, /^(webServer|settings|tools|systemPrompt|webStartup|sessionProjections|connection\.authentication)$/, `unexpected inject dependency ${name}`);
     }
   }
 });
