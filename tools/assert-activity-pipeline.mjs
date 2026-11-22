@@ -210,4 +210,40 @@ check("a cache hit reports the engine that filled the cache", () => {
   assert.equal(latest.engines[0].cached, true);
 });
 
+check("a record carries the turn it ran in", () => {
+  activity.resetForTests();
+  hook({ agent: { id: session } }, () => {
+    const run = activity.begin({ query: "t3", turn: 3 });
+    activity.finish(run, { result: { sources: [] } });
+  });
+  const latest = activity.snapshot(session).latest;
+  assert.equal(latest.turn, 3, "the record must keep its turn");
+});
+
+check("the turn comes from the tool scope when begin does not pass one", () => {
+  activity.resetForTests();
+  activity.withToolScope({ sessionId: session, turn: 7 }, () => {
+    const run = activity.begin({ query: "t7" });
+    activity.finish(run, { result: { sources: [] } });
+  });
+  assert.equal(activity.snapshot(session).latest.turn, 7, "begin must read the turn off the scope");
+});
+
+check("an unknown turn degrades to 0 instead of breaking the record", () => {
+  activity.resetForTests();
+  hook({ agent: { id: session } }, () => {
+    const run = activity.begin({ query: "no-turn" });
+    activity.finish(run, { result: { sources: [] } });
+  });
+  assert.equal(activity.snapshot(session).latest.turn, 0);
+});
+
+check("the history list shows a turn when one is known", () => {
+  const client = fs.readFileSync(`${repo}/lib/client.js`, "utf8");
+  assert.match(client, /dsfs-act-histTurn/, "the history row needs a turn chip");
+  assert.match(client, /entry\.turn > 0/, "the chip must be conditional");
+  assert.match(client, /turnN: "第 \{n\} 轮"/);
+  assert.match(client, /turnN: "Turn \{n\}"/);
+});
+
 console.log(`OK: ${checks} activity pipeline checks passed`);
