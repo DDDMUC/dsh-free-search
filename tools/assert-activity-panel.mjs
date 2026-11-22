@@ -138,7 +138,9 @@ check("the bridge routes are POST-only and session-scoped", () => {
 
 check("tool dispatch carries the session so the chain can attribute a search", () => {
   assert.match(indexSrc, /sctx\.on\("tools\/execute"/);
-  assert.match(indexSrc, /exec\?\.agent\?\.sessionId/);
+  // The host's Agent exposes `id` (a SessionId), not `sessionId`; both are accepted.
+  assert.match(indexSrc, /exec\?\.agent/);
+  assert.match(indexSrc, /agent\.id/);
   assert.match(indexSrc, /activityRunWith\(\{ sessionId \}/);
 });
 
