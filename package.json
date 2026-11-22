@@ -139,6 +139,7 @@
     }
   },
   "bin": {
-    "dsh-free-search-mcp": "./bin/mcp.js"
+    "dsh-free-search-mcp": "./bin/mcp.js",
+    "dsh-free-search": "./bin/restore.js"
   }
 }
