@@ -141,7 +141,8 @@ check("tool dispatch carries the session so the chain can attribute a search", (
   // The host's Agent exposes `id` (a SessionId), not `sessionId`; both are accepted.
   assert.match(indexSrc, /exec\?\.agent/);
   assert.match(indexSrc, /agent\.id/);
-  assert.match(indexSrc, /activityRunWith\(\{ sessionId \}/);
+  // The hook now carries session + turn through the tool scope.
+  assert.match(indexSrc, /activityWithToolScope\(\{ sessionId, turn \}/);
 });
 
 check("the panel polls only while mounted and stops on unmount", () => {
