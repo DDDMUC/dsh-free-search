@@ -80,8 +80,7 @@ await check("a skipped browser tier still explains itself", async () => {
 await check("both HTML return points slim the body before the host truncates it", async () => {
   // #161 与这里共用同一次改动：HTML 结果必须先瘦身。
   // 直接点击与浏览器层都必须调用 slimHtml（或复用已算好的 slim 变量）。
-  assert.match(source, /const slim = slimHtml\(r\.text\)/, "the direct tier slims before returning");
-  assert.match(source, /content: stripLoneSurrogates\(slim\)/, "the direct tier returns the slimmed body");
+  assert.match(source, /content: stripLoneSurrogates\(slimHtml\(r\.text\)\)/, "the direct tier slims before returning");
   assert.match(source, /content: stripLoneSurrogates\(slimHtml\(html\)\)/, "the browser tier slims too");
   // 层的走留仍按原始长度：瘦身后的长度不是"这一层有没有拿到页面"的判据。
   assert.match(source, /r\.text\.length >= T1_MIN_CHARS/, "the tier gate keeps using the raw length");
