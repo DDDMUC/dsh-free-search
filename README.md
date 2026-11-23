@@ -652,7 +652,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **99 个**零依赖断言脚本（合计 **1261 项**）
+仓库自带 **104 个**零依赖断言脚本（合计 **1321 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -693,6 +693,8 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-tavily-endpoint.mjs` | Tavily 兼容端点（#153）：留空 = 官方地址、base 自动补 `/search`、query/hash 被剥离、非 http(s) 拒绝、key 只走 Authorization 头、401 点名端点、配置与设置页接线 | `node tools/assert-tavily-endpoint.mjs`（8） |
 | `assert-hint-card.mjs` | 字段说明悬停卡：长说明不再占正文、卡片经 portal 挂到 body（否则被卡片 `overflow:clip` 裁掉）、Esc 关闭、聚焦打开/失焦关闭、悬停有延迟、触屏可点、卡片不越出视口、深浅色都覆盖、标签文字在图标按钮外（否则被压成一字一行）、点图标不连带切换复选框 | `node tools/assert-hint-card.mjs`（14） |
 | `assert-restore-cli.mjs` | 卸载后清理入口（#159）：`restore` 子命令不依赖插件运行时、只删插件自己写进去的 `searchProvider: ddg` / `fetchProvider: fs-quality-fetch`、用户显式选的 provider 不动、只剩 id+name 的空行整行删除、注释/顺序/引号/CRLF 保留、写入前备份、重复运行无副作用、`--dry-run` 不写、`--profile` 只清指定 profile、参数不明时拒绝写入 | `node tools/assert-restore-cli.mjs`（12） |
+| `assert-upgrade-version.mjs` | 一键升级以实际安装结果为准（#163）：读回 profile 里真正落下的版本、与 registry 比较、冷却拦截单独报 `upgrade-blocked`、成功路径报 installed 而非 latest、读不到安装状态时不算成功、界面 toast 用 installed、被拦截时用告警色并保留原文案 | `node tools/assert-upgrade-version.mjs`（8） |
+| `assert-browser-path.mjs` | T1.5 浏览器路径（#160）：留空仍走内置候选表、纯空格等同空值、自定义路径原样使用、路径不存在时不回落到其它浏览器、探测缓存随配置失效、provider 收到的是配置值而非硬编码、配置项默认空、设置页能完整读写、输入框只在 T1.5 开启时出现、中英文提示都写明不回落规则 | `node tools/assert-browser-path.mjs`（9） |
 | `assert-control-chrome.mjs` | 字段标题与复选框外观：标题字号/字重要高于正文、复选框由样式绘制（`appearance:none` + CSS 勾）、不确定态有独立横线、聚焦有描边、深浅色都覆盖、分组自动换行、全选不拉满整行、工具行复选框不再固定 150px | `node tools/assert-control-chrome.mjs`（9） |
 | `assert-checkbox-labels.mjs` | 复选框不再重复标签：左侧栏入口 / 斜杠命令 / 免 key 优先三项各只出现一次标签、标签位于复选框同一行、其它输入类字段仍保留独立标题 | `node tools/assert-checkbox-labels.mjs`（5） |
 | `assert-dropdown.mjs` | 自绘下拉：设置页不再有原生 `<select>`、11 处全部走同一个组件、保留 `onChange({ target })` 契约与 listbox 语义、键盘（↑↓/Home/End/Enter/Esc/Tab）可用、浮层限高滚动、深浅色都有样式 | `node tools/assert-dropdown.mjs`（6） |
@@ -1436,7 +1438,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**Ninety-nine** zero-dependency assertion scripts ship with the repo (**1261 assertions** total)
+**One hundred and four** zero-dependency assertion scripts ship with the repo (**1321 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|
