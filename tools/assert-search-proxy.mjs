@@ -137,6 +137,13 @@ check("the setting is described as search-only, in both languages", () => {
   assert.match(client, /searchProxyHint: "只用于搜索引擎的请求/);
   assert.match(client, /searchProxyLabel: "Search proxy"/);
   assert.match(client, /searchProxyHint: "Search-engine requests only/);
+  // 卡片里必须说明支持哪几种代理——用户不该靠猜地址写法。
+  assert.match(client, /searchProxyHint: "[^"]*http \/ https[^"]*socks5[^"]*/, "the hint names the supported schemes");
+  assert.match(client, /searchProxyHint: "Search-engine requests only[^"]*socks5[^"]*/, "the en hint names socks5 too");
+  // 长说明进悬停卡片，不再另起一行占版面。
+  const at = client.indexOf("t.searchProxyLabel");
+  const before = client.slice(Math.max(0, at - 260), at);
+  assert.match(before, /HintCard, \{/, "the label lives inside the hover card");
 });
 
 check("SOCKS5 is implemented here, not assumed from a dependency", () => {
