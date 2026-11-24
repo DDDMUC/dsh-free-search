@@ -642,7 +642,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **108 个**零依赖断言脚本（合计 **1372 项**）
+仓库自带 **109 个**零依赖断言脚本（合计 **1388 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -660,6 +660,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-keyless-first.mjs` | 免 key 优先：`keylessFirst` 默认关、开启后先走免 key 档，限流/鉴权/网络失败改用 key 并休息、其他失败不动用 key、无 key 行为不变，覆盖 Tavily、Exa 与 multi 模式 | `node tools/assert-keyless-first.mjs`（13） |
 | `assert-zhipu.mjs` | 智谱搜索：catalog/回退链、请求头与 engine/count/recency、Sogou 步进、响应映射、错误分类、无 key | `node tools/assert-zhipu.mjs`（6） |
 | `assert-deepseek-snippets.mjs` | deepseek-tools 摘要：默认 600、0 不截断、总预算上限、短条目保留 | `node tools/assert-deepseek-snippets.mjs`（5） |
+| `assert-deepseek-quality.mjs` | deepseek-tools 质量信号（#165）：`rerank_score`/`authority` 透传为 `score`/`authority`、官方 `site_name` 与兼容网关的 `site` 都认、`authority = -1`（未知）保留、缺失评分与 0 分可区分、`minScore` 默认不过滤、按分数裁在去重之后与条数之前、过滤到空时给出说明、空响应不产生说明、配置项与两处调用接线、设置页钳制到 0~3、工具 schema 同步声明新字段（`additionalProperties:false` 否则判非法）、合并保持字段、MCP 侧读环境变量、两处渲染都收成两位小数 | `node tools/assert-deepseek-quality.mjs`（16） |
 | `assert-deepseek-official.mjs` | DeepSeek Official：Anthropic Messages + deepseek_web_search、title/snippet/site_name/page_age 映射、citation 回退、源码守卫 | `node tools/assert-deepseek-official.mjs`（4） |
 | `assert-bing-relevance.mjs` | Bing 相关性（#112）：单字中文 token 被剔除、无关替代 SERP 被拒、真正相关的结果通过、只命中通用引擎名的整批被拒、单一 token 覆盖一半时放行、单字/纯数字查询的显式行为 | `node tools/assert-bing-relevance.mjs`（6） |
 | `assert-relevance-pools.mjs` | 相关性守卫与语言池（#132/#133）：AnySearch 无关批次判空、相关批次保留、shared.js 守卫被 anysearch/searxng/ddg/ddg-lite/degoog/keenable 使用、doctor 地区默认文案与语言池告警、缓存 key 随 zhPool/enPool 变化 | `node tools/assert-relevance-pools.mjs`（5） |
@@ -1425,7 +1426,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**One hundred and eight** zero-dependency assertion scripts ship with the repo (**1372 assertions** total)
+**One hundred and nine** zero-dependency assertion scripts ship with the repo (**1388 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|
