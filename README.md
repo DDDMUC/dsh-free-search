@@ -652,7 +652,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **106 个**零依赖断言脚本（合计 **1345 项**）
+仓库自带 **110 个**零依赖断言脚本（合计 **1395 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -697,6 +697,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-upgrade-version.mjs` | 一键升级以实际安装结果为准（#163）：读回 profile 里真正落下的版本、与 registry 比较、冷却拦截单独报 `upgrade-blocked`、成功路径报 installed 而非 latest、读不到安装状态时不算成功、界面 toast 用 installed、被拦截时用告警色并保留原文案 | `node tools/assert-upgrade-version.mjs`（8） |
 | `assert-search-proxy.mjs` | 搜索代理（#155）的规则层：http/https/socks5 地址解析、凭据百分号解码、无 scheme 视为 http、socks5h 交给代理解析、非法协议拒绝、`no_proxy` 优先于显式设置、空设置不接管环境变量代理、活动代理是配置层写入的模块状态、搜索路径不再直连全局 `fetch`、该设置只管引擎（天气/更新检查/抓取层保持平台 fetch）、界面中英双语文案、SOCKS5 由本仓库自己实现、重定向三档语义、abort/timeout 保持原生 error 名、HTTP/1.1 请求必须走我们自己的隧道 socket（`agent: false` 与 `https.request` 都会静默绕过代理）、新增依赖为零 | `node tools/assert-search-proxy.mjs`（18） |
 | `assert-proxy-tunnel.mjs` | 代理隧道实测（#155）：本地 CONNECT 代理与手写 SOCKS5 服务端，验证方法/路径/body/host 透传、Basic 凭据解码、每次请求一条隧道且响应后关闭、`follow`/`manual`/`error` 三档重定向语义、303 把 POST 降为 GET、gzip 解压、CONNECT 407 明确报错、代理接受 CONNECT 后立刻断开时不回落直连、不可达代理快速失败、`no_proxy` 绕过隧道、SOCKS5 无认证与用户名密码两档、认证被拒与断线报错 | `node tools/assert-proxy-tunnel.mjs`（17） |
+| `assert-proxy-wiring.mjs` | 搜索代理的接线回归（#155）：绕过 `searchOnce` 的入口（`runEngineTest` / `runMultiSearch` / 设置页测试 bridge）自己写活动值、统一出口挂「现读配置」的兜底 resolver、活动值优先于 resolver、配置为空仍直连、resolver 抛错时降级为直连而不是崩溃、`proxyFetch` 在没人写过活动值时不忽略配置的代理 | `node tools/assert-proxy-wiring.mjs`（7） |
 | `assert-fetch-alpn.mjs` | #162：https 每一跳都声明 `ALPNProtocols: ["http/1.1"]`（只此一个，不带 h2——响应按 HTTP/1.1 解析）、http 目标不声明、按重定向目标的协议逐跳判断、browser 层被跳过时 errors 里写明原因、两个 HTML 返回点都经过瘦身 | `node tools/assert-fetch-alpn.mjs`（7） |
 | `assert-fetch-html-slim.mjs` | #161：`slimHtml()` 去掉 style/script/noscript/template/注释、只清超长 base64 `data:`（短图标保留）、普通页面逐字节不变、幂等、大小写与跨行标签、构造一个 260 KB 内联 CSS 的页面后同样 200,000 字符预算下正文确实在 | `node tools/assert-fetch-html-slim.mjs`（9） |
 | `assert-browser-path.mjs` | T1.5 浏览器路径（#160）：留空仍走内置候选表、纯空格等同空值、自定义路径原样使用、路径不存在时不回落到其它浏览器、探测缓存随配置失效、provider 收到的是配置值而非硬编码、配置项默认空、设置页能完整读写、输入框只在 T1.5 开启时出现、中英文提示都写明不回落规则 | `node tools/assert-browser-path.mjs`（9） |
@@ -1443,7 +1444,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**One hundred and six** zero-dependency assertion scripts ship with the repo (**1345 assertions** total)
+**One hundred and ten** zero-dependency assertion scripts ship with the repo (**1395 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|
