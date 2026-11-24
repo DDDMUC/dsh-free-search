@@ -21,7 +21,24 @@ const CONVERTED = [
   ["sidebarEntryHint", "sidebarEntryLabel", "在左侧栏显示入口"],
   ["slashCommandsHint", "slashCommandsLabel", "注册聊天框斜杠命令"],
   ["keylessFirstHint", "keylessFirstLabel", "优先使用免 key 档"],
+  // 这六个内联说明很长（表单里每段占 3~5 行），转成悬停卡后表单短了一半。
+  ["engineHint", "searchEngine", "搜索引擎（当前引擎 + 说明）"],
+  ["engineEnableHint", "engineEnable", "全局启用的搜索引擎"],
+  ["fallbackPriorityHint", "fallbackPriority", "全局回退优先级"],
+  ["explicitEnginesHint", "explicitEnginesLabel", "仅手动选择"],
+  ["billedHint", "billedLabel", "按次计费"],
+  ["fallbackOnHint", "fallbackOnLabel", "回退触发条件"],
 ];
+
+/**
+ * 数一个键被引用了几次。
+ * 必须按「键名后面不是字母/数字」计：`engineEnable` 是 `engineEnableHint` 的前缀，
+ * 简单 includes 会把两者混在一起（实测 HintCard 的 text 恰好也是同一个前缀）。
+ */
+const countRef = (text, key) => {
+  const re = new RegExp(`t\\.${key}(?![A-Za-z0-9_])`, "g");
+  return (text.match(re) ?? []).length;
+};
 
 check("the HintCard component exists", () => {
   assert.match(client, /function HintCard\(\{ text, children \}\)/);
@@ -48,14 +65,16 @@ check("the panel is fixed-positioned and themed for both schemes", () => {
 for (const [hint, label, human] of CONVERTED) {
   check(`${human} shows its hint as a card, not as a paragraph`, () => {
     // Exactly one reference each: the card's `text` prop. No leftover <p>.
-    assert.equal(client.split("t." + hint).length - 1, 1, `${hint} should appear once`);
+    assert.equal(countRef(client, hint), 1, `${hint} should appear once`);
     assert.match(client, new RegExp(`<HintCard|jsx\\(HintCard, \\{ text: t\\.${hint}`));
     assert.equal(
       client.includes(`className: "dshfs-hint",\n                        children: t.${hint},`),
       false,
       `${hint} still renders an inline paragraph`
     );
-    assert.equal(client.split("t." + label).length - 1, 1, `${label} should appear once`);
+    // 名字带相同前缀的键（engineEnable / engineEnableHint）会互相误计，
+    // 所以按「t.<key> 后面不是字母」计数。
+    assert.equal(countRef(client, label), 1, `${label} should appear once`);
   });
 }
 
