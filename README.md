@@ -652,7 +652,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **107 个**零依赖断言脚本（合计 **1352 项**）
+仓库自带 **110 个**零依赖断言脚本（合计 **1371 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -1444,7 +1444,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**One hundred and seven** zero-dependency assertion scripts ship with the repo (**1352 assertions** total)
+**One hundred and ten** zero-dependency assertion scripts ship with the repo (**1371 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|
