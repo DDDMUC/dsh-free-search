@@ -642,7 +642,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **111 个**零依赖断言脚本（合计 **1404 项**）
+仓库自带 **112 个**零依赖断言脚本（合计 **1409 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -684,6 +684,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-tavily-endpoint.mjs` | Tavily 兼容端点（#153）：留空 = 官方地址、base 自动补 `/search`、query/hash 被剥离、非 http(s) 拒绝、key 只走 Authorization 头、401 点名端点、配置与设置页接线 | `node tools/assert-tavily-endpoint.mjs`（8） |
 | `assert-hint-card.mjs` | 字段说明悬停卡：长说明不再占正文、卡片经 portal 挂到 body（否则被卡片 `overflow:clip` 裁掉）、Esc 关闭、聚焦打开/失焦关闭、悬停有延迟、触屏可点、卡片不越出视口、深浅色都覆盖、标签文字在图标按钮外（否则被压成一字一行）、点图标不连带切换复选框 | `node tools/assert-hint-card.mjs`（14） |
 | `assert-field-row.mjs` | 单行字段排布：界面语言用 `fieldRow` 而不是独占一列、单行下拉不再撑满整行、密钥存储保持同一形态 | `node tools/assert-field-row.mjs`（3） |
+| `assert-tool-detail-preview.mjs` | 工具行「详情」展开区（只读预览）：内联文案覆盖 9 个工具 × 2 种语言、与服务端 `prompt_i18n` 的 description/参数说明逐字一致、预览不进提示词注入、展开状态是纯界面状态（不置 dirty、不写配置） | `node tools/assert-tool-detail-preview.mjs`（5） |
 | `assert-activity-panel.mjs` | 右侧栏搜索动态（#144）：记录只在内存不落盘、历史上限 50、来源上限 8、按会话隔离、进行中/完成状态、引擎结果分类（成功/失败类别/跳过原因）、清空、默认关闭、旧宿主无右侧栏服务时整体跳过、tab 正文+标题+引导入口注册、bridge 路由走统一守卫、工具分发携带会话、轮询随卸载停止、中英文案 | `node tools/assert-activity-panel.mjs`（15） |
 | `assert-activity-wiring.mjs` | 搜索动态接线（#144 回归）：配置项默认关闭且能完整往返、座位标志只在服务注入后才置位、加载时已开启也能挂载、tab id 三处共用、引导入口带 commandId 且标题/描述是函数、package.json 声明 `dsh-client-ui-sidebar-right` 为可选 peer 与 client inject、服务缺失时有 try/catch 兜底 | `node tools/assert-activity-wiring.mjs`（8） |
 | `assert-activity-pipeline.mjs` | 搜索动态数据面端到端：工具钩子把会话带进搜索链、记录归属该会话、进行中可见当前引擎、结束后离开 in-flight、引擎结果与来源往返完好、无归属记录仍可见、会话之间不串、底部计数已接线、两条 bridge 路由都过统一守卫、面板轮询随卸载停止 | `node tools/assert-activity-pipeline.mjs`（20） |
@@ -1428,7 +1429,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**One hundred and eleven** zero-dependency assertion scripts ship with the repo (**1404 assertions** total)
+**One hundred and twelve** zero-dependency assertion scripts ship with the repo (**1409 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|
