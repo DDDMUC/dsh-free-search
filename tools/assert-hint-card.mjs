@@ -2,7 +2,7 @@
 //   * be portaled to document.body  - the card has overflow:clip, so an in-tree
 //     popup would be cut off at the card edge;
 //   * close on Escape and on blur, open on focus (hover alone is not accessible);
-//   * cover exactly the four fields converted so far;
+//   * cover every field whose long hint was converted, and no leftover <p>;
 //   * leave a touch path, since hover does not exist on phones.
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -28,6 +28,15 @@ const CONVERTED = [
   ["explicitEnginesHint", "explicitEnginesLabel", "仅手动选择"],
   ["billedHint", "billedLabel", "按次计费"],
   ["fallbackOnHint", "fallbackOnLabel", "回退触发条件"],
+  // 抓取接管两个开关、Key 存储位置、平台搜索、四个数字字段：
+  // 都是「一段两三行的说明挂在字段下面」，转成卡片后表单明显短了。
+  ["fetchTakeoverHint", "fetchTakeoverLabel", "自动接管 web_fetch"],
+  ["fetchForceHint", "fetchForceLabel", "强制接管 web_fetch"],
+  ["platformHint", "platformSearch", "平台搜索"],
+  ["cacheTtlHint", "cacheTtl", "结果缓存时长"],
+  ["multiMaxEnginesHint", "multiMaxEngines", "Multi 并发引擎上限"],
+  ["multiMinSourcesHint", "multiMinSources", "Multi 目标成功源数"],
+  ["multiMaxResultsHint", "multiMaxResults", "Multi 结果上限"],
 ];
 
 /**
@@ -62,21 +71,36 @@ check("the panel is fixed-positioned and themed for both schemes", () => {
   assert.ok(dark.includes("#1e1f24"), "dark panel background missing");
 });
 
+// 内联说明段落：<p className="dshfs-hint"> … children: t.<key>。缩进会变，
+// 所以按「同一段 p 里出现这个键」判断，而不是匹配固定空格。
+const rendersAsParagraph = (key) => {
+  const re = new RegExp(
+    `className: "dshfs-hint",\\s*(?:children|\\s+children): [^\\n]*\\.${key}(?![A-Za-z0-9_])`,
+  );
+  return re.test(client);
+};
+
 for (const [hint, label, human] of CONVERTED) {
   check(`${human} shows its hint as a card, not as a paragraph`, () => {
     // Exactly one reference each: the card's `text` prop. No leftover <p>.
     assert.equal(countRef(client, hint), 1, `${hint} should appear once`);
     assert.match(client, new RegExp(`<HintCard|jsx\\(HintCard, \\{ text: t\\.${hint}`));
-    assert.equal(
-      client.includes(`className: "dshfs-hint",\n                        children: t.${hint},`),
-      false,
-      `${hint} still renders an inline paragraph`
-    );
+    assert.equal(rendersAsParagraph(hint), false, `${hint} still renders an inline paragraph`);
     // 名字带相同前缀的键（engineEnable / engineEnableHint）会互相误计，
     // 所以按「t.<key> 后面不是字母」计数。
     assert.equal(countRef(client, label), 1, `${label} should appear once`);
   });
 }
+
+check("Key 存储位置的说明也在卡片里（两种取值都算）", () => {
+  // 这条说明随下拉变化（凭据中心 / 设置页各一套），两套都必须进卡片，
+  // 而且不能再有一段跟着变化的独立 <p>。
+  const card = client.slice(client.indexOf("t.keyStorage,"), client.indexOf("t.keyStorage,") + 400);
+  const before = client.slice(Math.max(0, client.indexOf("t.keyStorage,") - 700), client.indexOf("t.keyStorage,"));
+  assert.match(before, /jsx\(HintCard, \{\n\s+text: keyStorage === "credentials"/, "the key-storage label must use the card");
+  assert.equal(/className: "dshfs-hint",\n\s+children: keyStorage === "credentials"/.test(client), false, "the dynamic hint must not stay a paragraph");
+  void card;
+});
 
 check("Escape closes the card", () => {
   const start = client.indexOf("function HintCard(");

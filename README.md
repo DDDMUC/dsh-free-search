@@ -642,7 +642,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **116 个**零依赖断言脚本（合计 **1432 项**）
+仓库自带 **116 个**零依赖断言脚本（合计 **1440 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -682,7 +682,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-engine-settings-ids.mjs` | 设置按钮可达性（#153 回归）：`ENGINE_SETTINGS_IDS` 必须包含所有写了 `renderEngineSettings` 分支的引擎，按钮仍由该列表控制 | `node tools/assert-engine-settings-ids.mjs`（3） |
 | `assert-serper.mjs` | Serper.dev 引擎（#157）：端点常量、`X-API-KEY` 鉴权（非 Bearer）、`num` 上限 100、`tbs` 时间语法（含绝对日期 `cd_min`）、`organic` 映射、401/403/429 错误分类、缺 key 快速失败、catalog 与 MCP/设置页接线 | `node tools/assert-serper.mjs`（10） |
 | `assert-tavily-endpoint.mjs` | Tavily 兼容端点（#153）：留空 = 官方地址、base 自动补 `/search`、query/hash 被剥离、非 http(s) 拒绝、key 只走 Authorization 头、401 点名端点、配置与设置页接线 | `node tools/assert-tavily-endpoint.mjs`（8） |
-| `assert-hint-card.mjs` | 字段说明悬停卡：长说明不再占正文、卡片经 portal 挂到 body（否则被卡片 `overflow:clip` 裁掉）、Esc 关闭、聚焦打开/失焦关闭、悬停有延迟、触屏可点、卡片不越出视口、深浅色都覆盖、标签文字在图标按钮外（否则被压成一字一行）、点图标不连带切换复选框 | `node tools/assert-hint-card.mjs`（14） |
+| `assert-hint-card.mjs` | 长说明挂悬停卡片（`HintCard`），不留在字段下面当内联段落：18 个已转换字段逐个核对「只被引用一次、确实在 `<HintCard>` 里、不再有 `<p className="dshfs-hint">`」；Key 存储位置那种随下拉变化的说明也算（两种取值都进卡片）。另加卡片本身的行为契约——portaled 到 `document.body`、fixed 定位且不越视口、悬停 150ms 开、Escape 关、focus 开、blur 关、触屏点按、图标按钮不连动外层复选框 | `node tools/assert-hint-card.mjs`（28） |
 | `assert-field-row.mjs` | 单行字段排布：界面语言用 `fieldRow` 而不是独占一列、单行下拉不再撑满整行、密钥存储保持同一形态 | `node tools/assert-field-row.mjs`（3） |
 | `assert-tool-detail-preview.mjs` | 工具行「详情」展开区（只读预览）：内联文案覆盖 9 个工具 × 2 种语言、与服务端 `prompt_i18n` 的 description/参数说明逐字一致、预览不进提示词注入、展开状态是纯界面状态（不置 dirty、不写配置） | `node tools/assert-tool-detail-preview.mjs`（6） |
 | `assert-segment-hint.mjs` | 分页编辑器说明的位置："第 1 页和第 2 页无法编辑和删除"挂在三个段标题的悬停卡片上、不再是悬在三段上方的独立段落、工具段（无内置页）不带这句话、中英文案原样保留 | `node tools/assert-segment-hint.mjs`（4） |
@@ -1433,7 +1433,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**One hundred and sixteen** zero-dependency assertion scripts ship with the repo (**1432 assertions** total)
+**One hundred and sixteen** zero-dependency assertion scripts ship with the repo (**1440 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|
