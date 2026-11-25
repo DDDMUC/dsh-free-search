@@ -195,10 +195,35 @@ await check("an installed package disappears from the available list", async () 
   assert.match(block, /!installed\.some\(\(engine\) => engine\.packageName === entry\.packageName\)/);
 });
 
+await check("an installable entry is one bordered line with a hover card", async () => {
+  // 详情（包名 / 需要的 key / 描述）不能各占一行：行里只留名称，
+  // 其余走 HintCard —— 和工具行、抓取开关同一形态。
+  const at = client.indexOf('"data-dsh-section": "extensions"');
+  const block = client.slice(at, at + 10000);
+  assert.equal(/dshfs-extInfo/.test(block), false, "the stacked info column must be gone");
+  assert.match(block, /className: "dshfs-extMain"/, "the name sits in one flex item");
+  assert.match(block, /jsx\(HintCard, \{\s*text: detail,/s, "the details moved into the hover card");
+  assert.match(block, /\.join\(\"\\n\"\)/, "detail lines are joined into one card body");
+  // 带框：边框 + 圆角 + 内边距
+  const row = client.match(/\.dshfs-extRow\{[^}]*\}/)?.[0] ?? "";
+  assert.ok(row.includes("border:1px solid"), "the row needs a frame");
+  assert.ok(row.includes("border-radius"), "the frame needs a radius");
+  assert.ok(row.includes("padding:"), "the frame needs padding");
+  assert.ok(row.includes("justify-content:space-between"), "name left, button right");
+});
+
+await check("progress gets its own line inside that frame", async () => {
+  const at = client.indexOf('"data-dsh-section": "extensions"');
+  const block = client.slice(at, at + 10000);
+  assert.match(block, /dshfs-extProgressLine/);
+  const line = client.match(/\.dshfs-extProgressLine\{[^}]*\}/)?.[0] ?? "";
+  assert.ok(line.includes("flex:1 1 100%"), "the progress line takes the full width, pushing the row to two lines");
+});
+
 await check("ticking an installed engine writes allowedEngines", async () => {
   // The checkbox must go through the same allowlist path as built-in engines.
   const at = client.indexOf('"data-dsh-section": "extensions"');
-  const block = client.slice(at, at + 6000);
+  const block = client.slice(at, at + 10000);
   assert.match(block, /setAllowedEngines\(\(prev\) =>/);
   assert.match(block, /addFallbackEngine\(engine\.id\)/);
 });
