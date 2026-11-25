@@ -34,7 +34,8 @@ check("the label lives inside the <label> next to the checkbox", () => {
 
 check("other fields keep their heading", () => {
   // Fields with an input/select still need the standalone heading.
-  assert.match(client, /className: "dshfs-label",\n\s+children: t\.promptLangLabel,/);
+  // （提示词语言那个下拉已删：工具文字的语言改由 toolLanguageOf 决定。）
+  assert.match(client, /className: "dshfs-label",\n\s+children: t\.safeSearchLabel,/);
 });
 
 console.log(`OK: ${checks} checkbox label checks passed`);
