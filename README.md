@@ -642,7 +642,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **116 个**零依赖断言脚本（合计 **1431 项**）
+仓库自带 **116 个**零依赖断言脚本（合计 **1432 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -687,7 +687,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-tool-detail-preview.mjs` | 工具行「详情」展开区（只读预览）：内联文案覆盖 9 个工具 × 2 种语言、与服务端 `prompt_i18n` 的 description/参数说明逐字一致、预览不进提示词注入、展开状态是纯界面状态（不置 dirty、不写配置） | `node tools/assert-tool-detail-preview.mjs`（6） |
 | `assert-segment-hint.mjs` | 分页编辑器说明的位置："第 1 页和第 2 页无法编辑和删除"挂在三个段标题的悬停卡片上、不再是悬在三段上方的独立段落、工具段（无内置页）不带这句话、中英文案原样保留 | `node tools/assert-segment-hint.mjs`（4） |
 | `assert-load-path.mjs` | 设置页加载路径：打开只读一次配置（卡片复用同一 promise）、写操作后绕过缓存重新读、describe 不再回传 schema（客户端从不读，8.9KB 冗余）、凭据状态一次并发而非 32 次串行 | `node tools/assert-load-path.mjs`（4） |
-| `assert-runtime-copy.mjs` | 运行时输出段（只读展示，不注入）：置信度文案与服务端逐字一致、回退 Note 模板一致、输出外壳一致、不可信边界标记一致、这段不进入注入、界面中英双语、文案明确写「不参与注入」 | `node tools/assert-runtime-copy.mjs`（8） |
+| `assert-runtime-copy.mjs` | 运行时输出面板的每一条文字都从 `lib/` 源码抽取（`tools/lib/extract-runtime-copy.mjs`），再与 `client.js` 的内联副本双向逐字比对：置信度说明、回退 Note 模板、输出外壳（含工具名与 weather 三种语言表头）、空结果占位、`<untrusted-web-content>` 边界；`Confidence` 与空占位不许混进外壳；四类文字各自成段（不是一个块），只有置信度段带中/EN；位置描述必须是「结果列表之后」；改源码后忘重跑 `tools/gen-runtime-copy.mjs` 会直接失败 | `node tools/assert-runtime-copy.mjs`（9）；重生成用 `node tools/gen-runtime-copy.mjs` |
 | `assert-tool-language.mjs` | 工具侧文字的语言（「提示词语言」下拉删除后的接手者）：`toolLanguageOf` 是唯一来源（显式 `promptToolsLang` > `uiLang` > en）、六处工具注册全部改用它、工具段摘要与运行时文案同源、客户端预览与服务端同一规则、界面已无该下拉但字段仍可读且客户端不再覆写 | `node tools/assert-tool-language.mjs`（5） |
 | `assert-activity-panel.mjs` | 右侧栏搜索动态（#144）：记录只在内存不落盘、历史上限 50、来源上限 8、按会话隔离、进行中/完成状态、引擎结果分类（成功/失败类别/跳过原因）、清空、默认关闭、旧宿主无右侧栏服务时整体跳过、tab 正文+标题+引导入口注册、bridge 路由走统一守卫、工具分发携带会话、轮询随卸载停止、中英文案 | `node tools/assert-activity-panel.mjs`（15） |
 | `assert-activity-wiring.mjs` | 搜索动态接线（#144 回归）：配置项默认关闭且能完整往返、座位标志只在服务注入后才置位、加载时已开启也能挂载、tab id 三处共用、引导入口带 commandId 且标题/描述是函数、package.json 声明 `dsh-client-ui-sidebar-right` 为可选 peer 与 client inject、服务缺失时有 try/catch 兜底 | `node tools/assert-activity-wiring.mjs`（8） |
@@ -1433,7 +1433,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**One hundred and sixteen** zero-dependency assertion scripts ship with the repo (**1431 assertions** total)
+**One hundred and sixteen** zero-dependency assertion scripts ship with the repo (**1432 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|
