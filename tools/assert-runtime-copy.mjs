@@ -76,6 +76,18 @@ check("这一段不进入注入", () => {
   void injected;
 });
 
+check("这一段有自己的 中 / EN 切换，且默认跟随提示词语言", () => {
+  // 「运行时输出」同样有两种语言的文案，所以和工具段一样给一组按钮。
+  const block = client.slice(client.indexOf("const renderRuntimeSection"), client.indexOf("const renderToolsSegment"));
+  assert.match(block, /runtimeLang === "zh"/, "the zh button reflects its own state");
+  assert.match(block, /runtimeLang === "en"/, "the en button reflects its own state");
+  assert.match(block, /setRuntimeLang\("zh"\)/);
+  assert.match(block, /setRuntimeLang\("en"\)/);
+  // 默认跟随提示词语言；用户点过之后不再被覆盖
+  assert.match(client, /runtimeLangPinned\.current = true;/);
+  assert.match(client, /if \(runtimeLangPinned\.current\) return;/);
+});
+
 check("界面上有这一段，且带中英文案", () => {
   assert.match(client, /const renderRuntimeSection = \(\) =>/);
   assert.match(client, /renderRuntimeSection\(\),/);
