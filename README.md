@@ -642,7 +642,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **116 个**零依赖断言脚本（合计 **1440 项**）
+仓库自带 **119 个**零依赖断言脚本（合计 **1489 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -689,6 +689,9 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-load-path.mjs` | 设置页加载路径：打开只读一次配置（卡片复用同一 promise）、写操作后绕过缓存重新读、describe 不再回传 schema（客户端从不读，8.9KB 冗余）、凭据状态一次并发而非 32 次串行 | `node tools/assert-load-path.mjs`（4） |
 | `assert-runtime-copy.mjs` | 运行时输出面板的每一条文字都从 `lib/` 源码抽取（`tools/lib/extract-runtime-copy.mjs`），再与 `client.js` 的内联副本双向逐字比对：置信度说明、回退 Note 模板、输出外壳（含工具名与 weather 三种语言表头）、空结果占位、`<untrusted-web-content>` 边界；`Confidence` 与空占位不许混进外壳；四类文字各自成段（不是一个块），只有置信度段带中/EN；位置描述必须是「结果列表之后」；改源码后忘重跑 `tools/gen-runtime-copy.mjs` 会直接失败 | `node tools/assert-runtime-copy.mjs`（9）；重生成用 `node tools/gen-runtime-copy.mjs` |
 | `assert-tool-language.mjs` | 工具侧文字的语言（「提示词语言」下拉删除后的接手者）：`toolLanguageOf` 是唯一来源（显式 `promptToolsLang` > `uiLang` > en）、六处工具注册全部改用它、工具段摘要与运行时文案同源、客户端预览与服务端同一规则、界面已无该下拉但字段仍可读且客户端不再覆写 | `node tools/assert-tool-language.mjs`（5） |
+| `assert-external-engines.mjs` | 外部引擎扩展点的发现与隔离：`dsh.freeSearch` 标记的包被发现、无标记的忽略、scope 目录展开而 `.pnpm`/隐藏目录跳过、`apiVersion` 必须是 1、id 撞内置或撞另一个外部包一律拒绝、`auto`/`multi` 不算引擎、入口不得越出包目录、import 抛错只记失败不中断扫描、坏结果形状返回 `null`、注入的上下文不含 `cfg`/`settings`/凭据中心 | `node tools/assert-external-engines.mjs`（16） |
+| `assert-external-wiring.mjs` | 外部引擎在 `lib/index.js` 的接线：43 个内置引擎常量一个不改、外部 id 未注册前不算已知引擎、注册后能过白名单/禁用集/回退链/语言池四处校验、默认启用集与默认回退链都不含它、Auto 路由只在自定义链点名时才用它、`time` 决定时间过滤时是否排到前面、`describe` 回传清单、判据只剩 `isKnownEngine`/`isTimeEngine` 两处原始常量、runner 只解析自己声明的凭据并用 `proxyFetch` | `node tools/assert-external-wiring.mjs`（15） |
+| `assert-webz-engine.mjs` | 第一个可选引擎包（Webz.io News Search）：`apiVersion`/`id`/`time`/`requiresKey` 契约、相对与绝对时间都换算成毫秒 `ts`、31 天边界决定是否带 `allowNewsHistory`、`size` 夹在 1–100、token 只走 Bearer 头不进 URL、`posts[]` → `sources[]` 字段映射、坏 JSON/缺 `posts`/401/402/429/400 的报错文案 | `node tools/assert-webz-engine.mjs`（18） |
 | `assert-activity-panel.mjs` | 右侧栏搜索动态（#144）：记录只在内存不落盘、历史上限 50、来源上限 8、按会话隔离、进行中/完成状态、引擎结果分类（成功/失败类别/跳过原因）、清空、默认关闭、旧宿主无右侧栏服务时整体跳过、tab 正文+标题+引导入口注册、bridge 路由走统一守卫、工具分发携带会话、轮询随卸载停止、中英文案 | `node tools/assert-activity-panel.mjs`（15） |
 | `assert-activity-wiring.mjs` | 搜索动态接线（#144 回归）：配置项默认关闭且能完整往返、座位标志只在服务注入后才置位、加载时已开启也能挂载、tab id 三处共用、引导入口带 commandId 且标题/描述是函数、package.json 声明 `dsh-client-ui-sidebar-right` 为可选 peer 与 client inject、服务缺失时有 try/catch 兜底 | `node tools/assert-activity-wiring.mjs`（8） |
 | `assert-activity-pipeline.mjs` | 搜索动态数据面端到端：工具钩子把会话带进搜索链、记录归属该会话、进行中可见当前引擎、结束后离开 in-flight、引擎结果与来源往返完好、无归属记录仍可见、会话之间不串、底部计数已接线、两条 bridge 路由都过统一守卫、面板轮询随卸载停止 | `node tools/assert-activity-pipeline.mjs`（20） |
@@ -1433,7 +1436,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**One hundred and sixteen** zero-dependency assertion scripts ship with the repo (**1440 assertions** total)
+**One hundred and nineteen** zero-dependency assertion scripts ship with the repo (**1489 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|

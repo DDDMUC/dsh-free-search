@@ -1,0 +1,28 @@
+{
+  "name": "dsh-free-search-engine-webz",
+  "version": "0.1.0",
+  "description": "Webz.io News Search engine for dsh-free-search (optional install)",
+  "type": "module",
+  "main": "./lib/webz.js",
+  "exports": {
+    ".": "./lib/webz.js"
+  },
+  "dsh": {
+    "freeSearch": "./lib/webz.js"
+  },
+  "files": [
+    "lib/",
+    "README.md"
+  ],
+  "keywords": [
+    "dsh",
+    "dsh-free-search",
+    "webz",
+    "news",
+    "search"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -32,10 +32,14 @@
 | 勾选 → 进白名单 | 做 | 与内置引擎同一套 `allowedEngines` |
 | 进回退链下拉 | 做 | 用户可拖进链里 |
 | 显式调用 `engine: "<id>"` | 做 | `advanced_search` 等 |
-| 进 `multi_search` 并发池 | 做（复用同一 runner） | — |
+| Multi **显式点名**（`engines: ["webz"]`） | 做 | 只换判据即可，不动池 |
+| Multi **默认池**自动带外部引擎 | **不做** | 默认池来自 `languagePool()` → `normalizeLanguagePool()` → `ALL_ENGINES` 静态过滤 |
 | 进语言池 `zhPool` / `enPool` | **不做** | 原因见第 5 节：静默失败，必须先做 `ALL_ENGINES` 动态化 |
 | 进提示词引擎清单 | 不做 | 同上 |
 | 进诊断报告 | 尽力 | 标 `source: external` |
+
+> 注：早期版本这一行写的是「进 `multi_search` 并发池：做」，与第 5 节矛盾——multi 的并发池**就是**语言池。
+> 实际边界是「显式点名可以，默认池不可以」。见 [external-engine-implementation.md](./external-engine-implementation.md) 第 0 节。
 
 ## 4. 契约（apiVersion 1，正式）
 
