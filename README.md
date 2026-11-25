@@ -257,16 +257,6 @@ dsh web
 Error: configured web provider "ddg" is not registered
 ```
 
-**已经卸掉了、忘了删？** 插件不在也能修——新增的 `restore` 命令直接改配置文件，不加载插件：
-
-```
-npx dsh-free-search restore                 # 所有 profile
-npx dsh-free-search restore --profile web   # 只清一个
-npx dsh-free-search restore --dry-run       # 只看会改什么，不写
-```
-
-它只删本插件自己写进去的两个值（`searchProvider: ddg`、`fetchProvider: fs-quality-fetch`）；你自己显式选的 provider 不动；删完只剩 `id` + `name` 的行整行去掉；注释、顺序、引号风格和 CRLF 都保留；写入前先备份成 `*.bak-before-free-search-restore`。改完重启 `dsh` 让 web 服务重建。
-
 更早的 DSH（0.1.x）由 patch 静态覆盖 config，不需要也更不该手写这段，这里不再赘述。
 
 #### DSH 的「DeepSeek 搜索 API」开关
@@ -652,7 +642,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **110 个**零依赖断言脚本（合计 **1371 项**）
+仓库自带 **114 个**零依赖断言脚本（合计 **1418 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -693,6 +683,13 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-serper.mjs` | Serper.dev 引擎（#157）：端点常量、`X-API-KEY` 鉴权（非 Bearer）、`num` 上限 100、`tbs` 时间语法（含绝对日期 `cd_min`）、`organic` 映射、401/403/429 错误分类、缺 key 快速失败、catalog 与 MCP/设置页接线 | `node tools/assert-serper.mjs`（10） |
 | `assert-tavily-endpoint.mjs` | Tavily 兼容端点（#153）：留空 = 官方地址、base 自动补 `/search`、query/hash 被剥离、非 http(s) 拒绝、key 只走 Authorization 头、401 点名端点、配置与设置页接线 | `node tools/assert-tavily-endpoint.mjs`（8） |
 | `assert-hint-card.mjs` | 字段说明悬停卡：长说明不再占正文、卡片经 portal 挂到 body（否则被卡片 `overflow:clip` 裁掉）、Esc 关闭、聚焦打开/失焦关闭、悬停有延迟、触屏可点、卡片不越出视口、深浅色都覆盖、标签文字在图标按钮外（否则被压成一字一行）、点图标不连带切换复选框 | `node tools/assert-hint-card.mjs`（14） |
+| `assert-field-row.mjs` | 单行字段排布：界面语言用 `fieldRow` 而不是独占一列、单行下拉不再撑满整行、密钥存储保持同一形态 | `node tools/assert-field-row.mjs`（3） |
+| `assert-tool-detail-preview.mjs` | 工具行「详情」展开区（只读预览）：内联文案覆盖 9 个工具 × 2 种语言、与服务端 `prompt_i18n` 的 description/参数说明逐字一致、预览不进提示词注入、展开状态是纯界面状态（不置 dirty、不写配置） | `node tools/assert-tool-detail-preview.mjs`（6） |
+| `assert-segment-hint.mjs` | 分页编辑器说明的位置："第 1 页和第 2 页无法编辑和删除"挂在三个段标题的悬停卡片上、不再是悬在三段上方的独立段落、工具段（无内置页）不带这句话、中英文案原样保留 | `node tools/assert-segment-hint.mjs`（4） |
+| `assert-load-path.mjs` | 设置页加载路径：打开只读一次配置（卡片复用同一 promise）、写操作后绕过缓存重新读、describe 不再回传 schema（客户端从不读，8.9KB 冗余）、凭据状态一次并发而非 32 次串行 | `node tools/assert-load-path.mjs`（4） |
+| `assert-activity-panel.mjs` | 右侧栏搜索动态（#144）：记录只在内存不落盘、历史上限 50、来源上限 8、按会话隔离、进行中/完成状态、引擎结果分类（成功/失败类别/跳过原因）、清空、默认关闭、旧宿主无右侧栏服务时整体跳过、tab 正文+标题+引导入口注册、bridge 路由走统一守卫、工具分发携带会话、轮询随卸载停止、中英文案 | `node tools/assert-activity-panel.mjs`（15） |
+| `assert-activity-wiring.mjs` | 搜索动态接线（#144 回归）：配置项默认关闭且能完整往返、座位标志只在服务注入后才置位、加载时已开启也能挂载、tab id 三处共用、引导入口带 commandId 且标题/描述是函数、package.json 声明 `dsh-client-ui-sidebar-right` 为可选 peer 与 client inject、服务缺失时有 try/catch 兜底 | `node tools/assert-activity-wiring.mjs`（8） |
+| `assert-activity-pipeline.mjs` | 搜索动态数据面端到端：工具钩子把会话带进搜索链、记录归属该会话、进行中可见当前引擎、结束后离开 in-flight、引擎结果与来源往返完好、无归属记录仍可见、会话之间不串、底部计数已接线、两条 bridge 路由都过统一守卫、面板轮询随卸载停止 | `node tools/assert-activity-pipeline.mjs`（20） |
 | `assert-restore-cli.mjs` | 卸载后清理入口（#159）：`restore` 子命令不依赖插件运行时、只删插件自己写进去的 `searchProvider: ddg` / `fetchProvider: fs-quality-fetch`、用户显式选的 provider 不动、只剩 id+name 的空行整行删除、注释/顺序/引号/CRLF 保留、写入前备份、重复运行无副作用、`--dry-run` 不写、`--profile` 只清指定 profile、参数不明时拒绝写入 | `node tools/assert-restore-cli.mjs`（12） |
 | `assert-upgrade-version.mjs` | 一键升级以实际安装结果为准（#163）：读回 profile 里真正落下的版本、与 registry 比较、冷却拦截单独报 `upgrade-blocked`、成功路径报 installed 而非 latest、读不到安装状态时不算成功、界面 toast 用 installed、被拦截时用告警色并保留原文案 | `node tools/assert-upgrade-version.mjs`（8） |
 | `assert-search-proxy.mjs` | 搜索代理（#155）的规则层：http/https/socks5 地址解析、凭据百分号解码、无 scheme 视为 http、socks5h 交给代理解析、非法协议拒绝、`no_proxy` 优先于显式设置、空设置不接管环境变量代理、活动代理是配置层写入的模块状态、搜索路径不再直连全局 `fetch`、该设置只管引擎（天气/更新检查/抓取层保持平台 fetch）、界面中英双语文案、SOCKS5 由本仓库自己实现、重定向三档语义、abort/timeout 保持原生 error 名、HTTP/1.1 请求必须走我们自己的隧道 socket（`agent: false` 与 `https.request` 都会静默绕过代理）、新增依赖为零 | `node tools/assert-search-proxy.mjs`（18） |
@@ -1051,16 +1048,6 @@ So **remove those `- id: web` lines before disabling or uninstalling this plugin
 ```
 Error: configured web provider "ddg" is not registered
 ```
-
-**Already uninstalled and forgot?** The `restore` command fixes the profile patch without loading the plugin:
-
-```
-npx dsh-free-search restore                 # every profile
-npx dsh-free-search restore --profile web   # one profile
-npx dsh-free-search restore --dry-run       # report only, write nothing
-```
-
-It removes only the two values this plugin wrote (`searchProvider: ddg`, `fetchProvider: fs-quality-fetch`); a provider you chose yourself is left alone; a row left with just `id` + `name` is dropped entirely; comments, ordering, quoting and CRLF survive; and it writes a `*.bak-before-free-search-restore` backup first. Restart `dsh` afterwards so the web service rebuilds.
 
 Older DSH (0.1.x) used a static patch layer for this; writing that row by hand there is neither needed nor recommended.
 
@@ -1444,7 +1431,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**One hundred and ten** zero-dependency assertion scripts ship with the repo (**1371 assertions** total)
+**One hundred and fourteen** zero-dependency assertion scripts ship with the repo (**1418 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|
