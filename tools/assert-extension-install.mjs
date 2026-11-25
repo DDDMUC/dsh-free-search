@@ -58,11 +58,13 @@ await check("the install handler checks the allowlist, not the client input", as
   assert.match(block, /await startInstall\(\{ profileDir, packageName \}\)/);
 });
 
-await check("link mode refuses installation", async () => {
+await check("link mode no longer blocks extension installs", async () => {
+  // 装的是「另一个包」（扩展引擎），不是自己；本插件自己的 link 与它无关。
+  // 自升级那条路径仍然拒绝 link 模式 —— 见 assert-extension-target.mjs。
   const at = index.indexOf("async extensionsInstall(request)");
   const block = index.slice(at, at + 1400);
-  assert.match(block, /if \(extensions\.isLink && extensions\.isLink\(\)\)/);
-  assert.match(block, /code: "local-link-mode"/);
+  assert.equal(/code: "local-link-mode"/.test(block), false, "the own-link guard must not live here");
+  assert.match(block, /await startInstall\(\{ profileDir, packageName \}\)/);
 });
 
 await check("a successful install rescans before answering", async () => {
