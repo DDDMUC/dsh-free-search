@@ -32,16 +32,24 @@ check("the toggles stay together and in order", () => {
   assert.equal(/data-dsh-section/.test(between), false, "another section sits between the toggles");
 });
 
-check("the toggles come last, after every other labelled section", () => {
+check("extensions is the last labelled section, right before the toggles", () => {
   const sections = [...client.matchAll(/"data-dsh-section": "([a-z]+)"/g)].map((m) => m[1]);
+  const extIdx = sections.indexOf("extensions");
   const promptIdx = sections.indexOf("prompt");
   assert.ok(promptIdx >= 0, "prompt section missing");
-  assert.equal(promptIdx, sections.length - 1, `prompt must be the last labelled section, got ${sections.join(",")}`);
+  assert.ok(extIdx >= 0, "extensions section missing");
+  assert.ok(extIdx > promptIdx, "extensions must come after prompt management");
+  assert.equal(extIdx, sections.length - 1, `extensions must be the last labelled section, got ${sections.join(",")}`);
+  // The toggles still sit below prompt management; the extensions section is
+  // the very last block, so it renders after them.
+  const ext = client.indexOf('"data-dsh-section": "extensions"');
+  const toggles = client.indexOf('className: "dshfs-toggles"');
+  assert.ok(toggles < ext, "the extensions section must be the bottom-most block");
 });
 
 check("the nav rail order still matches the page", () => {
   const nav = [...client.matchAll(/\{ id: "([a-z]+)", anchor: "dshfs-anchor-([a-z]+)" \}/g)].map((m) => m[1]);
-  assert.deepEqual(nav, ["engines", "fallback", "pools", "behavior", "fetch", "performance", "prompt"]);
+  assert.deepEqual(nav, ["engines", "fallback", "pools", "behavior", "fetch", "performance", "prompt", "extensions"]);
 });
 
 check("the three global toggles share one row", () => {

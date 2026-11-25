@@ -2,7 +2,7 @@
 //   data-dsh-panel-section = <id>   exactly one element (the page root) = the current section
 //   data-dsh-section       = <id>   on every section container (scroll target)
 //   <a data-dsh-section="<id>" href="#/panel/dsh-free-search/<id>">  the rail entry
-// Section ids are stable and language independent; the count is not fixed (7 today).
+// Section ids are stable and language independent; the count is not fixed (8 today).
 import assert from "node:assert/strict";
 import fs from "node:fs";
 
@@ -10,7 +10,7 @@ const root = new URL("..", import.meta.url);
 const client = fs.readFileSync(new URL("lib/client.js", root), "utf8");
 const pkg = JSON.parse(fs.readFileSync(new URL("package.json", root), "utf8"));
 
-const IDS = ["engines", "fallback", "pools", "behavior", "fetch", "performance", "prompt"];
+const IDS = ["engines", "fallback", "pools", "behavior", "fetch", "performance", "prompt", "extensions"];
 
 let checks = 0;
 const check = (name, fn) => {
@@ -24,7 +24,7 @@ check("the card root publishes exactly one current-section attribute", () => {
   assert.match(client, /"data-dsh-panel-section": railActive,/);
 });
 
-check("the section ids are exactly the seven rail entries, in rail order", () => {
+check("the section ids are exactly the rail entries, in rail order", () => {
   const ids = [...client.matchAll(/\{ id: "([a-z0-9-]+)", anchor: "dshfs-anchor-[a-z0-9-]+" \}/g)].map((m) => m[1]);
   assert.deepEqual(ids, IDS);
 });

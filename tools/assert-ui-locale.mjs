@@ -209,7 +209,7 @@ await check("rail children render without missing-key warnings across live local
     rendered = await render(f);
     const links = () => rendered.card.root.findAllByType("a").filter((node) => node.props.className?.split(/\s+/).includes("dshfs-railItem"));
     const before = links().map((node) => node.props.href);
-    assert.equal(before.length, 7, "the warning check must render the complete rail");
+    assert.equal(before.length, 8, "the warning check must render the complete rail");
     await act(async () => f.switchLocale("zh-CN"));
     assert.deepEqual(links().map((node) => node.props.href), before, "locale changes preserve navigation identities");
     await act(async () => f.switchLocale("en"));
