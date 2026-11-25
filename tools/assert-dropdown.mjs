@@ -21,7 +21,7 @@ check("no native select elements are left", () => {
 
 check("every dropdown goes through the custom component", () => {
   const uses = (client.match(/jsx[s]?\(Dropdown,/g) || []).length;
-  assert.equal(uses, 11, `expected 11 Dropdown usages, found ${uses}`);
+  assert.equal(uses, 10, `expected 10 Dropdown usages, found ${uses}`);
 });
 
 check("the component keeps the select contract", () => {

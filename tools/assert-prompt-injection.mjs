@@ -77,7 +77,7 @@ check("the three segments are joined, and all-empty means no injection", () => {
   assert.match(index, /\.filter\(Boolean\)/);
   assert.match(index, /\.join\("\\n\\n"\)/);
   assert.match(index, /if \(!injected\) return;/);
-  assert.match(index, /const toolsLang = promptLanguageOf\(\{ promptLanguage: cfg\.promptToolsLang \|\| cfg\.promptLanguage \}\);/);
+  assert.match(index, /const toolsLang = toolLanguageOf\(cfg\);/);
   assert.match(index, /blocks\.tools\[toolsLang\],/);
   assert.match(index, /promptToolsLang: z\.string\(\)\.default\(""\)\.volatile\(\)/);
 });
