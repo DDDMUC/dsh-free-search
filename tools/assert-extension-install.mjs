@@ -9,7 +9,9 @@ import {
   INSTALLABLE_ENGINES,
   installableEngine,
 } from "../lib/external_engines.js";
+import { spawn } from "node:child_process";
 import {
+  pnpmInvocation,
   applyPnpmEvent,
   installStatus,
   isValidPackageName,
@@ -92,10 +94,43 @@ await check("package names are validated before they become an argument", async 
   assert.equal(isValidPackageName(42), false);
 });
 
-await check("pnpm is spawned without a shell", async () => {
-  const src = fs.readFileSync(new URL("lib/external_install.js", root), "utf8");
-  assert.match(src, /spawn\("pnpm", \["add", packageName, "--reporter=ndjson"\]/);
-  assert.match(src, /shell: false/, "spawn must not go through a shell");
+await check("pnpm is started through the working platform invocation", async () => {
+  // Windows has no pnpm.exe: spawn("pnpm", shell:false) is ENOENT and
+  // spawn("pnpm.cmd", shell:false) is EINVAL, so cmd.exe is the only way in.
+  const win = pnpmInvocation(["add", "x", "--reporter=ndjson"], "win32");
+  assert.equal(win.shell, false, "Node must not add a shell of its own");
+  assert.match(win.command, /cmd\.exe/i, "windows goes through cmd.exe");
+  assert.deepEqual(win.args.slice(0, 3), ["/d", "/s", "/c"]);
+  assert.equal(win.args[3], "pnpm add x --reporter=ndjson");
+
+  // POSIX keeps the direct exec: no shell anywhere in the path.
+  const posix = pnpmInvocation(["add", "x", "--reporter=ndjson"], "linux");
+  assert.equal(posix.command, "pnpm");
+  assert.deepEqual(posix.args, ["add", "x", "--reporter=ndjson"]);
+  assert.equal(posix.shell, false);
+
+  // Nothing that survives isValidPackageName may carry shell syntax.
+  assert.equal(isValidPackageName("a;rm -rf /"), false);
+});
+
+await check("a real pnpm starts through that invocation", async () => {
+  // 真的起一次（只跑 --version）：构造错了这里就会红。
+  const call = pnpmInvocation(["--version"]);
+  const result = await new Promise((resolve) => {
+    let out = "";
+    let child;
+    try {
+      child = spawn(call.command, call.args, { shell: call.shell, windowsHide: true });
+    } catch (error) {
+      resolve({ code: -1, error: String(error && error.message) });
+      return;
+    }
+    child.stdout?.on("data", (c) => (out += c));
+    child.on("error", (error) => resolve({ code: -1, error: String(error.code) }));
+    child.on("close", (code) => resolve({ code, out: out.trim() }));
+  });
+  assert.equal(result.code, 0, "pnpm did not start: " + JSON.stringify(result));
+  assert.match(String(result.out), /^\d+\.\d+/, "unexpected pnpm output: " + result.out);
 });
 
 // ------------------------------------------------------------------ 进度
