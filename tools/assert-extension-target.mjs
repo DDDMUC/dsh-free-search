@@ -18,7 +18,7 @@ const check = (name, fn) => {
 const handlerBlock = () => {
   const at = index.indexOf("async extensionsInstall(request)");
   assert.ok(at > 0, "the install handler is missing");
-  return index.slice(at, at + 1400);
+  return index.slice(at, at + 2000);
 };
 
 check("a successful extension install no longer refuses link mode", () => {
@@ -51,7 +51,7 @@ check("activeProfileDir matches by realpath, not by scan order", () => {
 
 check("the list response says where it would install", () => {
   const at = index.indexOf("async extensions()");
-  const block = index.slice(at, at + 1200);
+  const block = index.slice(at, at + 2600);
   assert.match(block, /canInstall: profileDir !== null/);
   assert.match(block, /installProfile:/);
   assert.match(block, /path\.basename\(profileDir\)/);

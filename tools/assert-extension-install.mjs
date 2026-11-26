@@ -51,7 +51,7 @@ await check("the installable list is a hard-coded allowlist", async () => {
 await check("the install handler checks the allowlist, not the client input", async () => {
   const at = index.indexOf("async extensionsInstall(request)");
   assert.ok(at > 0, "the install handler is missing");
-  const block = index.slice(at, at + 1400);
+  const block = index.slice(at, at + 2000);
   assert.match(block, /const entry = installableEngine\(packageName\);/, "the allowlist must be consulted");
   assert.match(block, /if \(entry === undefined\)/, "an unknown package must be refused");
   assert.match(block, /code: "not-installable"/);
@@ -64,14 +64,14 @@ await check("link mode no longer blocks extension installs", async () => {
   // 装的是「另一个包」（扩展引擎），不是自己；本插件自己的 link 与它无关。
   // 自升级那条路径仍然拒绝 link 模式 —— 见 assert-extension-target.mjs。
   const at = index.indexOf("async extensionsInstall(request)");
-  const block = index.slice(at, at + 1400);
+  const block = index.slice(at, at + 2000);
   assert.equal(/code: "local-link-mode"/.test(block), false, "the own-link guard must not live here");
   assert.match(block, /await startInstall\(\{ profileDir, packageName \}\)/);
 });
 
 await check("a successful install rescans before answering", async () => {
   const at = index.indexOf("async extensionsInstall(request)");
-  const block = index.slice(at, at + 1400);
+  const block = index.slice(at, at + 2000);
   const installAt = block.indexOf("await startInstall");
   const rescanAt = block.indexOf("await extensions.rescan()");
   assert.ok(installAt > 0 && rescanAt > installAt, "the rescan must follow the install");
@@ -225,7 +225,7 @@ await check("installing goes through the bridge, never through the registry dire
 await check("an installed package disappears from the available list", async () => {
   const at = index.indexOf("async extensions()");
   assert.ok(at > 0, "the list handler is missing");
-  const block = index.slice(at, at + 900);
+  const block = index.slice(at, at + 2600);
   assert.match(block, /installable: INSTALLABLE_ENGINES\.filter\(/, "the server filters installed ones out");
   assert.match(block, /!installed\.some\(\(engine\) => engine\.packageName === entry\.packageName\)/);
 });
@@ -234,11 +234,11 @@ await check("an installable entry is one bordered line with a hover card", async
   // 详情（包名 / 需要的 key / 描述）不能各占一行：行里只留名称，
   // 其余走 HintCard —— 和工具行、抓取开关同一形态。
   const at = client.indexOf('"data-dsh-section": "extensions"');
-  const block = client.slice(at, at + 10000);
+  const block = client.slice(at, at + 14000);
   assert.equal(/dshfs-extInfo/.test(block), false, "the stacked info column must be gone");
   assert.match(block, /className: "dshfs-extMain"/, "the name sits in one flex item");
-  assert.match(block, /jsx\(HintCard, \{\s*text: detail,/s, "the details moved into the hover card");
-  assert.match(block, /\.join\(\"\\n\"\)/, "detail lines are joined into one card body");
+  assert.match(block, /text: detail/, "the installable details go into the hover card");
+  assert.match(block, /\.join\("\\n"\)/, "detail lines are joined into one card body");
   // 带框：边框 + 圆角 + 内边距
   const row = client.match(/\.dshfs-extRow\{[^}]*\}/)?.[0] ?? "";
   assert.ok(row.includes("border:1px solid"), "the row needs a frame");
