@@ -55,4 +55,22 @@ check("the language pool draws one line for the whole module", () => {
   assert.equal((pools.match(MARKER) ?? []).length, 1, "the pools module must draw exactly one line");
 });
 
+check("fallback triggers close the fallback module, not the pools module", () => {
+  // 「回退触发条件」管的是失败类别能不能换引擎，跟语言池无关。它必须落在
+  // 回退分区的第一条线之后、语言池分区那条线之前，否则视觉上会被算进语言池。
+  const fallbackSection = client.indexOf(`"data-dsh-section": "fallback"`);
+  const triggers = client.indexOf("t.fallbackOnHint");
+  const poolsSep = client.lastIndexOf(`"data-dsh-sep": "above",`, client.indexOf("t.poolPolicyLabel"));
+  assert.ok(fallbackSection > 0, "fallback section missing");
+  assert.ok(triggers > 0, "fallback trigger checkbox group missing");
+  assert.ok(poolsSep > 0, "pools module separator missing");
+  assert.ok(
+    fallbackSection < triggers && triggers < poolsSep,
+    "fallback triggers must sit inside the fallback module (after its section marker, before the pools separator)",
+  );
+  // 也不该再插在语言池字段后面。
+  const firstPool = client.indexOf(`renderPoolField("zh"`);
+  assert.ok(triggers < firstPool, "fallback triggers must not follow the language pool fields");
+});
+
 console.log(`OK: ${checks} section separator checks passed`);
