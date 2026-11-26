@@ -29,6 +29,21 @@ await check("the endpoint accepts a base, a trailing slash and a full /fetch URL
   assert.throws(() => deepseekFetchEndpoint("not a url"), /invalid/);
 });
 
+await check("the official DeepSeek host maps to /v1/tools/fetch (#168)", () => {
+  // 官方 Fetch 端点是 /v1/tools/fetch，不是 /fetch。用户只写 host 或 /v1 时必须
+  // 补成官方路径，否则会静默 404 并在回退链里被当成上游故障。
+  assert.equal(deepseekFetchEndpoint("https://api.deepseek.com"), "https://api.deepseek.com/v1/tools/fetch");
+  assert.equal(deepseekFetchEndpoint("https://api.deepseek.com/"), "https://api.deepseek.com/v1/tools/fetch");
+  assert.equal(deepseekFetchEndpoint("https://api.deepseek.com/v1"), "https://api.deepseek.com/v1/tools/fetch");
+  assert.equal(deepseekFetchEndpoint("https://api.deepseek.com/v1/"), "https://api.deepseek.com/v1/tools/fetch");
+  assert.equal(deepseekFetchEndpoint("https://api.deepseek.com/v1/tools"), "https://api.deepseek.com/v1/tools/fetch");
+  assert.equal(deepseekFetchEndpoint("https://api.deepseek.com/v1/tools/"), "https://api.deepseek.com/v1/tools/fetch");
+  assert.equal(deepseekFetchEndpoint("https://api.deepseek.com/v1/tools/fetch"), "https://api.deepseek.com/v1/tools/fetch");
+  // 只有一个 host 走这条规则：别的主机保持网关惯例（/fetch），不能顺手改掉别人的路径。
+  assert.equal(deepseekFetchEndpoint("https://deepseek.example.com"), "https://deepseek.example.com/fetch");
+  assert.equal(deepseekFetchEndpoint("https://api.deepseek.com.cn"), "https://api.deepseek.com.cn/fetch");
+});
+
 await check("the tier runs first and short-circuits the rest of the chain", async () => {
   resetStubs();
   let customCalls = 0;
