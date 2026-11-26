@@ -234,7 +234,7 @@ await check("an installable entry is one bordered line with a hover card", async
   // 详情（包名 / 需要的 key / 描述）不能各占一行：行里只留名称，
   // 其余走 HintCard —— 和工具行、抓取开关同一形态。
   const at = client.indexOf('"data-dsh-section": "extensions"');
-  const block = client.slice(at, at + 14000);
+  const block = client.slice(at, at + 24000);
   assert.equal(/dshfs-extInfo/.test(block), false, "the stacked info column must be gone");
   assert.match(block, /className: "dshfs-extMain"/, "the name sits in one flex item");
   assert.match(block, /text: detail/, "the installable details go into the hover card");
@@ -253,6 +253,20 @@ await check("progress gets its own line inside that frame", async () => {
   assert.match(block, /dshfs-extProgressLine/);
   const line = client.match(/\.dshfs-extProgressLine\{[^}]*\}/)?.[0] ?? "";
   assert.ok(line.includes("flex:1 1 100%"), "the progress line takes the full width, pushing the row to two lines");
+});
+
+await check("an installed engine's name opens its site", async () => {
+  // 名称可点：包自己声明了 link 就跳过去（通常正是拿 key 的页面）。
+  // 用 <a> + target=_blank + rel=noopener noreferrer，且不能把链接写死成 webz 的地址。
+  const at = client.indexOf('"data-dsh-section": "extensions"');
+  const section = client.slice(at, at + 14000);
+  const installed = section.slice(section.indexOf("extensions.installed.map"), section.indexOf("extensions.failures.length"));
+  assert.match(installed, /href: engine\.link/, "the link must come from the engine package");
+  assert.match(installed, /target: "_blank"/);
+  assert.match(installed, /rel: "noopener noreferrer"/);
+  assert.equal(/app\.webz\.io/.test(installed), false, "the client must not hard-code an engine's site");
+  // 没有 link 的包退回不可点的文本，不能渲染成 href=undefined。
+  assert.match(installed, /:\s*react_jsx_runtime\.jsx\("span",\s*\{\s*className: "dshfs-priorityName"/, "no link means a plain span");
 });
 
 await check("ticking an installed engine writes allowedEngines", async () => {
