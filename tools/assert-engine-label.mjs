@@ -52,9 +52,29 @@ check("counts are integers even when floats are passed", () => {
   assert.equal(engineEnableLabel("Enabled", 3.9, 42.2), "Enabled (3/42)");
 });
 
-check("the settings title actually uses the helper with ENGINE_IDS.length", () => {
-  assert.match(source, /engineEnableLabel\(t\.engineEnable, enabledEngineCount, ENGINE_IDS\.length\)/);
-  assert.match(source, /const enabledEngineCount = ENGINES\.filter\(\(e\) => e\.id !== "auto" && e\.id !== "multi" && !engineDisabled\(e\.id\)\)\.length;/);
+check("the settings title actually uses the helper with the live engine total", () => {
+  // 总数现在 = 内置 + 已安装外部引擎；写死 ENGINE_IDS.length 会把扩展包漏掉。
+  assert.match(source, /engineEnableLabel\(t\.engineEnable, enabledEngineCount, ENGINE_IDS\.length \+ externalEngines\.length\)/);
+  assert.match(source, /const enabledEngineCount = catalog\.filter\(/);
+});
+
+check("external engines are first-class in the catalog", () => {
+  // 客户端不能用静态 ENGINES 表过滤白名单/回退链/语言池——外部引擎的 id 不在那张表里。
+  assert.match(source, /let externalEngines = \[\];/);
+  assert.match(source, /const engineCatalog = \(\) =>/);
+  assert.match(source, /const catalogEngine = \(id\) =>/);
+  assert.match(source, /isExternalEngine\(id\)/, "addFallbackEngine must accept external ids");
+  assert.match(source, /isPlausibleEngineId/, "whitelist loading must not filter by the built-in table");
+  assert.equal(
+    /const configuredAllowed = Array\.isArray\(v\.allowedEngines\)[\s\S]{0,200}ENGINES\.some/.test(source),
+    false,
+    "allowedEngines loading must not use the static ENGINES table",
+  );
+  // 下拉、池候选、回退行都走目录
+  assert.match(source, /children: engineCatalog\(\)\.map/);
+  assert.match(source, /const candidates = engineCatalog\(\)/);
+  assert.match(source, /const engine = catalogEngine\(engineId\)/);
+  assert.match(source, /engineTitle\(engine, activeUiLocale\)/);
 });
 
 console.log(`OK: ${checks} engine label checks passed`);
