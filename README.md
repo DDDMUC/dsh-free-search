@@ -422,7 +422,7 @@ fetchProviderForce: false # true = 连 DSH 搜索开关写进来的 deepseek-fet
 browserFetch: true           # 直连失败时用系统浏览器无头渲染
 allowFakeIpCidrs: []          # 显式放行的保留网段，例如 Clash/mihomo fake-ip 的 198.18.0.0/15
 fetchPrefer: exa             # exa | firecrawl —— 两者都失败后先试哪个 keyed 抓取层
-deepseekFetchBaseUrl: ""    # 可选：自定义 DeepSeek 兼容抓取端点（…/fetch），留空不启用；失败自动回落直连 / exa / firecrawl
+deepseekFetchBaseUrl: ""    # 可选：DeepSeek 抓取端点。官方填 https://api.deepseek.com/v1/tools（代码补 /fetch；只写 https://api.deepseek.com 也会自动补成官方路径）；自建网关填 http://127.0.0.1:3000/v1 或完整 …/fetch。留空不启用；失败自动回落直连 / exa / firecrawl
 deepseekFetchApiKey: ...     # 可选：只给这个抓取端点用；留空依次复用工具 key、DEEPSEEK_API_KEY
 region: cn-zh               # DuckDuckGo 区域（可选）
 searxngInstances:           # 自定义 SearXNG 实例（可选）
@@ -1222,6 +1222,8 @@ fetchProviderForce: false # true = also take over the deepseek-fetch-api written
 browserFetch: true           # use the system browser headless renderer when direct fetch fails
 allowFakeIpCidrs: []          # reserved ranges to allow explicitly, e.g. 198.18.0.0/15 for Clash/mihomo fake-ip
 fetchPrefer: exa             # exa | firecrawl — which keyed fetch tier to try first
+deepseekFetchBaseUrl: ""    # optional DeepSeek fetch endpoint. Official: https://api.deepseek.com/v1/tools (the code appends /fetch; https://api.deepseek.com alone is auto-corrected). Gateway: http://127.0.0.1:3000/v1 or a full …/fetch. Empty = off; failures fall back to direct / exa / firecrawl
+deepseekFetchApiKey: ...     # optional: only for this fetch endpoint; empty reuses the tools key, then DEEPSEEK_API_KEY
 region: cn-zh               # DuckDuckGo region (optional)
 searxngInstances:           # Custom SearXNG instances (optional)
   - https://your-instance.example
