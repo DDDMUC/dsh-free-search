@@ -53,9 +53,23 @@ check("counts are integers even when floats are passed", () => {
 });
 
 check("the settings title actually uses the helper with the live engine total", () => {
-  // 总数现在 = 内置 + 已安装外部引擎；写死 ENGINE_IDS.length 会把扩展包漏掉。
+  // 总数 = 内置 + 已装外部引擎；写死 ENGINE_IDS.length 会把扩展包漏掉。
   assert.match(source, /engineEnableLabel\(t\.engineEnable, enabledEngineCount, ENGINE_IDS\.length \+ externalEngines\.length\)/);
-  assert.match(source, /const enabledEngineCount = catalog\.filter\(/);
+  // 分组计数必须分开算：主标题的合计不能靠 catalog 全量扫（会把 auto/multi 算进去）。
+  assert.match(source, /const enabledBuiltinCount = builtinIds\.filter\(/);
+  assert.match(source, /const enabledExternalCount = externalEngines\.filter\(/);
+  assert.match(source, /const enabledEngineCount = enabledBuiltinCount \+ enabledExternalCount/);
+});
+
+check("the whitelist shows two labelled groups and the 43+1 split", () => {
+  // 主标题只给合计；下面两行小标题分别写「内置 (a/b)」「外部 (c/d)」。
+  assert.match(source, /engineEnableBuiltin: \(a, b\) => `内置 \(\${a}\/\${b}\)`/);
+  assert.match(source, /engineEnableExternal: \(c, d\) => `外部 \(\${c}\/\${d}\)`/);
+  assert.match(source, /engineEnableBuiltin: \(a, b\) => `Built-in \(\${a}\/\${b}\)`/);
+  assert.match(source, /engineEnableExternal: \(c, d\) => `External \(\${c}\/\${d}\)`/);
+  assert.match(source, /className: "dshfs-groupTitle"/);
+  // 外部分组只在真的装了包时才出现，否则会多出一行「外部 (0/0)」。
+  assert.match(source, /externalEngines\.length > 0/);
 });
 
 check("external engines are first-class in the catalog", () => {

@@ -642,7 +642,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **123 个**零依赖断言脚本（合计 **1534 项**）
+仓库自带 **123 个**零依赖断言脚本（合计 **1535 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -708,7 +708,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-browser-path.mjs` | T1.5 浏览器路径（#160）：留空仍走内置候选表、纯空格等同空值、自定义路径原样使用、路径不存在时不回落到其它浏览器、探测缓存随配置失效、provider 收到的是配置值而非硬编码、配置项默认空、设置页能完整读写、输入框只在 T1.5 开启时出现、中英文提示都写明不回落规则 | `node tools/assert-browser-path.mjs`（9） |
 | `assert-control-chrome.mjs` | 字段标题与复选框外观：标题字号/字重要高于正文、复选框由样式绘制（`appearance:none` + CSS 勾）、不确定态有独立横线、聚焦有描边、深浅色都覆盖、分组自动换行、全选不拉满整行、工具行复选框不再固定 150px | `node tools/assert-control-chrome.mjs`（9） |
 | `assert-checkbox-labels.mjs` | 复选框不再重复标签：左侧栏入口 / 斜杠命令 / 免 key 优先三项各只出现一次标签、标签位于复选框同一行、其它输入类字段仍保留独立标题 | `node tools/assert-checkbox-labels.mjs`（5） |
-| `assert-dropdown.mjs` | 自绘下拉：设置页不再有原生 `<select>`、11 处全部走同一个组件、保留 `onChange({ target })` 契约与 listbox 语义、键盘（↑↓/Home/End/Enter/Esc/Tab）可用、浮层限高滚动、深浅色都有样式 | `node tools/assert-dropdown.mjs`（6） |
+| `assert-dropdown.mjs` | 自绘下拉：设置页不再有原生 `<select>`、11 处全部走同一个组件、保留 `onChange({ target })` 契约与 listbox 语义、键盘（↑↓/Home/End/Enter/Esc/Tab）可用、浮层限高滚动、深浅色都有样式、搜索引擎下拉可在浮层顶部输入过滤（保留原索引、空结果有提示） | `node tools/assert-dropdown.mjs`（7） |
 | `assert-engine-setting-fields.mjs` | 引擎设置字段签名：每个 `engineSettingField` 调用都按 `(id, label, value, setter, options)` 传参、没有把 label 当 id、Tavily 端点字段接线正确 | `node tools/assert-engine-setting-fields.mjs`（3） |
 | `assert-fallback-row-layout.mjs` | 回退优先级行对齐：没有高级设置的引擎也渲染不可见占位按钮、占位不参与交互、设置按钮列固定宽度、key 输入框不再撑满剩余空间 | `node tools/assert-fallback-row-layout.mjs`（4） |
 | `assert-settings-order.mjs` | 设置页顺序：提示词段在三个全局开关之前、开关彼此相邻且保持原顺序、提示词是最后一个带分区的段、右侧目录顺序与页面一致 | `node tools/assert-settings-order.mjs`（5） |
@@ -1442,7 +1442,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**One hundred and twenty-three** zero-dependency assertion scripts ship with the repo (**1534 assertions** total)
+**One hundred and twenty-three** zero-dependency assertion scripts ship with the repo (**1535 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|
