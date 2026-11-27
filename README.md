@@ -642,7 +642,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **123 个**零依赖断言脚本（合计 **1541 项**）
+仓库自带 **124 个**零依赖断言脚本（合计 **1546 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -761,6 +761,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-updater.mjs` | 自带更新：版本比较、registry 探测（成功 / 非 200 / 网络失败返回 null）、安装模式识别（真实安装优先于 link）、客户端按钮与桥接、服务端两条路由与 pnpm 升级命令、卡片版本跟 package.json 一致 | `node tools/assert-updater.mjs`（9） |
 | `assert-inject.mjs` | 旧版 Cordis 兼容（#107）：静态 inject 声明 web / settings / tools / systemPrompt、可选服务只走 `ctx.get`、回调上下文的属性读取都在 inject 里、动态依赖列表没有未知服务 | `node tools/assert-inject.mjs`（4） |
 | `assert-safe-text.mjs` | UTF-16 截断安全（#108）：孤立高低代理清理、有效代理对保留、码点截断不切开 emoji、`cleanSnippet` 300 边界落在整字符、结果/来源/错误脱敏、web_fetch 各层正文兜底、源码守卫 | `node tools/assert-safe-text.mjs`（9） |
+| `assert-lossless-output.mjs` | 工具输出必须是 lossless JSON（#169）：所有引擎（含 `lib/engines/**`、`platform_engines`、`agy`、`serp_engines`、外部引擎）都显式返回布尔 `truncated`、provider 出口再兜一层 `result?.truncated === true`、`runEngineTest`/`runMultiSearch`/外部引擎归一各自补齐、用 JSON 往返证明 `truncated: undefined` 会被丢键（也就是当初 `web_search` 报 `value is not lossless JSON` 的原因） | `node tools/assert-lossless-output.mjs`（5） |
 | `assert-degoog.mjs` | degoog 自建实例（#85）：`/api/search` URL 规范化、查询编码、`time`/`lang` 参数、注册表位置、无需凭据 | `node tools/assert-degoog.mjs`（7） |
 | `assert-multikey.mjs` | 多 key 字段：单 key 不变、逗号/分号/换行分隔、空白项丢弃、空输入为空数组 | `node tools/assert-multikey.mjs`（3） |
 | `assert-firecrawl-keyless.mjs` | Firecrawl keyless 出口判定：403 + VPN/proxy 文案才算拒绝、普通 403 与 401/429/500 不算、冷却初始未触发 | `node tools/assert-firecrawl-keyless.mjs`（5） |
@@ -1442,7 +1443,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**One hundred and twenty-three** zero-dependency assertion scripts ship with the repo (**1541 assertions** total)
+**One hundred and twenty-four** zero-dependency assertion scripts ship with the repo (**1546 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|
@@ -1509,6 +1510,7 @@ Restart `dsh web` after switching to apply changes.
 | `assert-updater.mjs` | Built-in updater: version comparison, registry probe (success / non-200 / network failure yields null), install-mode detection (a real install beats a link), the client button and bridge helper, both server routes with the pnpm upgrade command, and the card version matching package.json | `node tools/assert-updater.mjs` (9) |
 | `assert-inject.mjs` | Older Cordis compatibility (#107): the static inject list declares web / settings / tools / systemPrompt, optional services are read through `ctx.get`, every property read on a callback context is declared, and dynamic dependency lists contain no unknown services | `node tools/assert-inject.mjs` (4) |
 | `assert-safe-text.mjs` | UTF-16 truncation safety (#108): lone high/low surrogates replaced, valid pairs kept, code-point slicing never splits an emoji, `cleanSnippet`'s 300 boundary lands on a whole character, results/sources/errors sanitized, every web_fetch tier covered, plus source guards | `node tools/assert-safe-text.mjs` (9) |
+| `assert-lossless-output.mjs` | Tool output must be lossless JSON (#169): every engine (`lib/engines/**`, `platform_engines`, `agy`, `serp_engines`, external engines) returns a boolean `truncated`, the provider normalises it once more at its exit with `result?.truncated === true`, `runEngineTest` / `runMultiSearch` / external normalisation each supply their own, and a JSON round-trip shows why `truncated: undefined` dropped the key and made `web_search` fail | `node tools/assert-lossless-output.mjs` (5) |
 | `assert-degoog.mjs` | degoog self-hosted instance (#85): `/api/search` URL normalisation, query encoding, `time`/`lang` parameters, registry placement, no credentials needed | `node tools/assert-degoog.mjs` (7) |
 | `assert-multikey.mjs` | multi-key fields: a single key is unchanged, comma/semicolon/newline separate keys, blank entries are dropped, empty input yields none | `node tools/assert-multikey.mjs` (3) |
 | `assert-firecrawl-keyless.mjs` | Firecrawl keyless egress refusal: only a 403 with the VPN/proxy wording counts, plain 403 and 401/429/500 do not, and the cooldown starts inactive | `node tools/assert-firecrawl-keyless.mjs` (5) |
