@@ -3,6 +3,10 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { createMcpHandler, searchWeb, fetchWeb, multiSearchWeb, searchDomain, getWeather, searchPlatformWeb, searchVideosWeb, researchWeb, searchCachedPages, testEngines } from "../lib/mcp_server.js";
 import { MCP_ENGINE_IDS, MCP_KEYED_ENGINES, MCP_KEYLESS_ENGINES, runMcpEngine } from "../lib/mcp_engines.js";
+import fsSources from "node:fs";
+
+const mcpEngines = fsSources.readFileSync(new URL("../lib/mcp_engines.js", import.meta.url), "utf8");
+const mcpServer = fsSources.readFileSync(new URL("../lib/mcp_server.js", import.meta.url), "utf8");
 
 let checks = 0;
 const check = async (name, fn) => {
@@ -298,6 +302,16 @@ await check("the MCP schema advertises keyed engines and time_range", async () =
   const search = response.result.tools.find((tool) => tool.name === "web_search");
   assert.ok(search.inputSchema.properties.engine.enum.includes("zhipu"));
   assert.deepEqual(search.inputSchema.properties.time_range.enum, ["day", "week", "month", "year"]);
+});
+
+await check("installed external engines join the MCP id list and schema", async () => {
+  // 外部引擎在同一份 MCP 进程里也要能点名：id 列表、enum 与 unknown-engine 校验
+  // 都必须走运行时发现，而不是静态数组。
+  assert.match(mcpEngines, /export async function mcpEngineIds\(\)/);
+  assert.match(mcpEngines, /await discoverExternalEngines\(\{ profileDir: dir, builtinIds: ALL_ENGINES/);
+  assert.match(mcpEngines, /async function runMcpExternalEngine/);
+  assert.match(mcpServer, /await mcpEngineIds\(\)\)\.includes/);
+  assert.match(mcpServer, /await toolsWithExternal\(\)/);
 });
 
 await check("the package exposes a stdio bin and ships it", async () => {

@@ -17,6 +17,7 @@ const mod = await import(new URL("lib/index.js", root));
 const {
   ALL_ENGINES,
   Config,
+  effectiveDisabledEngines,
   enabledEngines,
   isKnownEngine,
   normalizeAllowedEngines,
@@ -93,15 +94,41 @@ await check("the default fallback chain is unchanged", async () => {
 });
 
 // ------------------------------------------------------------------ 路由
-await check("auto routing keeps external engines out unless the chain names them", async () => {
+await check("a registered external engine is a first-class engine in routing", async () => {
   setExternalEngines([{ id: "webz", label: { en: "Webz" }, time: true, requiresKey: ["WEBZ_API_TOKEN"] }]);
-  // Default (no custom order): routeEngines builds from ALL_ENGINES, so no external id.
-  const auto = routeEngines("anything", { disabledEngines: [], allowedEngines: ["bing", "ddg"] });
-  assert.equal(auto.includes("webz"), false, "auto must not pick up an external engine by itself");
+  // 1) 默认回退顺序下，只要勾进白名单，它就进 auto 链（不再只认自定义链）。
+  const allowed = [...ALL_ENGINES, "webz"];
+  const disabled = effectiveDisabledEngines({ allowedEngines: allowed });
+  const auto = routeEngines("anything", {
+    disabledEngines: disabled,
+    allowedEngines: allowed,
+    zhPool: ["bing", "webz"],
+  });
+  assert.equal(auto.includes("webz"), true, "a whitelisted external engine must join the auto chain");
+  // 2) 池里点名它会排到头上（语言池就是 routeHead）。
+  const pooled = routeEngines("中文查询", {
+    disabledEngines: disabled,
+    allowedEngines: allowed,
+    zhPool: ["webz"],
+  });
+  assert.equal(pooled[0], "webz", "an external engine in the language pool leads the route");
+  // 3) 没勾选时它仍然不出现：装了包不等于启用。
+  const off = routeEngines("anything", {
+    disabledEngines: effectiveDisabledEngines({ allowedEngines: ALL_ENGINES }),
+    allowedEngines: ALL_ENGINES,
+    zhPool: ["bing", "webz"],
+  });
+  assert.equal(off.includes("webz"), false, "an unchecked external engine must stay out");
+  setExternalEngines([]);
+});
 
-  // A custom chain that names it does route through it (at its position).
-  const custom = routeEngines("anything", { disabledEngines: [], allowedEngines: ["webz", "bing"], fallbackOrder: ["bing", "webz"] });
-  assert.deepEqual(custom, ["bing", "webz"], "a custom chain may contain it");
+await check("an external engine is reported as disabled until it is ticked", async () => {
+  setExternalEngines([{ id: "webz", label: { en: "Webz" }, time: true, requiresKey: ["WEBZ_API_TOKEN"] }]);
+  // 旧配置（白名单为空）只回填内置 43 个 → 外部引擎默认禁用
+  assert.equal(effectiveDisabledEngines({}).includes("webz"), true);
+  // 勾上之后才从禁用集合里消失
+  assert.equal(effectiveDisabledEngines({ allowedEngines: [...ALL_ENGINES, "webz"] }).includes("webz"), false);
+  setExternalEngines([]);
 });
 
 await check("a time-filtered route treats a time-capable external engine correctly", async () => {

@@ -33,10 +33,10 @@
 | 进回退链下拉 | 做 | 用户可拖进链里 |
 | 显式调用 `engine: "<id>"` | 做 | `advanced_search` 等 |
 | Multi **显式点名**（`engines: ["webz"]`） | 做 | 只换判据即可，不动池 |
-| Multi **默认池**自动带外部引擎 | **不做** | 默认池来自 `languagePool()` → `normalizeLanguagePool()` → `ALL_ENGINES` 静态过滤 |
-| 进语言池 `zhPool` / `enPool` | **不做** | 原因见第 5 节：静默失败，必须先做 `ALL_ENGINES` 动态化 |
-| 进提示词引擎清单 | 不做 | 同上 |
-| 进诊断报告 | 尽力 | 标 `source: external` |
+| Multi **默认池**自动带外部引擎 | 做（第二期已补） | `normalizeLanguagePool` 走 `isKnownEngine`，池里点名即生效 |
+| 进语言池 `zhPool` / `enPool` | 做（第二期已补） | `routeEngines` 的非自定义分支已并入外部 id |
+| 进提示词引擎清单 | 做（第二期已补） | `engineIdsPrompt()` 运行时拼接 |
+| 进诊断报告 | 做 | 与内置引擎同一份 `doctor` 逻辑 |
 
 > 注：早期版本这一行写的是「进 `multi_search` 并发池：做」，与第 5 节矛盾——multi 的并发池**就是**语言池。
 > 实际边界是「显式点名可以，默认池不可以」。见 [external-engine-implementation.md](./external-engine-implementation.md) 第 0 节。
@@ -102,19 +102,24 @@ export const freeSearchEngine = {
 - `pnpm add` 装的 → 写在 `package.json`
 - `pnpm link` 装的 → 常量 symlink，可能不写在 `package.json`
 
-## 5. 为什么 MVP 不做语言池（重要，别忘）
+## 5. 语言池与 `ALL_ENGINES`（第二期已补）
 
-池的校验在 `normalizeLanguagePool()`：
+池的校验原先在 `normalizeLanguagePool()`：
 
 ```js
 .filter((engine) => ALL_ENGINES.includes(engine) && ...)
 ```
 
-`ALL_ENGINES` 是 **`engine_meta.js` 的静态常量**，在 40+ 处被模块顶层求值。外部引擎的 id 不在里面 → **用户填了也会被静默丢掉**，然后回退到默认池。用户以为配好了，其实没有，且**没有任何提示**。
+`ALL_ENGINES` 是 **`engine_meta.js` 的静态常量**，外部引擎的 id 不在里面 → 用户填了也会被静默丢掉，然后回退到默认池。
 
-同类校验还有三处（白名单、回退链、池）。白名单/回退链的失败会「看得见」（勾了不生效、拖不进去），池的失败是静默的。所以池单独缓一期，等 `ALL_ENGINES` 彻底改成函数时一次做对。
+第二期没有把 `ALL_ENGINES` 整体改成函数（那要过 40+ 个调用点，风险太高），而是把「引擎是否已知」收敛到一个判据 `isKnownEngine()`，再让池、路由、白名单、诊断共用它：
 
-**第二期必须先做这件事**：把 `ALL_ENGINES` 从常量改成 `allEngines()` 函数（`builtin + external`），并逐处过一遍 40+ 个调用点。
+- `normalizeLanguagePool` 用 `isKnownEngine`
+- `routeEngines` 非自定义分支的全集 = `ALL_ENGINES ∪ 已装外部 id`
+- `effectiveDisabledEngines` 把外部 id 也算进禁用集合（没勾选即禁用）
+- `engineIdsPrompt()` 运行时拼接工具 schema 的 id 列表
+
+结果：池里点名外部引擎会生效，不再静默失败。第一期「缓一期」的结论只针对当时的实现，现已闭环。
 
 ## 6. 安装界面（用户已提的问题）
 

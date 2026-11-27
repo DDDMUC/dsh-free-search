@@ -37,6 +37,17 @@ check("both commands register only through the config-driven switch", () => {
   assert.equal((client.match(/command\.register\(/g) || []).length, 2);
 });
 
+check("the popup also lists installed external engines", () => {
+  const body = client.slice(client.indexOf("function registerSlashCommands()"));
+  // 斜杠命令是独立入口，不走设置页的 loadExtensions()；它必须自己读 describe 里的
+  // externalEngines，否则装好的扩展永远无法被设为首选引擎。
+  assert.match(body, /view\?\.value\?\.externalEngines/);
+  assert.match(body, /\[\.\.\.ENGINES, \.\.\.externalCatalog\]/);
+  assert.match(body, /e\.badge === "EXT" \? t\.engineExtension/);
+  assert.match(client, /engineExtension: "扩展"/);
+  assert.match(client, /engineExtension: "Extension"/);
+});
+
 check("the prompt stops naming /free-search-engine when commands are off", () => {
   const on = buildBuiltinPromptBlocks({});
   const off = buildBuiltinPromptBlocks({ slashCommands: false });

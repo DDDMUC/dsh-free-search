@@ -642,7 +642,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **123 个**零依赖断言脚本（合计 **1525 项**）
+仓库自带 **123 个**零依赖断言脚本（合计 **1534 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -656,7 +656,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-engine-modules.mjs` | 引擎分层：实现文件存在且被 index 引用、引擎函数已迁出 index、设置页引擎 id 与服务端清单一致、清单覆盖 43 个引擎且免费/按次标记正确、index 不引用引擎私有名 | `node tools/assert-engine-modules.mjs`（6） |
 | `assert-brave.mjs` | Brave Search：catalog/凭据/设置接线、请求头与 count/freshness、错误分类、HTML 清洗、ISO 日期归一化、15s 超时 | `node tools/assert-brave.mjs`（54） |
 | `assert-sidebar-entry.mjs` | 侧栏入口（#129）：`sidebarEntry` 默认开、设置页读写、条件注册/注销、`/free-search` 命令打开面板 | `node tools/assert-sidebar-entry.mjs`（4） |
-| `assert-slash-commands.mjs` | 斜杠命令开关：`slashCommands` 默认开、设置页读写、两个命令按配置注册/注销、关闭后提示词不再提 `/free-search-engine` | `node tools/assert-slash-commands.mjs`（4） |
+| `assert-slash-commands.mjs` | 斜杠命令开关：`slashCommands` 默认开、设置页读写、两个命令按配置注册/注销、关闭后提示词不再提 `/free-search-engine`、弹窗列出已装的外部引擎（角标「扩展」） | `node tools/assert-slash-commands.mjs`（5） |
 | `assert-keyless-first.mjs` | 免 key 优先：`keylessFirst` 默认关、开启后先走免 key 档，限流/鉴权/网络失败改用 key 并休息、其他失败不动用 key、无 key 行为不变，覆盖 Tavily、Exa 与 multi 模式 | `node tools/assert-keyless-first.mjs`（13） |
 | `assert-zhipu.mjs` | 智谱搜索：catalog/回退链、请求头与 engine/count/recency、Sogou 步进、响应映射、错误分类、无 key | `node tools/assert-zhipu.mjs`（6） |
 | `assert-deepseek-snippets.mjs` | deepseek-tools 摘要：默认 600、0 不截断、总预算上限、短条目保留 | `node tools/assert-deepseek-snippets.mjs`（5） |
@@ -690,11 +690,11 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-runtime-copy.mjs` | 运行时输出面板的每一条文字都从 `lib/` 源码抽取（`tools/lib/extract-runtime-copy.mjs`），再与 `client.js` 的内联副本双向逐字比对：置信度说明、回退 Note 模板、输出外壳（含工具名与 weather 三种语言表头）、空结果占位、`<untrusted-web-content>` 边界；`Confidence` 与空占位不许混进外壳；四类文字各自成段（不是一个块），只有置信度段带中/EN；位置描述必须是「结果列表之后」；改源码后忘重跑 `tools/gen-runtime-copy.mjs` 会直接失败 | `node tools/assert-runtime-copy.mjs`（9）；重生成用 `node tools/gen-runtime-copy.mjs` |
 | `assert-tool-language.mjs` | 工具侧文字的语言（「提示词语言」下拉删除后的接手者）：`toolLanguageOf` 是唯一来源（显式 `promptToolsLang` > `uiLang` > en）、六处工具注册全部改用它、工具段摘要与运行时文案同源、客户端预览与服务端同一规则、界面已无该下拉但字段仍可读且客户端不再覆写 | `node tools/assert-tool-language.mjs`（5） |
 | `assert-external-engines.mjs` | 外部引擎扩展点的发现与隔离：`dsh.freeSearch` 标记的包被发现、无标记的忽略、scope 目录展开而 `.pnpm`/隐藏目录跳过、`apiVersion` 必须是 1、id 撞内置或撞另一个外部包一律拒绝、`auto`/`multi` 不算引擎、入口不得越出包目录、import 抛错只记失败不中断扫描、坏结果形状返回 `null`、注入的上下文不含 `cfg`/`settings`/凭据中心 | `node tools/assert-external-engines.mjs`（16） |
-| `assert-external-wiring.mjs` | 外部引擎在 `lib/index.js` 的接线：43 个内置引擎常量一个不改、外部 id 未注册前不算已知引擎、注册后能过白名单/禁用集/回退链/语言池四处校验、默认启用集与默认回退链都不含它、Auto 路由只在自定义链点名时才用它、`time` 决定时间过滤时是否排到前面、`describe` 回传清单、判据只剩 `isKnownEngine`/`isTimeEngine` 两处原始常量、runner 只解析自己声明的凭据并用 `proxyFetch` | `node tools/assert-external-wiring.mjs`（15） |
+| `assert-external-wiring.mjs` | 外部引擎在 `lib/index.js` 的接线：43 个内置引擎常量一个不改、外部 id 未注册前不算已知引擎、注册后能过白名单/禁用集/回退链/语言池四处校验、默认启用集与默认回退链都不含它、勾选后默认顺序下也进 Auto 链并在池里领跑、未勾选仍算禁用、`time` 决定时间过滤时是否排到前面、`describe` 回传清单、判据只剩 `isKnownEngine`/`isTimeEngine` 两处原始常量、runner 只解析自己声明的凭据并用 `proxyFetch` | `node tools/assert-external-wiring.mjs`（16） |
 | `assert-webz-engine.mjs` | 第一个可选引擎包（Webz.io News Search）：`apiVersion`/`id`/`time`/`requiresKey` 契约、相对与绝对时间都换算成毫秒 `ts`、31 天边界决定是否带 `allowNewsHistory`、`size` 夹在 1–100、token 只走 Bearer 头不进 URL、`posts[]` → `sources[]` 字段映射、坏 JSON/缺 `posts`/401/402/429/400 的报错文案 | `node tools/assert-webz-engine.mjs`（18） |
 | `assert-extension-install.mjs` | 「扩展」分区的安装路径：可安装清单是服务端硬编码白名单（客户端传什么都不作数）、link 模式拒绝安装、装完先重扫再回话、包名过正则（`-g`/`;rm`/路径穿越一律拒绝）、pnpm 用 `spawn` 且 `shell:false`、ndjson 折叠成「阶段 + 已导入包数」（同一个包不重复计数）、进度结构里没有 `percent`（不编造百分比）、`minimumReleaseAge` 被拒时给出人能读的解释、扩展是导航与页面的最后一段、勾选走同一个 `allowedEngines` 路径 ；可安装条目是**一条带框的单行**（详情进悬停卡片，名称在左、按钮在右），安装进度用 `flex:1 1 100%` 独占第二行| `node tools/assert-extension-install.mjs`（20） |
 | `assert-extension-target.mjs` | 扩展装进哪个 profile：`activeProfileDir()` 用 `realpath` 比对「这一份插件自己」所在的 profile（多 profile 时按扫描顺序取第一个会装错，装了也不会被加载）；link 模式只拦「自升级自己」，不拦装扩展；列表回传 `canInstall` 与 `installProfile`，页面把目标 profile 写出来；按钮只看 `canInstall` | `node tools/assert-extension-target.mjs`（7） |
-| `assert-extension-credentials.mjs` | 扩展的凭据输入：服务端 `extensions()` 回传每个已装引擎声明的 key 是否已配置（只探测 `requiresKey` 里的名字，不遍历全表）、客户端按 `requiresKey` 渲染输入框（不写死 `WEBZ_API_TOKEN`）、保存走现成的 `credentials-set` 路由、输入框是 `password` 且保存成功后清空草稿、runner 读的键名与界面同源 | `node tools/assert-extension-credentials.mjs`（5） |
+| `assert-extension-credentials.mjs` | 扩展的凭据输入：服务端 `extensions()` 回传每个已装引擎声明的 key 是否已配置（只探测 `requiresKey` 里的名字，不遍历全表）、客户端按 `requiresKey` 渲染输入框（不写死 `WEBZ_API_TOKEN`）、保存走现成的 `credentials-set` 路由、输入框是 `password` 且保存成功后清空草稿、runner 读的键名与界面同源、状态点按包声明的凭据名查配置 | `node tools/assert-extension-credentials.mjs`（6） |
 | `assert-activity-panel.mjs` | 右侧栏搜索动态（#144）：记录只在内存不落盘、历史上限 50、来源上限 8、按会话隔离、进行中/完成状态、引擎结果分类（成功/失败类别/跳过原因）、清空、默认关闭、旧宿主无右侧栏服务时整体跳过、tab 正文+标题+引导入口注册、bridge 路由走统一守卫、工具分发携带会话、轮询随卸载停止、中英文案 | `node tools/assert-activity-panel.mjs`（15） |
 | `assert-activity-wiring.mjs` | 搜索动态接线（#144 回归）：配置项默认关闭且能完整往返、座位标志只在服务注入后才置位、加载时已开启也能挂载、tab id 三处共用、引导入口带 commandId 且标题/描述是函数、package.json 声明 `dsh-client-ui-sidebar-right` 为可选 peer 与 client inject、服务缺失时有 try/catch 兜底 | `node tools/assert-activity-wiring.mjs`（8） |
 | `assert-activity-pipeline.mjs` | 搜索动态数据面端到端：工具钩子把会话带进搜索链、记录归属该会话、进行中可见当前引擎、结束后离开 in-flight、引擎结果与来源往返完好、无归属记录仍可见、会话之间不串、底部计数已接线、两条 bridge 路由都过统一守卫、面板轮询随卸载停止 | `node tools/assert-activity-pipeline.mjs`（20） |
@@ -724,8 +724,8 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-mcp-response-cap.mjs` | #147 MCP stdio 单条响应上限：字符/字节/整行三重上限默认值与环境覆盖、0 关闭、多字节文本不超 64KB 行、**JSON 转义后的整行不超 64KB**（引号/换行/反斜杠密集三种形状）、不重复叠加截断提示、不切在代理对中间、handler 对结果与错误统一截断、web_fetch 先按上限收缩、research 文档按剩余预算均分 | `node tools/assert-mcp-response-cap.mjs`（18） |
 | `assert-fetch-ssrf.mjs` | 抓取 SSRF 防护：公网/私网/保留地址判定、DNS 解析到私网拒绝、localhost 与 IP 字面量拒绝、`http://` 与 `https://` 放行而其他协议与带凭据 URL 拒绝、http 目标解析到私网同样拒绝、fake-ip 网段默认拒绝且仅按配置放行、IPv6 ULA 显式放行、放行后仍拒绝回环/IPv4 私网/链路本地、provider 接线与设置项 | `node tools/assert-fetch-ssrf.mjs`（10） |
 | `assert-fetch-http.mjs` | 明文 http 目标（#143）：直连层按协议选 transport、http 重定向可跟随、provider 不再在入口拒绝 http 而交给 tier 链、全层失败报直连原因而不再报 only https、非 http(s) 协议仍拒、`agentForUrl` 为 http 目标选明文隧道 agent、经 `CONNECT` 隧道抓取 http 页面 | `node tools/assert-fetch-http.mjs`（7） |
-| `assert-mcp.mjs` | MCP stdio 面：initialize 协议协商、tools/list 的 JSON Schema、tools/call 文本结果、工具错误与 JSON-RPC 错误区分、必填参数校验、显式付费引擎与新 provider、advanced/multi/domain/platform/video/research/weather 新工具、bin/files 打包 | `node tools/assert-mcp.mjs`（10） |
-| `assert-mcp.mjs` | MCP stdio surface: initialize negotiation, tools/list JSON Schema, tools/call text results, tool errors vs JSON-RPC errors, required arguments, explicit keyed engines and new providers, advanced/multi/domain/platform/video/research/weather tools, bin/files packaging | `node tools/assert-mcp.mjs` (10) |
+| `assert-mcp.mjs` | MCP stdio 面：initialize 协议协商、tools/list 的 JSON Schema、tools/call 文本结果、工具错误与 JSON-RPC 错误区分、必填参数校验、显式付费引擎与新 provider、advanced/multi/domain/platform/video/research/weather 新工具、已装外部引擎进 id 列表与 schema、bin/files 打包 | `node tools/assert-mcp.mjs`（11） |
+| `assert-mcp.mjs` | MCP stdio surface: initialize negotiation, tools/list JSON Schema, tools/call text results, tool errors vs JSON-RPC errors, required arguments, explicit keyed engines and new providers, advanced/multi/domain/platform/video/research/weather tools, installed external engines in the id list and schema, bin/files packaging | `node tools/assert-mcp.mjs` (11) |
 | `assert-baidu.mjs` | 百度千帆：key 必填、web_search 首请求、403 或 results.code 额度错误回退 chat/completions（stream:false）、401 不回退、双端失败合并报错 | `node tools/assert-baidu.mjs`（6） |
 | `assert-deepseek-endpoint.mjs` | DeepSeek 搜索端点：默认地址、base/完整 URL 归一、自定义 endpoint 收 Bearer/key/query、配置与设置页接线 | `node tools/assert-deepseek-endpoint.mjs`（4） |
 | `assert-yuanbao.mjs` |key 必填、Bearer 网关/Query/Mode/Site/FromTime、自然与 VR 页面解析、日期归一、错误分类、注册与显式专用 | `node tools/assert-yuanbao.mjs`（6） |
@@ -744,7 +744,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-uncertainty.mjs` | 输出契约：0/1 源为 low、2 源与同站为 medium、3 个不同域为 high、时间过滤无日期、失败备注、聚合站提示 | `node tools/assert-uncertainty.mjs`（8） |
 | `assert-youcom.mjs` | You.com 免 key 档（#90）：两档 URL 与请求头、无 key 不发 `X-API-Key`、`YDC_API_KEY` 别名、429/401/402/5xx 分类 | `node tools/assert-youcom.mjs`（23） |
 | `assert-prompt-language.mjs` | 提示词语言（en/zh）：语言回退、9 个工具双语文案、标识符不被翻译、占位符插值、切换时只重注册一次 | `node tools/assert-prompt-language.mjs`（7） |
-| `assert-tool-schema-size.mjs` | 工具 schema 体积（#94）：共享引擎 id 常量、`domain_search` 不内嵌逐引擎句子、三处合计 < 1.6k 字符 | `node tools/assert-tool-schema-size.mjs`（5） |
+| `assert-tool-schema-size.mjs` | 工具 schema 体积（#94）：共享引擎 id 列表是运行时函数（外部引擎也能进）、`domain_search` 不内嵌逐引擎句子、三处合计 < 1.6k 字符 | `node tools/assert-tool-schema-size.mjs`（5） |
 | `assert-config-seat.mjs` | 配置入口（#101）：卡片同时挂在 `plugins.bundle.config`（key = 包名，渲染在包页）与 `plugins.row.config`（老入口），两者共用同一渲染器 | `node tools/assert-config-seat.mjs`（4） |
 `node tools/assert-prompt-injection.mjs`（15）
 | `assert-rail-section.mjs` | 页内目录的机器可读当前段：卡片根 `data-dsh-fs-section` 与 `railActive` 绑定、六段 id 固定、滚动监听仍在更新 | `node tools/assert-rail-section.mjs`（4） |
@@ -1442,7 +1442,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**One hundred and twenty-three** zero-dependency assertion scripts ship with the repo (**1525 assertions** total)
+**One hundred and twenty-three** zero-dependency assertion scripts ship with the repo (**1534 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|
@@ -1456,7 +1456,7 @@ Restart `dsh web` after switching to apply changes.
 | `assert-engine-modules.mjs` | Engine layout: module files exist and are imported, implementations have left index.js, the client engine ids match the server catalog, the catalog covers 42 engines with the right free/explicit flags, and index never reads an engine-private name | `node tools/assert-engine-modules.mjs` (6) |
 | `assert-brave.mjs` | Brave Search: catalog / credential / settings wiring, request headers and count/freshness, error classification, HTML stripping, ISO date normalization, and the 15s budget | `node tools/assert-brave.mjs` (54) |
 | `assert-sidebar-entry.mjs` | Sidebar entry (#129): `sidebarEntry` defaults on, settings load/save it, registration can be disposed/recreated, and `/free-search` opens the panel | `node tools/assert-sidebar-entry.mjs` (4) |
-| `assert-slash-commands.mjs` | Slash-command switch: `slashCommands` defaults on, settings load/save it, both commands register/unregister from config, and the prompt stops naming `/free-search-engine` when off | `node tools/assert-slash-commands.mjs` (4) |
+| `assert-slash-commands.mjs` | Slash-command switch: `slashCommands` defaults on, settings load/save it, both commands register/unregister from config, the prompt stops naming `/free-search-engine` when off, and the popup lists installed external engines (badge "Extension") | `node tools/assert-slash-commands.mjs` (5) |
 | `assert-keyless-first.mjs` | Keyless tier first: `keylessFirst` defaults off; when on, the keyless tier runs first and a rate limit, auth demand or network failure falls back to the key (which then rests the keyless tier), other failures leave the key alone, and no-key behaviour is unchanged; covers Tavily, Exa and multi mode | `node tools/assert-keyless-first.mjs` (13) |
 | `assert-zhipu.mjs` | Zhipu Web Search: catalog/fallback wiring, auth and request engine/count/recency, Sogou count steps, response mapping, error classes, missing key | `node tools/assert-zhipu.mjs` (6) |
 | `assert-deepseek-snippets.mjs` | deepseek-tools snippets: default 600, 0 disables the cap, total budget ceiling, short results survive, summary+snippet joining, and site labels | `node tools/assert-deepseek-snippets.mjs` (5) |
@@ -1492,7 +1492,7 @@ Restart `dsh web` after switching to apply changes.
 | `assert-uncertainty.mjs` | output contract: 0/1 source is low, two sources or a single site is medium, three distinct domains is high, time filter without dates, failure notes, aggregator caveat | `node tools/assert-uncertainty.mjs` (8) |
 | `assert-youcom.mjs` | You.com keyless tier (#90): both URLs and headers, no `X-API-Key` without a key, the `YDC_API_KEY` alias, and 429/401/402/5xx classification | `node tools/assert-youcom.mjs` (23) |
 | `assert-prompt-language.mjs` | Prompt language (en/zh): fallback rules, bilingual copy for all 9 tools, identifiers left untranslated, placeholder interpolation, and one re-registration per language change | `node tools/assert-prompt-language.mjs` (7) |
-| `assert-tool-schema-size.mjs` | Tool schema budget (#94): one shared engine-id constant, no per-engine sentences in `domain_search`, the three schemas under 1.6k chars combined | `node tools/assert-tool-schema-size.mjs` (5) |
+| `assert-tool-schema-size.mjs` | Tool schema budget (#94): one shared engine-id list built at runtime (external engines included), no per-engine sentences in `domain_search`, the three schemas under 1.6k chars combined | `node tools/assert-tool-schema-size.mjs` (5) |
 | `assert-config-seat.mjs` | Config entry point (#101): the card is registered on `plugins.bundle.config` (keyed by the package name, rendered on the bundle page) and on `plugins.row.config` (older entry), both sharing one renderer | `node tools/assert-config-seat.mjs` (4) |
 | `assert-prompt-injection.mjs` | Paged prompt (#102): two built-in pages first, user pages after, the current page is what gets injected, an empty page injects nothing, the generated page split into State/Tools/Constraints blocks, built-ins delivered with describe instead of a second request, tool switches wired into every registrar, and the seventh section UI | `node tools/assert-prompt-injection.mjs` (15) |
 | `assert-rail-section.mjs` | Machine-readable active section for the in-page rail: the card root's `data-dsh-fs-section` tracks `railActive`, the six section ids are fixed, and the scroll spy still updates it | `node tools/assert-rail-section.mjs` (4) |

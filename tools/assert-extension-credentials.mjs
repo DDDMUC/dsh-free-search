@@ -42,7 +42,7 @@ check("the client renders one input per declared key, not a hard-coded list", ()
 check("an installed engine row matches the built-in engine row", () => {
   // 已装扩展不能再长成另一套两行卡片：它必须复用内置引擎行的那组 class，
   // 否则同一个列表里会出现两种行高、两种勾选框、两种状态表达。
-  const section = client.slice(client.indexOf('"data-dsh-section": "extensions"'), client.indexOf('"data-dsh-section": "extensions"') + 14000);
+  const section = client.slice(client.indexOf('"data-dsh-section": "extensions"'), client.indexOf('"data-dsh-section": "extensions"') + 16000);
   const installed = section.slice(section.indexOf("extensions.installed.map"), section.indexOf("extensions.failures.length"));
   assert.match(installed, /className: "dshfs-priorityRow"/, "the row must reuse the built-in row class");
   assert.match(installed, /className: "dshfs-priorityName"/, "the name must reuse the built-in name class");
@@ -52,6 +52,8 @@ check("an installed engine row matches the built-in engine row", () => {
   // 角标是内置引擎的 badge；外部包的名字由包自己给，不该再拼一个 (API KEY)。
   assert.equal(/\(API KEY\)/.test(installed), false, "no synthetic API KEY badge on external engines");
   assert.equal(/className: "dshfs-extRow"/.test(installed), false, "the installed row must not use the installable-only frame");
+  // 状态点必须查外部凭据名，否则配好 key 之后仍显示橙色「未配置」。
+  assert.match(client, /extensions\.keysConfigured\?\.\[name\] === true/);
 });
 
 check("saving a key goes through the existing credentials route", () => {

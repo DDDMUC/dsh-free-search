@@ -20,11 +20,13 @@ const check = (name, fn) => {
 const ids = ALL_ENGINES.join(", ");
 
 check("index.js exposes a single shared engine-id list", () => {
-  assert.match(idx, /const ENGINE_IDS_PROMPT = ALL_ENGINES\.join\(", "\);/);
+  // 必须用函数而不是常量：外部引擎是运行时发现的，常量会让工具 schema 永远只列 43 个。
+  assert.match(idx, /const engineIdsPrompt = \(\) => \[\.\.\.ALL_ENGINES, \.\.\.externalEngineIds\]\.join\(", "\);/);
+  assert.equal(/const ENGINE_IDS_PROMPT = ALL_ENGINES\.join\(", "\);/.test(idx), false);
 });
 
 check("free_search_test and advanced_search reuse it instead of inline lists", () => {
-  assert.equal((idx.match(/\{ ids: ENGINE_IDS_PROMPT \}/g) || []).length, 2);
+  assert.equal((idx.match(/\{ ids: engineIdsPrompt\(\) \}/g) || []).length, 2);
   assert.equal(idx.includes("Options: ddg, ddg-lite"), false);
   assert.equal(idx.includes("multi (parallel full language-pool merge), auto, ddg"), false);
 });
