@@ -45,6 +45,20 @@ check("keyboard support covers the usual keys", () => {
   }
 });
 
+check("the engine dropdown can be filtered by typing", () => {
+  // 40+ 引擎靠滚动找太慢；搜索引擎下拉在浮层顶部放一个输入框。
+  const start = client.indexOf("function Dropdown(");
+  const end = client.indexOf("\n    function FreeSearchSummary()", start);
+  const block = client.slice(start, end);
+  assert.match(block, /searchable/, "the component needs a searchable mode");
+  assert.match(block, /className: "dshfs-ddSearch"/, "the filter input lives inside the panel");
+  assert.match(block, /visibleIndexes/, "filtering must keep the original option indexes");
+  assert.match(block, /className: "dshfs-ddEmpty"/, "an empty result needs its own line, not a blank panel");
+  assert.match(client, /searchable: true/, "the engine dropdown must opt in");
+  assert.match(client, /searchEngineSearch: "输入引擎名过滤…"/);
+  assert.match(client, /searchEngineSearch: "Type to filter engines…"/);
+});
+
 check("the panel scrolls instead of growing without bound", () => {
   assert.match(client, /\.dshfs-ddPanel\{[^}]*max-height:280px/);
   assert.match(client, /\.dshfs-ddPanel\{[^}]*overflow-y:auto/);

@@ -642,7 +642,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **113 个**零依赖断言脚本（合计 **1398 项**）
+仓库自带 **114 个**零依赖断言脚本（合计 **1404 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -699,7 +699,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-browser-path.mjs` | T1.5 浏览器路径（#160）：留空仍走内置候选表、纯空格等同空值、自定义路径原样使用、路径不存在时不回落到其它浏览器、探测缓存随配置失效、provider 收到的是配置值而非硬编码、配置项默认空、设置页能完整读写、输入框只在 T1.5 开启时出现、中英文提示都写明不回落规则 | `node tools/assert-browser-path.mjs`（9） |
 | `assert-control-chrome.mjs` | 字段标题与复选框外观：标题字号/字重要高于正文、复选框由样式绘制（`appearance:none` + CSS 勾）、不确定态有独立横线、聚焦有描边、深浅色都覆盖、分组自动换行、全选不拉满整行、工具行复选框不再固定 150px | `node tools/assert-control-chrome.mjs`（9） |
 | `assert-checkbox-labels.mjs` | 复选框不再重复标签：左侧栏入口 / 斜杠命令 / 免 key 优先三项各只出现一次标签、标签位于复选框同一行、其它输入类字段仍保留独立标题 | `node tools/assert-checkbox-labels.mjs`（5） |
-| `assert-dropdown.mjs` | 自绘下拉：设置页不再有原生 `<select>`、11 处全部走同一个组件、保留 `onChange({ target })` 契约与 listbox 语义、键盘（↑↓/Home/End/Enter/Esc/Tab）可用、浮层限高滚动、深浅色都有样式 | `node tools/assert-dropdown.mjs`（6） |
+| `assert-dropdown.mjs` | 自绘下拉：设置页不再有原生 `<select>`、10 处全部走同一个组件、保留 `onChange({ target })` 契约与 listbox 语义、键盘（↑↓/Home/End/Enter/Esc/Tab）可用、浮层限高滚动、深浅色都有样式、搜索引擎下拉可在浮层顶部输入过滤 | `node tools/assert-dropdown.mjs`（7） |
 | `assert-engine-setting-fields.mjs` | 引擎设置字段签名：每个 `engineSettingField` 调用都按 `(id, label, value, setter, options)` 传参、没有把 label 当 id、Tavily 端点字段接线正确 | `node tools/assert-engine-setting-fields.mjs`（3） |
 | `assert-fallback-row-layout.mjs` | 回退优先级行对齐：没有高级设置的引擎也渲染不可见占位按钮、占位不参与交互、设置按钮列固定宽度、key 输入框不再撑满剩余空间 | `node tools/assert-fallback-row-layout.mjs`（4） |
 | `assert-settings-order.mjs` | 设置页顺序：提示词段在三个全局开关之前、开关彼此相邻且保持原顺序、提示词是最后一个带分区的段、右侧目录顺序与页面一致 | `node tools/assert-settings-order.mjs`（5） |
@@ -751,6 +751,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-updater.mjs` | 自带更新：版本比较、registry 探测（成功 / 非 200 / 网络失败返回 null）、安装模式识别（真实安装优先于 link）、客户端按钮与桥接、服务端两条路由与 pnpm 升级命令、卡片版本跟 package.json 一致 | `node tools/assert-updater.mjs`（9） |
 | `assert-inject.mjs` | 旧版 Cordis 兼容（#107）：静态 inject 声明 web / settings / tools / systemPrompt、可选服务只走 `ctx.get`、回调上下文的属性读取都在 inject 里、动态依赖列表没有未知服务 | `node tools/assert-inject.mjs`（4） |
 | `assert-safe-text.mjs` | UTF-16 截断安全（#108）：孤立高低代理清理、有效代理对保留、码点截断不切开 emoji、`cleanSnippet` 300 边界落在整字符、结果/来源/错误脱敏、web_fetch 各层正文兜底、源码守卫 | `node tools/assert-safe-text.mjs`（9） |
+| `assert-lossless-output.mjs` | 工具输出必须是 lossless JSON（#169）：所有引擎（含 `lib/engines/**`、`platform_engines`、`agy`、`serp_engines`、外部引擎）都显式返回布尔 `truncated`、provider 出口再兜一层 `result?.truncated === true`、`runEngineTest`/`runMultiSearch`/外部引擎归一各自补齐、用 JSON 往返证明 `truncated: undefined` 会被丢键（也就是当初 `web_search` 报 `value is not lossless JSON` 的原因） | `node tools/assert-lossless-output.mjs`（5） |
 | `assert-degoog.mjs` | degoog 自建实例（#85）：`/api/search` URL 规范化、查询编码、`time`/`lang` 参数、注册表位置、无需凭据 | `node tools/assert-degoog.mjs`（7） |
 | `assert-multikey.mjs` | 多 key 字段：单 key 不变、逗号/分号/换行分隔、空白项丢弃、空输入为空数组 | `node tools/assert-multikey.mjs`（3） |
 | `assert-firecrawl-keyless.mjs` | Firecrawl keyless 出口判定：403 + VPN/proxy 文案才算拒绝、普通 403 与 401/429/500 不算、冷却初始未触发 | `node tools/assert-firecrawl-keyless.mjs`（5） |
@@ -1432,7 +1433,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**One hundred and thirteen** zero-dependency assertion scripts ship with the repo (**1398 assertions** total)
+**One hundred and fourteen** zero-dependency assertion scripts ship with the repo (**1404 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|
@@ -1499,6 +1500,7 @@ Restart `dsh web` after switching to apply changes.
 | `assert-updater.mjs` | Built-in updater: version comparison, registry probe (success / non-200 / network failure yields null), install-mode detection (a real install beats a link), the client button and bridge helper, both server routes with the pnpm upgrade command, and the card version matching package.json | `node tools/assert-updater.mjs` (9) |
 | `assert-inject.mjs` | Older Cordis compatibility (#107): the static inject list declares web / settings / tools / systemPrompt, optional services are read through `ctx.get`, every property read on a callback context is declared, and dynamic dependency lists contain no unknown services | `node tools/assert-inject.mjs` (4) |
 | `assert-safe-text.mjs` | UTF-16 truncation safety (#108): lone high/low surrogates replaced, valid pairs kept, code-point slicing never splits an emoji, `cleanSnippet`'s 300 boundary lands on a whole character, results/sources/errors sanitized, every web_fetch tier covered, plus source guards | `node tools/assert-safe-text.mjs` (9) |
+| `assert-lossless-output.mjs` | Tool output must be lossless JSON (#169): every engine (`lib/engines/**`, `platform_engines`, `agy`, `serp_engines`, external engines) returns a boolean `truncated`, the provider normalises it once more at its exit with `result?.truncated === true`, `runEngineTest` / `runMultiSearch` / external normalisation each supply their own, and a JSON round-trip shows why `truncated: undefined` dropped the key and made `web_search` fail | `node tools/assert-lossless-output.mjs` (5) |
 | `assert-degoog.mjs` | degoog self-hosted instance (#85): `/api/search` URL normalisation, query encoding, `time`/`lang` parameters, registry placement, no credentials needed | `node tools/assert-degoog.mjs` (7) |
 | `assert-multikey.mjs` | multi-key fields: a single key is unchanged, comma/semicolon/newline separate keys, blank entries are dropped, empty input yields none | `node tools/assert-multikey.mjs` (3) |
 | `assert-firecrawl-keyless.mjs` | Firecrawl keyless egress refusal: only a 403 with the VPN/proxy wording counts, plain 403 and 401/429/500 do not, and the cooldown starts inactive | `node tools/assert-firecrawl-keyless.mjs` (5) |
