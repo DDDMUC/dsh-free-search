@@ -2,6 +2,10 @@
 
 > 设计见 [engine-extension-plan.md](./engine-extension-plan.md)。本文只写「怎么做」。
 > 范围：核心侧接线 + 第一个包（Webz.io News Search）。设置页分段**不在本期**。
+>
+> **现状（0.9.90）**：第一期已实现，并且外部引擎已补齐为与内置引擎同级——
+> 白名单/禁用集/回退链/语言池/Multi/`free_search_test`/`advanced_search`/MCP/工具 schema/系统提示词
+> 全部按「内置 ∪ 外部」判据走。第 0 节那张表是当时（只做显式点名）的边界，已经被第 6 节的补丁取代。
 
 ## 0. 先修一处设计文档的自相矛盾
 
@@ -176,3 +180,26 @@ packages/webz-engine/
 - `node tools/run-assertions.mjs` 全绿，且**内置 43 个引擎一条不动**
 - 手工验证：`allowedEngines` 加 `"webz"` + `engine: "webz"` → 有 token 时出结果，无 token 时报 `WEBZ_API_TOKEN is not configured`
 - 设置页**未改**（下一期）
+
+## 6. 同级化补丁（0.9.90 已落地）
+
+第 0 节的边界是「只做显式点名」。后续按用户要求把外部引擎补齐到与内置引擎完全同级，
+六处缺口与对应改法：
+
+| 缺口 | 改法 |
+|---|---|
+| Multi 主轮/补跑、`free_search_test`、设置页「测试引擎」找不到外部引擎 | `runEngineTest` 的 `default` 分支改查 `engineRunners[engine]` |
+| 默认顺序下外部引擎进不了 Auto 链 | `routeEngines` 非自定义分支全集 = `ALL_ENGINES ∪ 白名单里的外部 id`；`effectiveDisabledEngines` 把外部 id 算进禁用集合 |
+| 斜杠命令 `/free-search-engine` 弹窗没有外部引擎 | 弹窗读 `describe.value.externalEngines`，角标「扩展 / Extension」 |
+| 状态点不认外部引擎的凭据 | `hasConfiguredKey` 按 `requiresKey` 查 `extensions.keysConfigured[name]` |
+| MCP 的 id 列表 / enum / `doctor` 只有内置 | `mcp_engines.js` 运行时扫描 profile；`mcpEngineIds()` 异步；`tools/list`、`unknown engine` 校验、凭据表都走运行时列表 |
+| 工具 schema 与系统提示词里的 id 列表是常量 | `ENGINE_IDS_PROMPT` 常量换成 `engineIdsPrompt()`；`free_search_test` / `advanced_search` 注册时实时拼接 |
+
+两个容易踩的点：
+
+- **发现是异步的**。`void discover()` 不阻塞 `apply`，工具在 `apply` 里就注册了。
+  所以 `localizedEffect` 暴露了 `refreshLocalizedEffects()`，发现结束后调用一次，
+  并把外部 id 拼进那两个工具的 `getKey`——否则 key 没变，重注册会被跳过。
+- **卸载要撤干净**。`setExternalEngines` 除了 id 集合，还要撤 `REQUIRED_CREDENTIALS`、
+  `KEY_REF_MAP`（被内置引擎共用的 env 名不删）和 `engineRunners` 里的 runner，
+  否则已删除的包还能被 `free_search_test` 点名。
