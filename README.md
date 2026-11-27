@@ -642,7 +642,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **123 个**零依赖断言脚本（合计 **1540 项**）
+仓库自带 **123 个**零依赖断言脚本（合计 **1541 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -694,7 +694,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-webz-engine.mjs` | 第一个可选引擎包（Webz.io News Search）：`apiVersion`/`id`/`time`/`requiresKey` 契约、相对与绝对时间都换算成毫秒 `ts`、31 天边界决定是否带 `allowNewsHistory`、`size` 夹在 1–100、token 只走 Bearer 头不进 URL、`posts[]` → `sources[]` 字段映射、坏 JSON/缺 `posts`/401/402/429/400 的报错文案 | `node tools/assert-webz-engine.mjs`（18） |
 | `assert-extension-install.mjs` | 「扩展」分区的安装与卸载路径：可安装清单是服务端硬编码白名单（客户端传什么都不作数）、link 模式拒绝安装、装完先重扫再回话、包名过正则（`-g`/`;rm`/路径穿越一律拒绝）、pnpm 用 `spawn` 且 `shell:false`、ndjson 折叠成「阶段 + 已导入包数」（同一个包不重复计数）、进度结构里没有 `percent`（不编造百分比）、`minimumReleaseAge` 被拒时给出人能读的解释、扩展是导航与页面的最后一段、勾选走同一个 `allowedEngines` 路径；可安装条目是**一条带框的单行**（详情进悬停卡片，名称在左、按钮在右），安装进度用 `flex:1 1 100%` 独占第二行；卸载只认当前确实装着的包名、走同一条 job 状态机、卸完先重扫、按钮只出现在带包名的行、有二次确认 | `node tools/assert-extension-install.mjs`（24） |
 | `assert-extension-target.mjs` | 扩展装进哪个 profile：`activeProfileDir()` 用 `realpath` 比对「这一份插件自己」所在的 profile（多 profile 时按扫描顺序取第一个会装错，装了也不会被加载）；link 模式只拦「自升级自己」，不拦装扩展；列表回传 `canInstall` 与 `installProfile`，页面把目标 profile 写出来；按钮只看 `canInstall` | `node tools/assert-extension-target.mjs`（7） |
-| `assert-extension-credentials.mjs` | 扩展的凭据输入：服务端 `extensions()` 回传每个已装引擎声明的 key 是否已配置（只探测 `requiresKey` 里的名字，不遍历全表）、客户端按 `requiresKey` 渲染输入框（不写死 `WEBZ_API_TOKEN`）、保存走现成的 `credentials-set` 路由、输入框是 `password` 且保存成功后清空草稿、runner 读的键名与界面同源、状态点按包声明的凭据名查配置 | `node tools/assert-extension-credentials.mjs`（6） |
+| `assert-extension-credentials.mjs` | 扩展的凭据输入：服务端 `extensions()` 回传每个已装引擎声明的 key 是否已配置（只探测 `requiresKey` 里的名字，不遍历全表）、客户端按 `requiresKey` 渲染输入框（不写死 `WEBZ_API_TOKEN`）、**与内置 key 同一套 dirty/保存契约**（输入即标脏、由底部「保存」统一提交 `credentials-set`、不再有行内保存按钮）、输入框是 `password` 且保存成功或按「放弃」都会清空草稿、有未保存草稿时状态点不算「已配置」且输入框描边标脏、runner 读的键名与界面同源 | `node tools/assert-extension-credentials.mjs`（7） |
 | `assert-activity-panel.mjs` | 右侧栏搜索动态（#144）：记录只在内存不落盘、历史上限 50、来源上限 8、按会话隔离、进行中/完成状态、引擎结果分类（成功/失败类别/跳过原因）、清空、默认关闭、旧宿主无右侧栏服务时整体跳过、tab 正文+标题+引导入口注册、bridge 路由走统一守卫、工具分发携带会话、轮询随卸载停止、中英文案 | `node tools/assert-activity-panel.mjs`（15） |
 | `assert-activity-wiring.mjs` | 搜索动态接线（#144 回归）：配置项默认关闭且能完整往返、座位标志只在服务注入后才置位、加载时已开启也能挂载、tab id 三处共用、引导入口带 commandId 且标题/描述是函数、package.json 声明 `dsh-client-ui-sidebar-right` 为可选 peer 与 client inject、服务缺失时有 try/catch 兜底 | `node tools/assert-activity-wiring.mjs`（8） |
 | `assert-activity-pipeline.mjs` | 搜索动态数据面端到端：工具钩子把会话带进搜索链、记录归属该会话、进行中可见当前引擎、结束后离开 in-flight、引擎结果与来源往返完好、无归属记录仍可见、会话之间不串、底部计数已接线、两条 bridge 路由都过统一守卫、面板轮询随卸载停止 | `node tools/assert-activity-pipeline.mjs`（20） |
@@ -1442,7 +1442,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**One hundred and twenty-three** zero-dependency assertion scripts ship with the repo (**1540 assertions** total)
+**One hundred and twenty-three** zero-dependency assertion scripts ship with the repo (**1541 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|

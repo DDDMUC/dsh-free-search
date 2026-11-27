@@ -48,7 +48,7 @@ check("an installed engine row matches the built-in engine row", () => {
   assert.match(installed, /className: "dshfs-priorityName"/, "the name must reuse the built-in name class");
   assert.match(installed, /dshfs-keyStatus dshfs-keyStatus-/, "the row needs the 8px status dot, not a text label");
   assert.match(installed, /className: "dshfs-check"/, "the checkbox must use the shared pill/box style");
-  assert.match(installed, /className: "dshfs-priorityKey"/, "the input must reuse the built-in key field");
+  assert.match(installed, /className: hasDraft \? "dshfs-priorityKey dshfs-priorityKeyDirty" : "dshfs-priorityKey"/, "the input must reuse the built-in key field");
   // 角标是内置引擎的 badge；外部包的名字由包自己给，不该再拼一个 (API KEY)。
   assert.equal(/\(API KEY\)/.test(installed), false, "no synthetic API KEY badge on external engines");
   assert.equal(/className: "dshfs-extRow"/.test(installed), false, "the installed row must not use the installable-only frame");
@@ -57,18 +57,39 @@ check("an installed engine row matches the built-in engine row", () => {
 });
 
 check("saving a key goes through the existing credentials route", () => {
-  assert.match(client, /const saveExternalKey = async \(name\) =>/);
+  // 扩展的 key 与内置 key 同批提交：不再有行内「保存」按钮，
+  // 草稿落在 extKeyState，由底部 save() 统一写入 credentials-set。
+  assert.equal(/const saveExternalKey = /.test(client), false, "the inline save path must be gone");
+  assert.match(client, /for \(const \[name, draft\] of Object\.entries\(extKeyState\)\)/);
   assert.match(client, /await bridgeCredentialsSet\(name, value\)/, "reuse credentials-set, do not invent a route");
-  assert.match(client, /await loadExtensions\(\)/, "refresh states after saving");
+  assert.match(client, /setExtKeyState\(\{\}\)/, "drafts are cleared after a successful save");
+  // 底部保存成功后要刷新扩展区的「已配置」状态点。
+  assert.match(client, /void loadExtensions\(\)/, "refresh states after saving");
 });
 
-check("the input is a password field and the value is not kept after saving", () => {
+check("the input is a password field and the draft never survives a save or discard", () => {
   const at = client.indexOf("names.map((name, index) =>");
   assert.ok(at > 0, "the credential loop is missing");
   const section = client.slice(at, at + 3000);
   assert.match(section, /type: "password"/, "a credential must not render as plain text");
-  // 保存成功后把草稿清空，避免明文长留在页面上。
-  assert.match(client, /value: "", saving: false, saved: true/, "clear the draft after a successful save");
+  // 明文只活在草稿里：保存成功清空，按「放弃」也清空。
+  assert.match(client, /setExtKeyState\(\{\}\)/, "clear the draft after a successful save");
+  const discardAt = client.indexOf("const discard = () => {");
+  assert.ok(discardAt > 0, "discard is missing");
+  assert.match(client.slice(discardAt, discardAt + 600), /setExtKeyState\(\{\}\)/, "discard must drop the drafts too");
+});
+
+check("an external key input obeys the same dirty/save contract as a built-in one", () => {
+  // 这是用户提的问题：为什么只有扩展要单独的保存按钮。答案是不应该有。
+  const at = client.indexOf("names.map((name, index) =>");
+  const section = client.slice(at, at + 5200);
+  assert.match(section, /setDirty\(true\)/, "typing a key must mark the page dirty, like a built-in key");
+  assert.equal(/onClick: \(\) => saveExternalKey/.test(section), false, "no inline save button");
+  assert.equal(/extKeySave|extKeySaving|extKeySaved/.test(client), false, "the inline save copy is gone");
+  // 有草稿时状态点不能显示「已配置」，否则未保存会被读成已生效。
+  assert.match(section, /const hasDraft = String\(state\.value \?\? ""\)\.trim\(\) !== ""/);
+  assert.match(section, /const effective = hasDraft \? false : configured/);
+  assert.match(section, /dshfs-priorityKeyDirty/, "an unsaved draft is shown on the field itself");
 });
 
 check("the declared key is what the engine actually receives", () => {
