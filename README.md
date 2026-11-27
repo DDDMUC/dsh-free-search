@@ -642,7 +642,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **123 个**零依赖断言脚本（合计 **1535 项**）
+仓库自带 **123 个**零依赖断言脚本（合计 **1540 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -690,9 +690,9 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-runtime-copy.mjs` | 运行时输出面板的每一条文字都从 `lib/` 源码抽取（`tools/lib/extract-runtime-copy.mjs`），再与 `client.js` 的内联副本双向逐字比对：置信度说明、回退 Note 模板、输出外壳（含工具名与 weather 三种语言表头）、空结果占位、`<untrusted-web-content>` 边界；`Confidence` 与空占位不许混进外壳；四类文字各自成段（不是一个块），只有置信度段带中/EN；位置描述必须是「结果列表之后」；改源码后忘重跑 `tools/gen-runtime-copy.mjs` 会直接失败 | `node tools/assert-runtime-copy.mjs`（9）；重生成用 `node tools/gen-runtime-copy.mjs` |
 | `assert-tool-language.mjs` | 工具侧文字的语言（「提示词语言」下拉删除后的接手者）：`toolLanguageOf` 是唯一来源（显式 `promptToolsLang` > `uiLang` > en）、六处工具注册全部改用它、工具段摘要与运行时文案同源、客户端预览与服务端同一规则、界面已无该下拉但字段仍可读且客户端不再覆写 | `node tools/assert-tool-language.mjs`（5） |
 | `assert-external-engines.mjs` | 外部引擎扩展点的发现与隔离：`dsh.freeSearch` 标记的包被发现、无标记的忽略、scope 目录展开而 `.pnpm`/隐藏目录跳过、`apiVersion` 必须是 1、id 撞内置或撞另一个外部包一律拒绝、`auto`/`multi` 不算引擎、入口不得越出包目录、import 抛错只记失败不中断扫描、坏结果形状返回 `null`、注入的上下文不含 `cfg`/`settings`/凭据中心 | `node tools/assert-external-engines.mjs`（16） |
-| `assert-external-wiring.mjs` | 外部引擎在 `lib/index.js` 的接线：43 个内置引擎常量一个不改、外部 id 未注册前不算已知引擎、注册后能过白名单/禁用集/回退链/语言池四处校验、默认启用集与默认回退链都不含它、勾选后默认顺序下也进 Auto 链并在池里领跑、未勾选仍算禁用、`time` 决定时间过滤时是否排到前面、`describe` 回传清单、判据只剩 `isKnownEngine`/`isTimeEngine` 两处原始常量、runner 只解析自己声明的凭据并用 `proxyFetch` | `node tools/assert-external-wiring.mjs`（16） |
+| `assert-external-wiring.mjs` | 外部引擎在 `lib/index.js` 的接线：43 个内置引擎常量一个不改、外部 id 未注册前不算已知引擎、注册后能过白名单/禁用集/回退链/语言池四处校验、默认启用集与默认回退链都不含它、勾选后默认顺序下也进 Auto 链并在池里领跑、未勾选仍算禁用、`time` 决定时间过滤时是否排到前面、`describe` 回传清单、判据只剩 `isKnownEngine`/`isTimeEngine` 两处原始常量、runner 只解析自己声明的凭据并用 `proxyFetch`、卸载后 `REQUIRED_CREDENTIALS`/`KEY_REF_MAP`/runner 一并撤走（被内置引擎共用的 env 名不删）、发现完成后重注册工具 schema 与系统提示词 | `node tools/assert-external-wiring.mjs`（18） |
 | `assert-webz-engine.mjs` | 第一个可选引擎包（Webz.io News Search）：`apiVersion`/`id`/`time`/`requiresKey` 契约、相对与绝对时间都换算成毫秒 `ts`、31 天边界决定是否带 `allowNewsHistory`、`size` 夹在 1–100、token 只走 Bearer 头不进 URL、`posts[]` → `sources[]` 字段映射、坏 JSON/缺 `posts`/401/402/429/400 的报错文案 | `node tools/assert-webz-engine.mjs`（18） |
-| `assert-extension-install.mjs` | 「扩展」分区的安装路径：可安装清单是服务端硬编码白名单（客户端传什么都不作数）、link 模式拒绝安装、装完先重扫再回话、包名过正则（`-g`/`;rm`/路径穿越一律拒绝）、pnpm 用 `spawn` 且 `shell:false`、ndjson 折叠成「阶段 + 已导入包数」（同一个包不重复计数）、进度结构里没有 `percent`（不编造百分比）、`minimumReleaseAge` 被拒时给出人能读的解释、扩展是导航与页面的最后一段、勾选走同一个 `allowedEngines` 路径 ；可安装条目是**一条带框的单行**（详情进悬停卡片，名称在左、按钮在右），安装进度用 `flex:1 1 100%` 独占第二行| `node tools/assert-extension-install.mjs`（20） |
+| `assert-extension-install.mjs` | 「扩展」分区的安装与卸载路径：可安装清单是服务端硬编码白名单（客户端传什么都不作数）、link 模式拒绝安装、装完先重扫再回话、包名过正则（`-g`/`;rm`/路径穿越一律拒绝）、pnpm 用 `spawn` 且 `shell:false`、ndjson 折叠成「阶段 + 已导入包数」（同一个包不重复计数）、进度结构里没有 `percent`（不编造百分比）、`minimumReleaseAge` 被拒时给出人能读的解释、扩展是导航与页面的最后一段、勾选走同一个 `allowedEngines` 路径；可安装条目是**一条带框的单行**（详情进悬停卡片，名称在左、按钮在右），安装进度用 `flex:1 1 100%` 独占第二行；卸载只认当前确实装着的包名、走同一条 job 状态机、卸完先重扫、按钮只出现在带包名的行、有二次确认 | `node tools/assert-extension-install.mjs`（24） |
 | `assert-extension-target.mjs` | 扩展装进哪个 profile：`activeProfileDir()` 用 `realpath` 比对「这一份插件自己」所在的 profile（多 profile 时按扫描顺序取第一个会装错，装了也不会被加载）；link 模式只拦「自升级自己」，不拦装扩展；列表回传 `canInstall` 与 `installProfile`，页面把目标 profile 写出来；按钮只看 `canInstall` | `node tools/assert-extension-target.mjs`（7） |
 | `assert-extension-credentials.mjs` | 扩展的凭据输入：服务端 `extensions()` 回传每个已装引擎声明的 key 是否已配置（只探测 `requiresKey` 里的名字，不遍历全表）、客户端按 `requiresKey` 渲染输入框（不写死 `WEBZ_API_TOKEN`）、保存走现成的 `credentials-set` 路由、输入框是 `password` 且保存成功后清空草稿、runner 读的键名与界面同源、状态点按包声明的凭据名查配置 | `node tools/assert-extension-credentials.mjs`（6） |
 | `assert-activity-panel.mjs` | 右侧栏搜索动态（#144）：记录只在内存不落盘、历史上限 50、来源上限 8、按会话隔离、进行中/完成状态、引擎结果分类（成功/失败类别/跳过原因）、清空、默认关闭、旧宿主无右侧栏服务时整体跳过、tab 正文+标题+引导入口注册、bridge 路由走统一守卫、工具分发携带会话、轮询随卸载停止、中英文案 | `node tools/assert-activity-panel.mjs`（15） |
@@ -1442,7 +1442,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**One hundred and twenty-three** zero-dependency assertion scripts ship with the repo (**1535 assertions** total)
+**One hundred and twenty-three** zero-dependency assertion scripts ship with the repo (**1540 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|

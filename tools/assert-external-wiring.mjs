@@ -28,6 +28,7 @@ const {
   setExternalEngines,
   externalEngineStatus,
 } = mod;
+const { REQUIRED_CREDENTIALS } = await import(new URL("lib/multi_policy.js", root));
 
 let checks = 0;
 const check = async (name, fn) => {
@@ -207,6 +208,37 @@ await check("no built-in engine module is touched by the extension point", async
   const ext = fs.readFileSync(new URL("lib/external_engines.js", root), "utf8");
   assert.equal(/from "\.\/engines\//.test(ext), false, "external_engines must not import an engine module");
   assert.equal(/fetchBing|proxyFetch|cooldown/i.test(ext), false, "no built-in plumbing inside the discovery module");
+});
+
+await check("a removed package leaves no residue behind", async () => {
+  // 卸载（或发现失败）后，id 集合清了还不够：runner、REQUIRED_CREDENTIALS、
+  // KEY_REF_MAP 都是按 id 追加的表，留着会让 free_search_test 打到已删除的包。
+  setExternalEngines([{ id: "webz", label: { en: "Webz" }, time: true, requiresKey: ["WEBZ_API_TOKEN"] }]);
+  assert.equal(REQUIRED_CREDENTIALS.webz?.length, 1, "the credential requirement is registered");
+  setExternalEngines([]);
+  assert.equal(REQUIRED_CREDENTIALS.webz, undefined, "the credential requirement must go with the package");
+  assert.equal(isKnownEngine("webz"), false);
+
+  // 内置引擎共用同一个环境变量名时不能连带删掉：先注册一个假的外部引擎声明它，
+  // 再卸载，内置那条仍然在。
+  setExternalEngines([{ id: "webz", label: { en: "Webz" }, time: true, requiresKey: ["BRAVE_API_KEY"] }]);
+  assert.equal(REQUIRED_CREDENTIALS.webz?.length, 1);
+  setExternalEngines([]);
+  assert.ok(REQUIRED_CREDENTIALS.brave, "a name still used by a built-in engine must survive");
+});
+
+await check("discovery re-registers tool schemas and the prompt", async () => {
+  // 发现是异步的，工具在 apply 里就注册了。不重注册的话 webz 永远进不了
+  // free_search_test / advanced_search 的 schema，也不进系统提示词。
+  assert.match(index, /refreshLocalizedEffects\(\)/, "tool schemas must be refreshed after discovery");
+  assert.match(index, /refreshPrompt\?\.\(\)/, "the prompt section must be refreshed after discovery");
+  // 刷新的判据必须含外部 id，否则 localizedEffect 认为什么都没变。
+  assert.match(index, /const engineIdsKey = \(\) => \[\.\.\.externalEngineIds\]\.join\(","\)/);
+  const getKeyUses = (index.match(/getKey: engineIdsKey/g) || []).length;
+  assert.equal(getKeyUses, 2, "both engine-list tool schemas must key on the external ids");
+  // 卸载要能摘掉 runner。
+  assert.match(index, /pruneExternalRunners = \(ids\) => \{/);
+  assert.match(index, /for \(const id of ids\) delete engineRunners\[id\]/);
 });
 
 // ------------------------------------------------------------------ 端到端（假 profile）

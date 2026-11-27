@@ -277,4 +277,41 @@ await check("ticking an installed engine writes allowedEngines", async () => {
   assert.match(block, /addFallbackEngine\(engine\.id\)/);
 });
 
+await check("uninstalling is allowed only for a package that is actually installed", async () => {
+  const at = index.indexOf("async extensionsRemove(request)");
+  assert.ok(at > 0, "the remove handler is missing");
+  const block = index.slice(at, at + 1800);
+  assert.match(block, /isValidPackageName\(packageName\)/, "the name must pass the same validator before it reaches pnpm");
+  assert.match(block, /extensions\.installed \? extensions\.installed\(\) : \[\]/, "the handler must look at what is really installed");
+  assert.match(block, /code: "not-installed"/, "an unlisted name must be refused");
+  assert.match(block, /await startRemove\(\{ profileDir, packageName \}\)/);
+  const removeAt = block.indexOf("await startRemove");
+  const rescanAt = block.indexOf("await extensions.rescan()");
+  assert.ok(rescanAt > removeAt, "the rescan must follow the removal, otherwise the engine lingers");
+  // The bridge route exists and goes through the same auth guard.
+  assert.match(index, /path: `\$\{BRIDGE_PREFIX\}\/extensions-remove`/);
+});
+
+await check("remove reuses the install job bookkeeping", async () => {
+  const install = fs.readFileSync(new URL("lib/external_install.js", root), "utf8");
+  assert.match(install, /export async function startRemove\(/, "removal needs an entry point of its own");
+  assert.match(install, /verb: "remove"/);
+  assert.match(install, /const call = pnpmInvocation\(\[verb, packageName, "--reporter=ndjson"\]\)/);
+  // 两个动词共用一套 stage/imported 状态机，UI 不需要第二套进度模型。
+  assert.match(install, /async function startPackageJob\(/);
+  assert.equal((install.match(/pnpmInvocation\(\[verb, packageName/g) || []).length, 1, "one spawn site, not two");
+});
+
+await check("the uninstall button only appears for engine rows that carry a package name", async () => {
+  const at = client.indexOf('"data-dsh-section": "extensions"');
+  const section = client.slice(at, at + 20000);
+  assert.match(section, /const removeButton = engine\.packageName/, "no package name means nothing to remove");
+  assert.match(section, /removeExtension\(engine\.packageName\)/);
+  assert.match(client, /window\.confirm/, "removal must be confirmed");
+  assert.match(client, /bridgeExtensionsRemove\(packageName\)/);
+  assert.match(client, /bridgeUrl\("extensions-remove"\)/);
+  assert.match(client, /extRemove: "卸载"/);
+  assert.match(client, /extRemove: "Remove"/);
+});
+
 console.log(`OK: ${checks} extension install checks passed`);
