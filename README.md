@@ -642,7 +642,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **124 个**零依赖断言脚本（合计 **1557 项**）
+仓库自带 **125 个**零依赖断言脚本（合计 **1576 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -673,6 +673,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-research-degradation.mjs` | research 无 key 全降级、`node:sqlite` no-op、90s 预算隔离、缓存目录可配置、`budget.exhausted` 契约名 | `node tools/assert-research-degradation.mjs`（19） |
 | `assert-research-call-wrappers.mjs` | research 四个 `call*` 包装层的替身/底层透传（#75 回归） | `node tools/assert-research-call-wrappers.mjs`（23） |
 | `assert-fetch-chain.mjs` | `fs-quality-fetch` 四层链序、任一层命中即停、exa 失败静默降级 firecrawl、全层失败聚合报错、http 目标进到 tier 链而不是被入口断言拒绝 | `node tools/assert-fetch-chain.mjs`（9） |
+| `assert-fetch-pdf.mjs` | PDF 不走浏览器层（#170）：`.pdf` 判据（忽略 query/fragment、大小写、嵌套路径、`.pdf.html` 与「页面名里带 pdf」不算）、`content-type` 含 pdf、识别浏览器 dump 出的 PDF 阅读器外壳（chrome 内置 viewer / pdf.js），非 PDF 页面不会被误判；PDF 目标跳过浏览器层后由 firecrawl 承接，失败串里留下跳过原因，普通文章不出现该原因 | `node tools/assert-fetch-pdf.mjs`（19） |
 | `assert-deepseek-fetch.mjs` | #124 自定义 DeepSeek 兼容抓取端点：base/完整 URL 归一化、作为第一档命中即停、失败回落、未配置不出现、短内容被拒、明文 http 请求形状与鉴权、401/429/空正文的错误分类、配置/MCP/设置页接线 | `node tools/assert-deepseek-fetch.mjs`（8） |
 | `assert-engine-label.mjs` | 设置页「全局启用的搜索引擎」标题计数：中英文模板、0/总数、缺失标题只显示计数、负数/NaN 归零、浮点取整 | `node tools/assert-engine-label.mjs`（8） |
 | `assert-fallback-order.mjs` | 回退链可编辑：空白顺序仍取默认链、已保存顺序保持删除结果、默认链不混入 HTML 家族、HTML 与按次计费引擎都能显式加入、`hasCustomFallbackOrder` 只认真实编辑、`enabledEngines` 不把白名单引擎追加进自定义链、Auto 只在链内路由、设置页默认链与增删控件接线 | `node tools/assert-fallback-order.mjs`（11） |
@@ -1443,7 +1444,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**One hundred and twenty-four** zero-dependency assertion scripts ship with the repo (**1557 assertions** total)
+**One hundred and twenty-five** zero-dependency assertion scripts ship with the repo (**1576 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|
@@ -1473,6 +1474,7 @@ Restart `dsh web` after switching to apply changes.
 | `assert-research-degradation.mjs` | research degrades fully without keys, `node:sqlite` no-op, 90s budget isolation, configurable cache dir, `budget.exhausted` contract names | `node tools/assert-research-degradation.mjs` (19) |
 | `assert-research-call-wrappers.mjs` | the four research `call*` wrappers proxy to stubs / the real layer (#75 regression) | `node tools/assert-research-call-wrappers.mjs` (23) |
 | `assert-fetch-chain.mjs` | `fs-quality-fetch` tier ordering, stop-on-first-success, silent firecrawl degradation, aggregated all-tiers failure | `node tools/assert-fetch-chain.mjs` (8) |
+| `assert-fetch-pdf.mjs` | PDFs never reach the browser tier (#170): the `.pdf` test (query/fragment ignored, case-insensitive, nested paths, while `.pdf.html` and a page that merely mentions pdf do not count), a `content-type` carrying pdf, and recognising the PDF reader shell a browser dump returns (chrome's built-in viewer / pdf.js) without mistaking an ordinary article for one; a PDF target skips the browser tier and is answered by firecrawl, the failure line records why it was skipped, and a normal article never carries that reason | `node tools/assert-fetch-pdf.mjs` (19) |
 | `assert-fetch-ssrf.mjs` | Fetch SSRF guard: public/private/reserved address classification, DNS resolving to a private address rejected, localhost and IP literals rejected, `http://` accepted while other schemes and credential URLs are refused, an http host resolving to a private address rejected, fake-ip ranges blocked by default and allowed only when configured, IPv6 ULA allowed only when listed, loopback/IPv4-private/link-local still blocked after opt-in, provider wiring and settings | `node tools/assert-fetch-ssrf.mjs` (10) |
 | `assert-fetch-http.mjs` | Plain-http targets (#143): the direct tier picks its transport per protocol, http redirects are followed, the provider no longer refuses http up front and lets the tier chain run, an all-tiers failure reports the direct error instead of an https-only assertion, other schemes still refused, `agentForUrl` hands http targets a plain tunnel agent, and an http page is fetched through a `CONNECT` tunnel | `node tools/assert-fetch-http.mjs` (7) |
 | `assert-baidu.mjs` | Baidu Qianfan: key required, web_search first, 403 or results.code quota fallback to chat/completions (stream:false), no fallback on 401, combined error when both fail | `node tools/assert-baidu.mjs` (6) |
