@@ -112,18 +112,24 @@ await check("custom endpoint works without API key and sends configured model", 
   );
 });
 
-await check("extractPerplexitySources merges structured citations, annotations, and content links without duplicates", () => {
+await check("extractPerplexitySources merges structured citations, annotations, grounding chunks, and content links without duplicates", () => {
   const sources = extractPerplexitySources({
     citations: ["https://example.org/one?utm_medium=referral", { url: "https://example.org/two", title: "Two" }],
     search_results: [{ url: "https://example.org/three", title: "Three", snippet: "Custom snippet", date: "2026-11-28" }],
     choices: [
       {
         message: {
-          annotations: [{ type: "url_citation", url_citation: { url: "https://example.org/one", title: "One" } }],
+          annotations: [{
+            type: "url_citation",
+            url_citation: { url: "https://example.org/one", title: "One", content: "OpenRouter excerpt" },
+          }],
           content: "See [One](https://example.org/one) and [Four](https://example.org/four).\n[5]: https://example.org/five \"Five\"",
         },
       },
     ],
+    groundingMetadata: {
+      groundingChunks: [{ web: { uri: "https://example.org/six", title: "Gemini Source" } }],
+    },
   }, 10);
 
   assert.deepEqual(
@@ -132,14 +138,37 @@ await check("extractPerplexitySources merges structured citations, annotations, 
       "https://example.org/one",
       "https://example.org/two",
       "https://example.org/three",
+      "https://example.org/six",
       "https://example.org/five",
       "https://example.org/four",
     ]
   );
   assert.equal(sources[0].title, "One");
+  assert.equal(sources[0].snippet, "OpenRouter excerpt");
   assert.equal(sources[2].snippet, "Custom snippet");
   assert.equal(sources[2].publishedAt, "2026-11-28");
-  assert.equal(sources[3].title, "Five");
+  assert.equal(sources[3].title, "Gemini Source");
+  assert.equal(sources[4].title, "Five");
+});
+
+await check("OpenAI web-search-preview model receives web_search_options automatically", async () => {
+  let sentBody = null;
+  await withFetch(
+    async (_url, init) => {
+      sentBody = JSON.parse(init.body);
+      return new Response(JSON.stringify({
+        choices: [{ message: { content: "Answer [Ref](https://openai.com/news)." } }],
+      }), { status: 200 });
+    },
+    async () => {
+      const out = await searchPerplexity("latest release", 3, "", {
+        baseUrl: "https://gateway.example/v1",
+        model: "gpt-4o-search-preview",
+      });
+      assert.deepEqual(sentBody.web_search_options, { search_context_size: "medium" });
+      assert.equal(out.sources[0].url, "https://openai.com/news");
+    }
+  );
 });
 
 await check("MCP dispatch and loopback proxy work with MCP_PERPLEXITY_BASE_URL without PERPLEXITY_API_KEY", async () => {
