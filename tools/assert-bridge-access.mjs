@@ -108,7 +108,8 @@ check("every bridge handler runs the host-auth guard first", () => {
   const index = fs.readFileSync(new URL("../lib/index.js", import.meta.url), "utf8");
   assert.match(index, /bridgeAuthRejection\(req, connection\(\)\)/);
   assert.match(index, /connectionContext\.get\("connection"\)/);
-  assert.match(index, /ctx\.inject\(\["connection\.authentication"\]/);
+  // #173：嵌套 inject 挂在 sctx 上（不是插件根的 ctx），这里要跟着改。
+  assert.match(index, /(?:sctx|injectAuth)\.?[^\n]*\["connection\.authentication"\]/);
   assert.match(index, /const rejection = bridgeAuthRejection/);
   assert.equal((index.match(/if \(!guard\(req, res\)\) return;/g) ?? []).length >= 10, true);
 });
