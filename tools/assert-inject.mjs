@@ -33,7 +33,9 @@ check("optional services are read through ctx.get instead of property access", (
 });
 
 check("every property read on an inject callback context is declared statically", () => {
-  const allowed = new Set([...staticInject, "effect", "on", "get", "fiber"]);
+  // inject 是 ctx 自己的方法（#173 把嵌套 inject 挂到 sctx 下），不是被注入的服务，
+  // 所以不要求在 staticInject 里声明。
+  const allowed = new Set([...staticInject, "effect", "on", "get", "fiber", "inject"]);
   const used = new Set([...index.matchAll(/\bsctx\.([A-Za-z_$][\w$]*)/g)].map((m) => m[1]));
   for (const prop of used) {
     assert.equal(allowed.has(prop), true, `sctx.${prop} is used but not declared in inject`);
