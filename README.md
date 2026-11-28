@@ -642,7 +642,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **128 个**零依赖断言脚本（合计 **1589 项**）
+仓库自带 **128 个**零依赖断言脚本（合计 **1590 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -772,7 +772,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-fetch-proxy.mjs` | 抓取层代理：`http_proxy` / `https_proxy` / `all_proxy` / `no_proxy` 解析（大小写与小写优先、空值视为未设置）、`NO_PROXY` 的域名 / `host:port` / `*` 匹配、loopback 恒直连、`socks5://` 忽略、`CONNECT` 隧道握手与 `Proxy-Authorization`、代理拒绝与提前断连不挂起、有 agent 时重定向每一跳仍过 SSRF 校验、浏览器 tier 的 `--proxy-server` | `node tools/assert-fetch-proxy.mjs`（12） |
 | `assert-bridge-access.mjs` | 桥接 Host 围栏（#84）：loopback 放行、remote peer 打 loopback Host 拒绝、`--trusted-host`（无端口匹配任意端口 / 带端口精确匹配）、`--public-url`、绑定地址、跨站与异源拒绝、connection 鉴权委托与 fail-closed、设置客户端按 `document.baseURI` 解析子路径 | `node tools/assert-bridge-access.mjs`（14） |
 | `assert-lifecycle-reentry.mjs` | #173 的三条 Cordis 生命周期规则：重入保护必须随 `ctx.effect` 撤销（否则服务重启后 apply 被当成异常重入挡掉、插件只剩空纤维）、桥路由直接登记而不走 `registerOnce`（撞名时静默复用的可能是别的插件的路由）、嵌套的 `connection.authentication` inject 挂在 `sctx` 上而不是插件根 | `node tools/assert-lifecycle-reentry.mjs`（3） |
-| `assert-extension-state.mjs` | 扩展区的两个状态陷阱：卸载成功后不能留下 `stage:"done"` 的安装任务（那个文案是「已安装，正在重新加载引擎…」，留在「可安装」行里会显示成刚装好）、`node_modules` 里指向已删除目录的悬空符号链接不算引擎包（跳过且不进 failures，否则扩展区会一直挂一条与搜索引擎无关的加载失败） | `node tools/assert-extension-state.mjs`（2） |
+| `assert-extension-state.mjs` | 扩展区的三个状态陷阱：卸载成功后不能留下 `stage:"done"` 的安装任务（那个文案是「已安装，正在重新加载引擎…」，留在「可安装」行里会显示成刚装好）、装成功同样要清掉这条 job（「已安装」行把 done 渲染成「已卸载」，两个区里含义相反）、`node_modules` 里指向已删除目录的悬空符号链接不算引擎包（跳过且不进 failures，否则扩展区会一直挂一条与搜索引擎无关的加载失败） | `node tools/assert-extension-state.mjs`（3） |
 | `assert-provider-takeover.mjs` | provider 接管：旧属性 API 与 rc.2 的 `config.*` ref 两套兼容、`settings.mutate(web)` 单批写入、显式指定的 provider 不被抢占、`fetchProviderTakeover: false` 时保留显式 `http`、`fetchProviderForce` 抢回 `deepseek-fetch-api` 且不动搜索、开关打开时保存设置即补接管（关闭时不动 web）、describe 噪声不误报、嵌套 config 变化与 web 重建分别成行、关闭 DSH 搜索开关后重新接管（`deepseek-search-api` / `deepseek-official` 均视为官方默认）、apply 重入/重复注册不再中断、重复日志去重 | `node tools/assert-provider-takeover.mjs`（25） |
 
 任何一个失败会以非 0 退出码结束并列出失败项；把某个旧版本文件路径作为参数传进去，可以看到修复前必红（用来证明断言不是空转）。改动发布相关逻辑后建议先跑一遍再发版。
@@ -1447,7 +1447,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**One hundred and twenty-eight** zero-dependency assertion scripts ship with the repo (**1589 assertions** total)
+**One hundred and twenty-eight** zero-dependency assertion scripts ship with the repo (**1590 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|
