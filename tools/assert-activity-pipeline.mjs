@@ -3,8 +3,8 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 
-const repo = "C:/Users/MVT/.dsh/plugins/free-search";
-const activity = await import(`file:///${repo}/lib/activity.js`);
+const repo = new URL("../", import.meta.url);
+const activity = await import(new URL("lib/activity.js", repo));
 
 let checks = 0;
 const check = (name, fn) => {
@@ -130,7 +130,7 @@ check("the counters the footer prints are wired", () => {
 });
 
 check("the bridge routes exist and are POST-only behind the guard", () => {
-  const index = fs.readFileSync(`${repo}/lib/index.js`, "utf8");
+  const index = fs.readFileSync(new URL("lib/index.js", repo), "utf8");
   assert.match(index, /\$\{BRIDGE_PREFIX\}\/activity`/);
   assert.match(index, /\$\{BRIDGE_PREFIX\}\/activity-clear`/);
   assert.match(index, /activitySnapshot\(body\?\.sessionId \?\? ""\)/);
@@ -144,7 +144,7 @@ check("the bridge routes exist and are POST-only behind the guard", () => {
 });
 
 check("the panel component polls and stops on unmount", () => {
-  const client = fs.readFileSync(`${repo}/lib/client.js`, "utf8");
+  const client = fs.readFileSync(new URL("lib/client.js", repo), "utf8");
   assert.match(client, /timer = setTimeout\(loop, 2000\)/);
   assert.match(client, /if \(timer !== null\) clearTimeout\(timer\)/);
   assert.match(client, /bridgeActivity\(sessionId\)/);
@@ -154,7 +154,7 @@ check("the host's Agent shape is what the hook reads", () => {
   // dsh-agent declares `readonly id: SessionId` and nothing else; reading
   // `sessionId` alone made every record unattributed, so the panel showed
   // every session's history. Keep both shapes accepted and pin the real one.
-  const index = fs.readFileSync(`${repo}/lib/index.js`, "utf8");
+  const index = fs.readFileSync(new URL("lib/index.js", repo), "utf8");
   const at = index.indexOf('sctx.on("tools/execute"');
   const body = index.slice(at, at + 700);
   assert.match(body, /agent\.id/, "the hook must fall back to agent.id");
@@ -239,7 +239,7 @@ check("an unknown turn degrades to 0 instead of breaking the record", () => {
 });
 
 check("the history list shows a turn when one is known", () => {
-  const client = fs.readFileSync(`${repo}/lib/client.js`, "utf8");
+  const client = fs.readFileSync(new URL("lib/client.js", repo), "utf8");
   assert.match(client, /dsfs-act-histTurn/, "the history row needs a turn chip");
   assert.match(client, /entry\.turn > 0/, "the chip must be conditional");
   assert.match(client, /turnN: "第 \{n\} 轮"/);
