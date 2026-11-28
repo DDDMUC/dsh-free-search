@@ -20,13 +20,16 @@ const check = (name, fn) => {
 const extensionsHandler = () => {
   const at = index.indexOf("async extensions()");
   assert.ok(at > 0, "the extensions handler is missing");
-  return index.slice(at, at + 2200);
+  return index.slice(at, at + 6000);
 };
 
 check("the server reports which declared keys are configured", () => {
   const block = extensionsHandler();
   assert.match(block, /keysConfigured/, "the page needs to know whether a key is set");
-  assert.match(block, /credentials\.resolve|credentialsSvc\.resolve/, "it probes the credential center, not config");
+  // describe() 一次拿到「配没配」和遮罩（masked）；resolve() 会把值整个读出来，
+  // 那是另一件事，不是这里该做的。
+  assert.match(block, /credentialsSvc\.describe\(/, "it probes the credential center, not config");
+  assert.match(block, /masked/, "the mask is what lets the page show a saved key");
   assert.match(block, /credentialsAvailable/);
   // 只探测已装引擎声明过的名字，不遍历整张表。
   assert.match(block, /installed\.flatMap\(\(engine\) => \(Array\.isArray\(engine\.requiresKey\)/);
@@ -47,7 +50,7 @@ check("an installed engine row matches the built-in engine row", () => {
   assert.match(installed, /className: "dshfs-priorityRow"/, "the row must reuse the built-in row class");
   assert.match(installed, /className: "dshfs-priorityName"/, "the name must reuse the built-in name class");
   assert.match(installed, /dshfs-keyStatus dshfs-keyStatus-/, "the row needs the 8px status dot, not a text label");
-  assert.match(installed, /className: hasDraft \? "dshfs-priorityKey dshfs-priorityKeyDirty" : "dshfs-priorityKey"/, "the input must reuse the built-in key field");
+  assert.match(installed, /className: "dshfs-priorityKey" \+ \(view\.showingStored/, "the input must reuse the built-in key field");
   // 角标是内置引擎的 badge；外部包的名字由包自己给，不该再拼一个 (API KEY)。
   assert.equal(/\(API KEY\)/.test(installed), false, "no synthetic API KEY badge on external engines");
   assert.equal(/className: "dshfs-extRow"/.test(installed), false, "the installed row must not use the installable-only frame");
@@ -83,8 +86,10 @@ check("saving a key goes through the existing credentials route", () => {
 check("the input is a password field and the draft never survives a save or discard", () => {
   const at = client.indexOf("names.map((name, index) =>");
   assert.ok(at > 0, "the credential loop is missing");
-  const section = client.slice(at, at + 3000);
-  assert.match(section, /type: "password"/, "a credential must not render as plain text");
+  const section = client.slice(at, at + 6000);
+  // 存着 key 时显示遮罩（type=text，否则 • 会被再吞一遍）；一旦开始打字就回到 password。
+  assert.match(section, /type: view\.type/, "the field type follows the view");
+  assert.match(client, /type: showingStored \? "text" : "password"/, "a draft is still a password field");
   // 明文只活在草稿里：保存成功清空，按「放弃」也清空。
   assert.match(client, /setExtKeyState\(\{\}\)/, "clear the draft after a successful save");
   const discardAt = client.indexOf("const discard = () => {");
@@ -99,9 +104,10 @@ check("an external key input obeys the same dirty/save contract as a built-in on
   assert.match(section, /setDirty\(true\)/, "typing a key must mark the page dirty, like a built-in key");
   assert.equal(/onClick: \(\) => saveExternalKey/.test(section), false, "no inline save button");
   assert.equal(/extKeySave|extKeySaving|extKeySaved/.test(client), false, "the inline save copy is gone");
-  // 有草稿时状态点不能显示「已配置」，否则未保存会被读成已生效。
+  // 动过（含清空）时状态点不能显示「已配置」，否则未保存 / 待删除会被读成已生效。
   assert.match(section, /const hasDraft = String\(state\.value \?\? ""\)\.trim\(\) !== ""/);
-  assert.match(section, /const effective = hasDraft \? false : configured/);
+  assert.match(section, /const touched = state\.value !== undefined/);
+  assert.match(section, /const effective = touched \? false : configured/);
   assert.match(section, /dshfs-priorityKeyDirty/, "an unsaved draft is shown on the field itself");
 });
 
@@ -123,8 +129,9 @@ check("an untouched empty field never deletes anything", () => {
   assert.match(client, /const keyWasConfigured = \(field\) =>/, "and it must also have been configured");
 });
 
-check("a saved key shows a masked preview instead of a bare placeholder", () => {
-  // 凭据中心 describe() 会回同长度遮罩（sk-ab••••c4f2）。它只进 placeholder，
+check("a saved key shows a masked preview inside the field, not a bare placeholder", () => {
+  // 凭据中心 describe() 会回同长度遮罩（sk-ab••••c4f2）。它现在是输入框的**值**：
+  // 已存过的 key 一打开就在框里，聚焦即全选，清空再保存就是删除。
   // 明文永远不会被回传，也不需要额外的「显示」路由。
   assert.match(index, /masked: typeof info\?\.masked === "string"/, "the server forwards the mask");
   assert.match(index, /value: \{ configured, masked, available: true \}/);
@@ -134,8 +141,13 @@ check("a saved key shows a masked preview instead of a bare placeholder", () => 
   const block = client.slice(loadAt, loadAt + 2600);
   assert.match(block, /cred\.value\.masked/, "the mask is read from the answer");
   assert.match(block, /setCredMasked\(mm\)/);
-  assert.match(client, /const placeholder = masked \?/, "the mask replaces the placeholder");
+  // 遮罩进 value，不进 placeholder（用户要的就是「输入框里就是那把 key 的样子」）。
+  assert.match(client, /value: showingStored \? mask : text/, "the stored mask is the value");
+  assert.equal(/const placeholder = masked \?/.test(client), false, "the mask must not live in a placeholder");
   assert.match(client, /dshfs-priorityKeySaved/, "a stored key looks different from an unsaved draft");
+  // 外部引擎的遮罩走服务端 extensions() 回传，不靠客户端猜。
+  assert.match(index, /keysMasked: extKeyMasked/);
+  assert.match(client, /masked: extensions\.keysMasked\?\.\[name\]/);
 });
 
 check("the declared key is what the engine actually receives", () => {

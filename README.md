@@ -642,7 +642,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 
 #### 离线自检断言（tools/）
 
-仓库自带 **125 个**零依赖断言脚本（合计 **1576 项**）
+仓库自带 **126 个**零依赖断言脚本（合计 **1584 项**）
 
 | 脚本 | 覆盖 | 运行（项数） |
 |---|---|---|
@@ -695,7 +695,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-webz-engine.mjs` | 第一个可选引擎包（Webz.io News Search）：`apiVersion`/`id`/`time`/`requiresKey` 契约、相对与绝对时间都换算成毫秒 `ts`、31 天边界决定是否带 `allowNewsHistory`、`size` 夹在 1–100、token 只走 Bearer 头不进 URL、`posts[]` → `sources[]` 字段映射、坏 JSON/缺 `posts`/401/402/429/400 的报错文案 | `node tools/assert-webz-engine.mjs`（18） |
 | `assert-extension-install.mjs` | 「扩展」分区的安装与卸载路径：可安装清单是服务端硬编码白名单（客户端传什么都不作数）、link 模式拒绝安装、装完先重扫再回话、包名过正则（`-g`/`;rm`/路径穿越一律拒绝）、pnpm 用 `spawn` 且 `shell:false`、ndjson 折叠成「阶段 + 已导入包数」（同一个包不重复计数）、进度结构里没有 `percent`（不编造百分比）、`minimumReleaseAge` 被拒时给出人能读的解释、扩展是导航与页面的最后一段、勾选走同一个 `allowedEngines` 路径；可安装条目是**一条带框的单行**（详情进悬停卡片，名称在左、按钮在右），安装进度用 `flex:1 1 100%` 独占第二行；卸载只认当前确实装着的包名、走同一条 job 状态机、卸完先重扫、按钮只出现在带包名的行、有二次确认 | `node tools/assert-extension-install.mjs`（24） |
 | `assert-extension-target.mjs` | 扩展装进哪个 profile：`activeProfileDir()` 用 `realpath` 比对「这一份插件自己」所在的 profile（多 profile 时按扫描顺序取第一个会装错，装了也不会被加载）；link 模式只拦「自升级自己」，不拦装扩展；列表回传 `canInstall` 与 `installProfile`，页面把目标 profile 写出来；按钮只看 `canInstall` | `node tools/assert-extension-target.mjs`（7） |
-| `assert-extension-credentials.mjs` | 扩展的凭据输入：服务端 `extensions()` 回传每个已装引擎声明的 key 是否已配置（只探测 `requiresKey` 里的名字，不遍历全表）、客户端按 `requiresKey` 渲染输入框（不写死 `WEBZ_API_TOKEN`）、**与内置 key 同一套 dirty/保存契约**（输入即标脏、由底部「保存」统一提交 `credentials-set`、不再有行内保存按钮）、输入框是 `password` 且保存成功或按「放弃」都会清空草稿、有未保存草稿时状态点不算「已配置」且输入框描边标脏、runner 读的键名与界面同源 | `node tools/assert-extension-credentials.mjs`（7） |
+| `assert-extension-credentials.mjs` | 扩展的凭据输入：服务端 `extensions()` 回传每个已装引擎声明的 key 是否已配置（只探测 `requiresKey` 里的名字，不遍历全表）、客户端按 `requiresKey` 渲染输入框（不写死 `WEBZ_API_TOKEN`）、**与内置 key 同一套 dirty/保存契约**（输入即标脏、由底部「保存」统一提交 `credentials-set`、不再有行内保存按钮）、已存的 key 以**遮罩填进输入框的值**（不是 placeholder，聚焦/单击即全选），保存成功或按「放弃」都会清空草稿与「动过」标记、有未保存草稿时状态点不算「已配置」且输入框描边标脏、runner 读的键名与界面同源 | `node tools/assert-extension-credentials.mjs`（11） |
 | `assert-activity-panel.mjs` | 右侧栏搜索动态（#144）：记录只在内存不落盘、历史上限 50、来源上限 8、按会话隔离、进行中/完成状态、引擎结果分类（成功/失败类别/跳过原因）、清空、默认关闭、旧宿主无右侧栏服务时整体跳过、tab 正文+标题+引导入口注册、bridge 路由走统一守卫、工具分发携带会话、轮询随卸载停止、中英文案 | `node tools/assert-activity-panel.mjs`（15） |
 | `assert-activity-wiring.mjs` | 搜索动态接线（#144 回归）：配置项默认关闭且能完整往返、座位标志只在服务注入后才置位、加载时已开启也能挂载、tab id 三处共用、引导入口带 commandId 且标题/描述是函数、package.json 声明 `dsh-client-ui-sidebar-right` 为可选 peer 与 client inject、服务缺失时有 try/catch 兜底 | `node tools/assert-activity-wiring.mjs`（8） |
 | `assert-activity-pipeline.mjs` | 搜索动态数据面端到端：工具钩子把会话带进搜索链、记录归属该会话、进行中可见当前引擎、结束后离开 in-flight、引擎结果与来源往返完好、无归属记录仍可见、会话之间不串、底部计数已接线、两条 bridge 路由都过统一守卫、面板轮询随卸载停止 | `node tools/assert-activity-pipeline.mjs`（20） |
@@ -717,6 +717,7 @@ npx -y -p dsh-free-search dsh-free-search-mcp
 | `assert-header-description.mjs` | 卡片标题区只显示插件名（去掉副标题那一行）；摘要文案仍保留给插件列表行使用；废弃样式已清 | `node tools/assert-header-description.mjs`（4） |
 | `assert-mobile-layout.mjs` | 移动端布局（≤560px）：桌面 150px 分区留白由 `dshfs-page` 类承载而非内联样式、移动端只覆盖该类 padding、移动端块不含已删除的 `.dshfs-description` / `.dshfs-select` 规则、分区 Tab 在文档流内不依赖宿主头部高度 | `node tools/assert-mobile-layout.mjs`（8） |
 | `assert-multikey-layout.mjs` | 多 key 输入的行高（#154 回归）：输入框是裸 textarea 不带提示段落、格式说明只在 placeholder / title、双语提示仍完整、废弃样式已删 | `node tools/assert-multikey-layout.mjs`（4） |
+| `assert-key-mask-field.mjs` | 已存 key 的输入框形态：遮罩进 `value` 而不是 placeholder、聚焦 / 单击即全选、没全选就直接打字时先剥掉遮罩再记草稿（遮罩字符永远不属于 key）、四处入口共用同一份 view、环境变量提供的 key 不画成「本插件存下来的」、清空后立刻反映到描边与状态点、保存 / 放弃都清掉「动过」标记、服务端按凭据名回同长度遮罩（含外部引擎与两个 DeepSeek key 的区分） | `node tools/assert-key-mask-field.mjs`（8） |
 | `assert-multikey-ui.mjs` | 多 key 输入（#154）：后端支持换行/逗号/分号分隔、设置页为 textarea 而非单行密码框、提示写明格式与轮换顺序 | `node tools/assert-multikey-ui.mjs`（4） |
 | `assert-pool-policy.mjs` | 按次计费引擎入池（#152）：7 个引擎全覆盖、策略归一化（含大小写与非法值）、`off` 保持现状、`auto`/`multi` 放行、Auto 可把按次计费引擎排到首位、`off` 写进池也不生效、策略进入缓存键 | `node tools/assert-pool-policy.mjs`（9） |
 | `assert-pool-prompt.mjs` | 入池策略与提示词一致（#152）：`off` 保留「只在显式选择时运行」、`auto` 改写为「最多一个、计费一次」、`multi` 改写为「每个引擎各计费一次」、Multi 池只在 `multi` 档列出按次计费引擎、中文文案同步 | `node tools/assert-pool-prompt.mjs`（5） |
@@ -1444,7 +1445,7 @@ Restart `dsh web` after switching to apply changes.
 
 #### Offline self-check assertions (`tools/`)
 
-**One hundred and twenty-five** zero-dependency assertion scripts ship with the repo (**1576 assertions** total)
+**One hundred and twenty-six** zero-dependency assertion scripts ship with the repo (**1584 assertions** total)
 
 | Script | Covers | Run (count) |
 |---|---|---|
@@ -1515,6 +1516,7 @@ Restart `dsh web` after switching to apply changes.
 | `assert-lossless-output.mjs` | Tool output must be lossless JSON (#169): every engine (`lib/engines/**`, `platform_engines`, `agy`, `serp_engines`, external engines) returns a boolean `truncated`, the provider normalises it once more at its exit with `result?.truncated === true`, `runEngineTest` / `runMultiSearch` / external normalisation each supply their own, and a JSON round-trip shows why `truncated: undefined` dropped the key and made `web_search` fail | `node tools/assert-lossless-output.mjs` (5) |
 | `assert-degoog.mjs` | degoog self-hosted instance (#85): `/api/search` URL normalisation, query encoding, `time`/`lang` parameters, registry placement, no credentials needed | `node tools/assert-degoog.mjs` (7) |
 | `assert-multikey.mjs` | multi-key fields: a single key is unchanged, comma/semicolon/newline separate keys, blank entries are dropped, empty input yields none | `node tools/assert-multikey.mjs` (3) |
+| `assert-key-mask-field.mjs` | the shape of a saved key's input: the mask is the field's `value` rather than a placeholder, focus and a plain click select it so the first keystroke replaces it, typing without selecting strips the mask before the draft is recorded (a mask character is never part of a key), all four entry points share one view, a key supplied by the environment is not drawn as one this plugin stored, clearing the field shows up immediately in the border and the status dot, saving and discarding both drop the touched marks, and the server hands out a same-length mask per credential name (external engines included, and the two DeepSeek keys kept apart) | `node tools/assert-key-mask-field.mjs` (8) |
 | `assert-firecrawl-keyless.mjs` | Firecrawl keyless egress refusal: only a 403 with the VPN/proxy wording counts, plain 403 and 401/429/500 do not, and the cooldown starts inactive | `node tools/assert-firecrawl-keyless.mjs` (5) |
 | `assert-fetch-charset.mjs` | fetch encoding (#88): `charset=gbk` / `gb2312` decoded as declared, `<meta charset>` and the http-equiv form sniffed when the header omits it, UTF-8 by default, and an unknown label falls back to UTF-8 instead of throwing | `node tools/assert-fetch-charset.mjs` (6) |
 | `assert-fetch-abort.mjs` | fetch interruption (#87): a compressed response cut mid-body rejects instead of hanging forever, identity truncation rejects too, abort breaks a stalled gzip stream, and complete responses plus redirects still work | `node tools/assert-fetch-abort.mjs` (6) |

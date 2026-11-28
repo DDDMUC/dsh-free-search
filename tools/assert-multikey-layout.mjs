@@ -29,11 +29,13 @@ check("the key input renders a bare textarea, no wrapper row", () => {
 
 check("the format hint moved into placeholder and title", () => {
   const block = keyInputBlock();
-  // placeholder 在存过 key 时会拼上凭据中心的真遮罩（sk-ab••••c4f2），
-  // 基础文案仍是这句；两者都要在。
-  assert.match(block, /const placeholder = masked \? `\$\{t\.multiKeyPlaceholder\}（\$\{masked\}）` : t\.multiKeyPlaceholder;/);
-  assert.match(block, /placeholder,/);
+  // placeholder 只留格式文案：已存 key 的遮罩现在画在 **value** 里
+  // （大部分软件那种「框里就是那把 key」的样子），不再拼进占位符。
+  assert.match(block, /placeholder: t\.multiKeyPlaceholder/);
   assert.match(block, /title: t\.multiKeyHint/);
+  // 遮罩仍然来自凭据中心，由 keyInputState 放进 value；按字段名取，不按引擎 id。
+  assert.match(block, /masked: field \? keyMaskFor\(field\) : credMasked\[id\]/);
+  assert.match(block, /value: view\.value/);
 });
 
 check("both locales still explain multi-key entry", () => {
