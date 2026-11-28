@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 
-const client = fs.readFileSync(new URL("../lib/client.js", import.meta.url), "utf8");
+const client = fs.readFileSync(new URL("../lib/client.js", import.meta.url), "utf8").replace(/\r\n/g, "\n");
 
 let checks = 0;
 const check = (name, fn) => {

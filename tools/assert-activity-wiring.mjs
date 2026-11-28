@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 
 const root = new URL("..", import.meta.url);
-const client = fs.readFileSync(new URL("lib/client.js", root), "utf8");
+const client = fs.readFileSync(new URL("lib/client.js", root), "utf8").replace(/\r\n/g, "\n");
 const index = fs.readFileSync(new URL("lib/index.js", root), "utf8");
 
 let checks = 0;
