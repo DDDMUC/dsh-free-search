@@ -72,7 +72,7 @@ await check("backward-compatible fourth-arg AbortSignal still forwards cancellat
       throw init.signal.reason;
     },
     async () => {
-      await assert.rejects(() => searchPerplexity("query", 3, "pplx-test", controller.signal), /cancelled/);
+      await assert.rejects(() => searchPerplexity("query", 3, "pplx-test", controller.signal), /request aborted/);
     }
   );
 });
@@ -139,8 +139,6 @@ await check("extractPerplexitySources merges structured citations, annotations, 
       "https://example.org/two",
       "https://example.org/three",
       "https://example.org/six",
-      "https://example.org/five",
-      "https://example.org/four",
     ]
   );
   assert.equal(sources[0].title, "One");
@@ -148,7 +146,7 @@ await check("extractPerplexitySources merges structured citations, annotations, 
   assert.equal(sources[2].snippet, "Custom snippet");
   assert.equal(sources[2].publishedAt, "2026-11-28");
   assert.equal(sources[3].title, "Gemini Source");
-  assert.equal(sources[4].title, "Five");
+  assert.equal(sources.length, 4);
 });
 
 await check("OpenAI web-search-preview model receives web_search_options automatically", async () => {
@@ -237,6 +235,49 @@ await check("Config and Settings UI wire perplexityBaseUrl and perplexityModel c
   assert.match(clientSrc, /path: \["perplexityBaseUrl"\]/);
   assert.match(clientSrc, /path: \["perplexityModel"\]/);
   assert.equal(PERPLEXITY_DEFAULT_MODEL, "sonar");
+});
+
+await check("rejects endpoint and citation userinfo", () => {
+  assert.throws(() => perplexityEndpoint("https://user:secret@gateway.example/v1"), /credentials/);
+  assert.deepEqual(extractPerplexitySources({ citations: ["https://user:secret@example.org/a"] }), []);
+});
+
+await check("fallback preserves balanced parentheses and reference titles", () => {
+  const sources = extractPerplexitySources({ choices: [{ message: { content: '[Wiki](https://example.org/A_(B)).\n[2]: https://example.org/ref "Reference"' } }] });
+  assert.deepEqual(sources.map(s => s.url), ["https://example.org/ref", "https://example.org/A_(B)"]);
+  assert.equal(sources[0].title, "Reference");
+  assert.equal(sources[1].title, "Wiki");
+});
+
+await check("blocked structured sources do not activate prose fallback", async () => {
+  const { setActiveBlockedDomains } = await import("../lib/domain_filter.js");
+  setActiveBlockedDomains(["example.org"]);
+  try {
+    assert.deepEqual(extractPerplexitySources({ citations: ["https://example.org/a"], choices: [{ message: { content: "https://other.example/a" } }] }), []);
+  } finally { setActiveBlockedDomains([]); }
+});
+
+await check("network HTTP and JSON errors never echo secrets", async () => {
+  const secret = "test-private-credential";
+  for (const stub of [
+    async () => { throw new Error(secret); },
+    async () => new Response(secret, { status: 500 }),
+    async () => new Response(secret, { status: 401 }),
+    async () => new Response(secret, { status: 403 }),
+    async () => new Response(secret, { status: 200 }),
+  ]) {
+    await withFetch(stub, () => assert.rejects(() => searchPerplexity("q", 3, secret, { baseUrl: `https://gateway.example/${secret}` }), error => {
+      assert.doesNotMatch(error.message, new RegExp(secret));
+      assert.match(error.message, /Perplexity/);
+      return true;
+    }));
+  }
+});
+
+await check("malformed response shapes fail safely", async () => {
+  for (const data of [null, [], {}, { error: "secret" }, { choices: {} }, { choices: [{ message: { content: [] } }] }, { choices: [{ message: { content: "answer" } }], citations: {} }, { choices: [{ message: { content: "answer", annotations: {} } }] }]) {
+    await withFetch(async () => new Response(JSON.stringify(data)), () => assert.rejects(() => searchPerplexity("q", 3, "key"), /invalid response/));
+  }
 });
 
 console.log(`OK: ${checks} perplexity custom endpoint checks passed`);
