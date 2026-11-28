@@ -38,6 +38,40 @@ setActiveBlockedDomains(["csdn.net", "51cto.com"]);
 check("多规则命中第二条（子域）", isDomainBlocked("https://x.51cto.com/y"));
 check("多规则未命中", !isDomainBlocked("https://example.com/z"));
 
+// DNS root dots must not bypass either active or explicit blocklists.
+for (const rule of ["example.com", "example.com.", " WWW.EXAMPLE.COM./ "]) {
+  setActiveBlockedDomains([rule]);
+  for (const url of [
+    "https://example.com./a",
+    "https://sub.example.com./a",
+    "https://deep.sub.example.com./a",
+    "https://www.example.com./a",
+    "https://WWW.EXAMPLE.COM.:8443/a",
+    "https://example.com/a",
+    "https://example.com../a",
+  ]) {
+    check(`DNS dot active: ${rule} blocks ${url}`, isDomainBlocked(url));
+    check(`DNS dot explicit: ${rule} blocks ${url}`, isDomainBlocked(url, [rule]));
+  }
+  for (const url of [
+    "https://notexample.com./a",
+    "https://example.com.evil.test./a",
+    "https://example.com-evil.test./a",
+  ]) {
+    check(`DNS dot active negative: ${url}`, !isDomainBlocked(url));
+    check(`DNS dot explicit negative: ${url}`, !isDomainBlocked(url, [rule]));
+  }
+}
+setActiveBlockedDomains(["example.com."]);
+const dottedSources = [mk("https://example.com./a"), mk("https://safe.test/a"), mk("https://sub.example.com.:8080/a"), mk("https://notexample.com./a")];
+const dottedKept = filterBlockedDomains(dottedSources);
+check("DNS dot list filtering preserves safe items and order", dottedKept.length === 2 && dottedKept[0] === dottedSources[1] && dottedKept[1] === dottedSources[3]);
+check("DNS dot explicit list filtering matches active filtering", filterBlockedDomains(dottedSources, ["example.com."]).every((item, i) => item === dottedKept[i]) && filterBlockedDomains(dottedSources, ["example.com."]).length === 2);
+const dottedResult = { sources: dottedSources, truncated: false, provider: "test" };
+const dottedFiltered = applyBlockedFilterToResult(dottedResult);
+check("DNS dot result integration removes blocked sources", dottedFiltered.sources.length === 2 && dottedFiltered.sources.every((item, i) => item === dottedKept[i]));
+check("DNS dot result integration preserves metadata and input", dottedFiltered !== dottedResult && dottedResult.sources.length === 4 && dottedFiltered.truncated === false && dottedFiltered.provider === "test");
+
 // === 2. 「收敛前过滤」补位语义（issue #72 验收核心）===
 setActiveBlockedDomains(["csdn.net"]);
 // 原始 12 条含 3 条被禁、maxResults=10 → 应返回 10 条（不是 7 条）
