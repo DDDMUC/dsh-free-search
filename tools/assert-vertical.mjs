@@ -14,6 +14,7 @@ section("A. 注册表与工具形态（离线）");
 const { ENGINES, registerDomainSearchTool } = await import("../lib/vertical.js");
 const keys = Object.keys(ENGINES);
 assert(keys.includes("openlibrary"), "Open Library is registered in domain_search");
+assert(typeof ENGINES.hex_pm?.run === "function", "hex_pm is available through domain_search");
 assert(typeof registerDomainSearchTool === "function", "registerDomainSearchTool 可导入（模块无网络副作用）");
 assert(keys.every((k) => typeof ENGINES[k].run === "function" && typeof ENGINES[k].desc === "string" && ENGINES[k].desc), "每个引擎都有 run() 与非空 desc");
 const dupDesc = keys.map((k) => ENGINES[k].desc).filter((d, i, a) => a.indexOf(d) !== i);
