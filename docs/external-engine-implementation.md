@@ -203,3 +203,25 @@ packages/webz-engine/
 - **卸载要撤干净**。`setExternalEngines` 除了 id 集合，还要撤 `REQUIRED_CREDENTIALS`、
   `KEY_REF_MAP`（被内置引擎共用的 env 名不删）和 `engineRunners` 里的 runner，
   否则已删除的包还能被 `free_search_test` 点名。
+
+## 7. 可选能力（apiVersion 1 增补）
+
+契约里补了 4 个**可选**字段，让外部包也能表达内置引擎早已具备的能力。
+全部 opt-in：不声明就沿用内置默认，老包行为一个字不变。
+
+| 字段 | 类型 | 内置对应 | 落点 |
+|---|---|---|---|
+| `keyless` | `boolean` | `keyedTierProbes` 那 7 个 | 有免 key 档时先进 `withKeylessFirst`，额度/鉴权/反爬/网络失败才切到 key |
+| `explicitOnly` | `boolean` | `EXPLICIT_ONLY_ENGINES`（7 个按次计费引擎） | 合并进 `isExplicitOnlyEngine()`，Auto 首发、默认池、multi 候选三条判据同时生效 |
+| `concurrency` | `integer 1–8` | `SERP_FAMILY` 单独一档 | `engineConcurrency()` 优先读外部声明 |
+| `settings` | `Array<{key,label,type,hint,placeholder,default}>` | `ENGINE_SETTINGS_IDS` 那 7 个 | 设置页「设置」按钮；值存 `externalEngineSettings[id][key]` |
+
+三个实现细节：
+
+- **`explicitOnly` 用判据函数收敛，不是逐点加 if**：`EXPLICIT_ONLY_ENGINES.includes(id)` 全量换成
+  `isExplicitOnlyEngine(id)`（7 处），一处改完六处使用点自动跟着走。
+- **`settings` 的注入与凭据同一条规则**：只把「这个包自己声明过」的字段交给它，
+  别的引擎的配置一概不在 `ctx.settings` 里。空实现给的是 `{}` 而不是 `undefined`，
+  包不用自己兜底。
+- **`settings` 的值随引擎卸载一起清掉**：保存时只写「当前装着且声明过」的字段，
+  `clean` 里没有的键不会留在配置里。

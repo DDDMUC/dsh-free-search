@@ -269,12 +269,19 @@ await check("an installed engine's name opens its site", async () => {
   assert.match(installed, /:\s*react_jsx_runtime\.jsx\("span",\s*\{\s*className: "dshfs-priorityName"/, "no link means a plain span");
 });
 
-await check("ticking an installed engine writes allowedEngines", async () => {
-  // The checkbox must go through the same allowlist path as built-in engines.
+await check("installed engines are enabled from the allowlist, not from this section", async () => {
+  // 扩展区只管「装 / 卸 / 配 key」。启用与否只有一个开关：
+  // 「全局启用的搜索引擎」里的「外部 (c/d)」组。
   const at = client.indexOf('"data-dsh-section": "extensions"');
-  const block = client.slice(at, at + 10000);
-  assert.match(block, /setAllowedEngines\(\(prev\) =>/);
-  assert.match(block, /addFallbackEngine\(engine\.id\)/);
+  const block = client.slice(at, at + 16000);
+  const installed = block.slice(block.indexOf("extensions.installed.map"), block.indexOf("extensions.failures.length"));
+  assert.equal(/setAllowedEngines/.test(installed), false, "the installed row must not write the allowlist");
+  assert.equal(/addFallbackEngine/.test(installed), false, "the row must not touch the fallback chain");
+  // 那一组仍然走白名单路径（含 provider 重置）。
+  const allowlist = client.slice(client.indexOf("externalEngines.length > 0"), client.indexOf('"data-dsh-section": "fallback"'));
+  assert.match(allowlist, /setAllowedEngines\(\(prev\) =>/);
+  assert.match(allowlist, /addFallbackEngine\(engine\.id\)/);
+  assert.match(allowlist, /if \(!nextEnabled && provider === engine\.id\) setProvider\("auto"\)/, "clearing the current provider must fall back to auto");
 });
 
 await check("uninstalling is allowed only for a package that is actually installed", async () => {

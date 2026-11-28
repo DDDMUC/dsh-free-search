@@ -67,8 +67,18 @@ export const freeSearchEngine = {
   label: { zh: "Webz.io 新闻", en: "Webz.io News" },
   time: true,                          // 是否支持时间过滤
   requiresKey: ["WEBZ_API_TOKEN"],     // 需要哪些凭据（我们负责解析）
-  async search({ query, maxResults, timeRange, key, fetch, signal }) {
-    // 自己发请求；只能拿到属于本引擎的凭据
+
+  // ---- 以下四个全是可选，不写就是内置默认 ----
+  keyless: true,                       // 有免 key 档：先白嫖，额度/鉴权/网络失败才切到 key
+  explicitOnly: true,                  // 按次计费：默认不进 Auto 池，只在显式选中时跑
+  concurrency: 1,                      // 本引擎的并发上限（1–8），不写走默认
+  settings: [                          // 本引擎专属参数，核心不管语义，只负责存取
+    { key: "region", label: { zh: "区域", en: "Region" }, type: "text", default: "eu" },
+    { key: "limit", label: { zh: "条数上限", en: "Result cap" }, type: "number", hint: "1–10" },
+  ],
+
+  async search({ query, maxResults, timeRange, key, keys, settings, fetch, signal }) {
+    // 自己发请求；只能拿到属于本引擎的凭据与它自己声明的 settings
     return {
       sources: [{ url, title, snippet, publishedAt }],
       truncated: false,
@@ -77,12 +87,25 @@ export const freeSearchEngine = {
 };
 ```
 
+四个可选能力的落点：
+
+| 字段 | 核心拿它做什么 | 不声明时 |
+|---|---|---|
+| `keyless` | 进 `keyedTierProbes`，先跑免 key 档，失败再带 key 重试 | 直接带 key 跑一次 |
+| `explicitOnly` | 与内置 7 个按次计费引擎同一判据：不进 Auto 首发、不进默认池 | 可自动入池 |
+| `concurrency` | `engineRuntime` 的并发令牌数（1–8） | 走 `ENGINE_CONCURRENCY_LIMIT` |
+| `settings` | 设置页「设置」按钮展开的字段；值只注入给声明它的那个引擎 | 无「设置」按钮，`ctx.settings` 是 `{}` |
+
+`settings` 的值存在插件配置的 `externalEngineSettings[引擎 id][字段 key]`，卸载时随引擎一起清掉。
+
 ### 4.3 我们注入什么（安全边界）
 
 | 注入项 | 内容 | 为什么不给更多 |
 |---|---|---|
 | `query` / `maxResults` / `timeRange` | 本次请求参数 | — |
 | `key` | **只含本引擎 `requiresKey` 声明的那一个**凭据 | 不传完整 `cfg`：`cfg` 里有用户配置的**所有** API key，外部引擎能读走全部凭据 |
+| `keys` | 同上，按名字的全集 | 同上 |
+| `settings` | **只含本引擎 `settings` 声明过的那几个字段** | 别的引擎的配置一概不在里面；空实现保证是 `{}` 而不是 `undefined` |
 | `fetch` | 受控的 fetch（即 `proxyFetch`） | 复用搜索代理、`no_proxy`、超时；不给 `node:http` 原始能力也无意义（它能自己 import） |
 | `signal` | 取消信号 | — |
 

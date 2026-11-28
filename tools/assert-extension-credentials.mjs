@@ -41,19 +41,32 @@ check("the client renders one input per declared key, not a hard-coded list", ()
 
 check("an installed engine row matches the built-in engine row", () => {
   // 已装扩展不能再长成另一套两行卡片：它必须复用内置引擎行的那组 class，
-  // 否则同一个列表里会出现两种行高、两种勾选框、两种状态表达。
+  // 否则同一个列表里会出现两种行高、两种状态表达。
   const section = client.slice(client.indexOf('"data-dsh-section": "extensions"'), client.indexOf('"data-dsh-section": "extensions"') + 16000);
   const installed = section.slice(section.indexOf("extensions.installed.map"), section.indexOf("extensions.failures.length"));
   assert.match(installed, /className: "dshfs-priorityRow"/, "the row must reuse the built-in row class");
   assert.match(installed, /className: "dshfs-priorityName"/, "the name must reuse the built-in name class");
   assert.match(installed, /dshfs-keyStatus dshfs-keyStatus-/, "the row needs the 8px status dot, not a text label");
-  assert.match(installed, /className: "dshfs-check"/, "the checkbox must use the shared pill/box style");
   assert.match(installed, /className: hasDraft \? "dshfs-priorityKey dshfs-priorityKeyDirty" : "dshfs-priorityKey"/, "the input must reuse the built-in key field");
   // 角标是内置引擎的 badge；外部包的名字由包自己给，不该再拼一个 (API KEY)。
   assert.equal(/\(API KEY\)/.test(installed), false, "no synthetic API KEY badge on external engines");
   assert.equal(/className: "dshfs-extRow"/.test(installed), false, "the installed row must not use the installable-only frame");
   // 状态点必须查外部凭据名，否则配好 key 之后仍显示橙色「未配置」。
   assert.match(client, /extensions\.keysConfigured\?\.\[name\] === true/);
+});
+
+check("the extensions section has no enable checkbox of its own", () => {
+  // 启用状态只有一个来源：上面「全局启用的搜索引擎」里的「外部 (c/d)」组。
+  // 扩展区再画一个勾选框就是两处开关 + 两套行为（白名单那处会把 provider
+  // 重置成 auto，还有「至少保留一个」的保护），所以这里必须没有。
+  const at = client.indexOf('"data-dsh-section": "extensions"');
+  const section = client.slice(at, at + 16000);
+  const installed = section.slice(section.indexOf("extensions.installed.map"), section.indexOf("extensions.failures.length"));
+  assert.equal(/dshfs-check/.test(installed), false, "no checkbox on an installed-engine row");
+  assert.equal(/setAllowedEngines/.test(installed), false, "the row must not write the allowlist");
+  assert.equal(/addFallbackEngine/.test(installed), false, "the row must not touch the fallback chain");
+  // 白名单的外部分组仍然是那个唯一的开关。
+  assert.match(client, /t\.engineEnableExternal\(enabledExternalCount, externalEngines\.length\)/);
 });
 
 check("saving a key goes through the existing credentials route", () => {
@@ -90,6 +103,39 @@ check("an external key input obeys the same dirty/save contract as a built-in on
   assert.match(section, /const hasDraft = String\(state\.value \?\? ""\)\.trim\(\) !== ""/);
   assert.match(section, /const effective = hasDraft \? false : configured/);
   assert.match(section, /dshfs-priorityKeyDirty/, "an unsaved draft is shown on the field itself");
+});
+
+check("clearing a field and saving is what deletes the key", () => {
+  // 用户的原话：「直接清空，保存，就行了」。空输入框以前被 `if (!value.trim()) continue`
+  // 静默跳过，看起来像删了其实还在。现在空值走 unset。
+  assert.match(client, /if \(trimmed === ""\) \{/, "an empty field needs its own branch");
+  assert.match(client, /await bridgeCredentialsUnset\(field\)/, "emptying a field must unset the credential");
+  assert.equal(/if \(!value\.trim\(\)\) continue;/.test(client), false, "the silent skip must be gone");
+  // 设置页模式（keyStorage: settings）同样要能删。
+  assert.match(client, /else if \(keyTouched\[field\] === true && keyWasConfigured\(field\)\) ops\.push\(\{ op: "unset", path: \[field\] \}\)/);
+});
+
+check("an untouched empty field never deletes anything", () => {
+  // 服务端把 secret 值抹成空，所以「已配置」和「没配置」在输入框里长得一样。
+  // 只有用户真的动过这个字段，空值才能解释成「删除」。
+  assert.match(client, /const \[keyTouched, setKeyTouched\] = react\.useState\(\{\}\)/);
+  assert.match(client, /keyTouched\[field\] !== true/, "the unset branch must require a touch");
+  assert.match(client, /const keyWasConfigured = \(field\) =>/, "and it must also have been configured");
+});
+
+check("a saved key shows a masked preview instead of a bare placeholder", () => {
+  // 凭据中心 describe() 会回同长度遮罩（sk-ab••••c4f2）。它只进 placeholder，
+  // 明文永远不会被回传，也不需要额外的「显示」路由。
+  assert.match(index, /masked: typeof info\?\.masked === "string"/, "the server forwards the mask");
+  assert.match(index, /value: \{ configured, masked, available: true \}/);
+  const loadAt = client.indexOf("const cred = await bridgeCredentialsStatus();");
+  assert.ok(loadAt > 0, "the client probes the credential status");
+  // 这一段里夹着一整张 key→引擎 id 的长表，所以窗口要放宽。
+  const block = client.slice(loadAt, loadAt + 2600);
+  assert.match(block, /cred\.value\.masked/, "the mask is read from the answer");
+  assert.match(block, /setCredMasked\(mm\)/);
+  assert.match(client, /const placeholder = masked \?/, "the mask replaces the placeholder");
+  assert.match(client, /dshfs-priorityKeySaved/, "a stored key looks different from an unsaved draft");
 });
 
 check("the declared key is what the engine actually receives", () => {

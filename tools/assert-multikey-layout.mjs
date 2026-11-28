@@ -29,7 +29,10 @@ check("the key input renders a bare textarea, no wrapper row", () => {
 
 check("the format hint moved into placeholder and title", () => {
   const block = keyInputBlock();
-  assert.match(block, /placeholder: t\.multiKeyPlaceholder/);
+  // placeholder 在存过 key 时会拼上凭据中心的真遮罩（sk-ab••••c4f2），
+  // 基础文案仍是这句；两者都要在。
+  assert.match(block, /const placeholder = masked \? `\$\{t\.multiKeyPlaceholder\}（\$\{masked\}）` : t\.multiKeyPlaceholder;/);
+  assert.match(block, /placeholder,/);
   assert.match(block, /title: t\.multiKeyHint/);
 });
 

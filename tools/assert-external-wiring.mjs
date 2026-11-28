@@ -12,6 +12,7 @@ import { pathToFileURL } from "node:url";
 
 const root = new URL("..", import.meta.url);
 const index = fs.readFileSync(new URL("lib/index.js", root), "utf8");
+const client = fs.readFileSync(new URL("lib/client.js", root), "utf8");
 
 const mod = await import(new URL("lib/index.js", root));
 const {
@@ -171,6 +172,90 @@ await check("the bridge describe exposes the list", async () => {
   assert.match(index, /externalEngines: externalEngineStatus\(\)/);
 });
 
+await check("describe reports the optional capabilities", async () => {
+  // 四个可选字段要一路回传到设置页：设置页据此画「设置」按钮、
+  // 标「按次计费」、显示并发上限；不声明时给的是内置默认（false / null / []）。
+  setExternalEngines([
+    {
+      id: "webz",
+      label: { en: "Webz" },
+      time: true,
+      requiresKey: ["WEBZ_API_TOKEN"],
+      keyless: true,
+      explicitOnly: true,
+      concurrency: 2,
+      settings: [{ key: "region", label: { en: "Region" }, type: "text", placeholder: "", hint: "", default: "eu" }],
+      packageName: "dsh-free-search-engine-webz",
+    },
+  ]);
+  const status = externalEngineStatus();
+  assert.equal(status.length, 1);
+  assert.equal(status[0].keyless, true, "keyless is forwarded");
+  assert.equal(status[0].explicitOnly, true, "explicitOnly is forwarded");
+  assert.equal(status[0].concurrency, 2, "concurrency is forwarded");
+  assert.equal(status[0].settings.length, 1, "settings are forwarded");
+  assert.equal(status[0].settings[0].key, "region");
+
+  // 没有声明的引擎拿到的是默认值，而不是 undefined。
+  setExternalEngines([{ id: "plain", label: { en: "Plain" }, time: false }]);
+  const plain = externalEngineStatus()[0];
+  assert.equal(plain.keyless, false);
+  assert.equal(plain.explicitOnly, false);
+  assert.equal(plain.concurrency, null);
+  assert.deepEqual(plain.settings, []);
+  setExternalEngines([]);
+});
+
+await check("a declared settings field is the only thing injected, and only to its owner", async () => {
+  // 上下文里的 settings 必须只含「这个包自己声明的 key」，
+  // 且其它引擎的值一概看不到 —— 与凭据的过滤规则同一条。
+  const { searchContext } = await import(new URL("lib/external_engines.js", root).href);
+  const ctx = searchContext({
+    query: "q",
+    maxResults: 5,
+    timeRange: undefined,
+    keys: {},
+    settings: { region: "eu" },
+    fetch: () => {},
+  });
+  assert.deepEqual(ctx.settings, { region: "eu" });
+  assert.equal("otherEngine" in ctx.settings, false);
+});
+
+await check("settings are persisted under the engine id and pruned with it", async () => {
+  // 保存时的清洗规则：只留装着且声明过的字段，卸载后残留值一并清掉。
+  assert.match(index, /externalEngineSettings: z\.dict\(z\.dict\(z\.string\(\)\)\)\.default\(\{\}\)\.volatile\(\)/);
+  assert.match(index, /const declared = externalSettingsOf\(engine\.id\);/);
+  assert.match(index, /current\(\)\.externalEngineSettings\?\.\[engine\.id\]\?\.\[field\.key\]/);
+  // 设置页的「设置」按钮对声明过 settings 的外部引擎可见。
+  assert.match(client, /ENGINE_SETTINGS_IDS\.includes\(id\) \|\| externalSettingsFields\(id\)\.length > 0/);
+  // 保存时整块写回，并且只写当前装着的那几个引擎。
+  assert.match(client, /ops\.push\(\{ op: "set", path: \["externalEngineSettings"\], value: clean \}\)/);
+});
+
+await check("explicitOnly and concurrency reach the routing gates", async () => {
+  // explicitOnly 的外包进不了 auto 的首发位，与内置按次计费引擎同一条判据。
+  // 白名单是显式意图，所以它仍可出现在「兜底位置」——这与内置引擎的规则一致。
+  const isExplicitOnlyEngine = mod.isExplicitOnlyEngineForTest;
+  assert.equal(isExplicitOnlyEngine("openai"), true, "a built-in billed engine stays explicit-only");
+  assert.equal(isExplicitOnlyEngine("bing"), false);
+  setExternalEngines([{ id: "billed", label: { en: "Billed" }, time: false, explicitOnly: true }]);
+  assert.equal(isExplicitOnlyEngine("billed"), true, "a declared external engine joins the same gate");
+  const auto = routeEngines("anything", {
+    disabledEngines: [],
+    allowedEngines: [...ALL_ENGINES, "billed"],
+  });
+  assert.equal(auto.includes("billed"), true, "whitelisting is explicit intent, so it may sit at the tail");
+  assert.equal(auto[0] === "billed", false, "but it must not lead the chain");
+
+  // 池策略关着时，explicitOnly 的外包进不了语言池。
+  const pool = normalizeLanguagePool(["bing", "billed"], ["bing"], "off");
+  assert.deepEqual(pool, ["bing"], "an explicitOnly engine is refused by the default pool");
+  const openPool = normalizeLanguagePool(["bing", "billed"], ["bing"], "multi");
+  assert.deepEqual(openPool, ["bing", "billed"], "the pool policy can let it in");
+  setExternalEngines([]);
+});
+
 // ------------------------------------------------------------------ 接线
 await check("the predicate swap covers every engine gate", async () => {
   // These are the gates that used to hard-code ALL_ENGINES / TIME_ENGINES: an
@@ -285,6 +370,119 @@ await check("a package placed in a profile is discovered and registered", async 
   assert.equal(result.sources[0].title, "SAMPLE_TOKEN", "the engine only sees the credential it declared");
 
   setExternalEngines([]);
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+// ------------------------------------------------------------------ 可选能力（apiVersion 1 增补）
+await check("an undeclared capability keeps the built-in default", async () => {
+  // 老包不写这四个字段，行为必须一个字都不变：
+  //   keyless      → 不进 keyedTierProbes（没有免 key 档）
+  //   explicitOnly → 允许自动入池
+  //   concurrency  → 走默认并发
+  //   settings     → 空表，上下文里 settings 是 {}
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "fsx-opt-"));
+  const profile = path.join(tmp, "profile");
+  const pkgDir = path.join(profile, "node_modules", "dsh-free-search-engine-plain");
+  fs.mkdirSync(path.join(pkgDir, "lib"), { recursive: true });
+  fs.writeFileSync(
+    path.join(pkgDir, "package.json"),
+    JSON.stringify({ name: "dsh-free-search-engine-plain", version: "1.0.0", dsh: { freeSearch: "./lib/entry.js" } }),
+  );
+  fs.writeFileSync(
+    path.join(pkgDir, "lib", "entry.js"),
+    `export const freeSearchEngine = {
+      apiVersion: 1, id: "plain", label: { en: "Plain" }, time: false,
+      async search(ctx) { return { sources: [{ url: "https://plain.test/1", title: JSON.stringify(ctx.settings) }] }; },
+    };`,
+  );
+
+  const { discoverExternalEngines, normalizeEngineResult } = await import(
+    new URL("lib/external_engines.js", root).href
+  );
+  const { engines } = await discoverExternalEngines({ profileDir: profile, builtinIds: ALL_ENGINES });
+  assert.equal(engines.length, 1);
+  const engine = engines[0];
+  assert.equal(engine.keyless, null, "keyless is opt-in");
+  assert.equal(engine.explicitOnly, null, "explicitOnly is opt-in");
+  assert.equal(engine.concurrency, null, "concurrency is opt-in");
+  assert.deepEqual(engine.settings, [], "no settings declared means an empty list");
+
+  setExternalEngines(engines);
+  // 上下文里 settings 永远是对象（不是 undefined），包不用自己兜底。
+  const result = normalizeEngineResult(
+    await engine.search({ query: "q", maxResults: 5, timeRange: undefined, keys: {}, settings: {}, fetch: () => {} }),
+    5,
+  );
+  assert.equal(result.sources.length, 1);
+  assert.equal(result.sources[0].title, "{}", "an engine with no settings gets an empty object");
+
+  setExternalEngines([]);
+  fs.rmSync(tmp, { recursive: true, force: true });
+});
+
+await check("a declared capability is carried through, a bad one is refused", async () => {
+  const { validateEngine, discoverExternalEngines } = await import(new URL("lib/external_engines.js", root).href);
+  const seen = new Set();
+  const good = {
+    apiVersion: 1,
+    id: "rich",
+    label: { en: "Rich" },
+    time: true,
+    keyless: true,
+    explicitOnly: true,
+    concurrency: 1,
+    settings: [
+      { key: "region", label: { en: "Region" }, type: "text", default: "eu" },
+      { key: "limit", label: { en: "Limit" }, type: "number", hint: "1-10" },
+    ],
+    async search() {
+      return { sources: [] };
+    },
+  };
+  assert.equal(validateEngine(good, ALL_ENGINES, seen), null, "a fully declared engine passes");
+
+  const bad = (patch) => validateEngine({ ...good, ...patch, settings: patch.settings ?? good.settings }, ALL_ENGINES, new Set());
+  assert.match(bad({ keyless: "yes" }), /keyless must be a boolean/);
+  assert.match(bad({ explicitOnly: 1 }), /explicitOnly must be a boolean/);
+  assert.match(bad({ concurrency: 0 }), /between 1 and 8/);
+  assert.match(bad({ concurrency: 9 }), /between 1 and 8/);
+  assert.match(bad({ concurrency: 1.5 }), /between 1 and 8/);
+  assert.match(bad({ settings: "nope" }), /settings must be an array/);
+  assert.match(bad({ settings: [null] }), /must be an object/);
+  assert.match(bad({ settings: [{ label: { en: "x" } }] }), /\.key is required/);
+  assert.match(bad({ settings: [{ key: "a", label: { zh: "甲" } }] }), /label\.en is required/);
+  assert.match(bad({ settings: [{ key: "a", label: { en: "A" }, type: "json" }] }), /type must be text, number or password/);
+  assert.match(bad({ settings: [{ key: "a", label: { en: "A" }, hint: 1 }] }), /hint must be a string/);
+
+  // 合法声明要被原样搬到运行时对象上（默认值补齐、类型收敛）。
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "fsx-rich-"));
+  const profile = path.join(tmp, "profile");
+  const pkgDir = path.join(profile, "node_modules", "dsh-free-search-engine-rich");
+  fs.mkdirSync(path.join(pkgDir, "lib"), { recursive: true });
+  fs.writeFileSync(
+    path.join(pkgDir, "package.json"),
+    JSON.stringify({ name: "dsh-free-search-engine-rich", version: "1.0.0", dsh: { freeSearch: "./lib/entry.js" } }),
+  );
+  fs.writeFileSync(
+    path.join(pkgDir, "lib", "entry.js"),
+    `export const freeSearchEngine = {
+      apiVersion: 1, id: "rich", label: { en: "Rich" }, time: true,
+      keyless: true, explicitOnly: true, concurrency: 2,
+      settings: [{ key: "region", label: { en: "Region" }, default: "eu" }],
+      async search() { return { sources: [] }; },
+    };`,
+  );
+  const { engines } = await discoverExternalEngines({ profileDir: profile, builtinIds: ALL_ENGINES });
+  assert.equal(engines.length, 1);
+  const engine = engines[0];
+  assert.equal(engine.keyless, true);
+  assert.equal(engine.explicitOnly, true);
+  assert.equal(engine.concurrency, 2);
+  assert.equal(engine.settings.length, 1);
+  assert.equal(engine.settings[0].key, "region");
+  assert.equal(engine.settings[0].label.en, "Region");
+  assert.equal(engine.settings[0].default, "eu");
+  assert.equal(engine.settings[0].type, "text", "an omitted type defaults to text");
   fs.rmSync(tmp, { recursive: true, force: true });
 });
 

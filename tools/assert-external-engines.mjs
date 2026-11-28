@@ -191,21 +191,28 @@ await check("a bad result shape is rejected instead of leaking downstream", asyn
 });
 
 // ------------------------------------------------------------------ 注入
-await check("the context is narrow: no cfg, no settings, no credential center", async () => {
+await check("the context is narrow: no cfg, no credential center", async () => {
   const ctx = searchContext({
     query: "q",
     maxResults: 5,
     timeRange: { days: 7 },
     keys: { WEBZ_API_TOKEN: "t" },
+    settings: { region: "eu" },
     fetch: () => {},
     signal: undefined,
   });
-  assert.deepEqual(Object.keys(ctx).sort(), ["fetch", "key", "keys", "maxResults", "query", "signal", "timeRange"]);
+  assert.deepEqual(Object.keys(ctx).sort(), ["fetch", "key", "keys", "maxResults", "query", "settings", "signal", "timeRange"]);
   assert.equal(ctx.key, "t", "the single-key shortcut matches the only declared credential");
   assert.deepEqual(ctx.keys, { WEBZ_API_TOKEN: "t" });
-  assert.equal("cfg" in ctx, false);
-  assert.equal("settings" in ctx, false);
+  assert.deepEqual(ctx.settings, { region: "eu" }, "only the fields the package declared are injected");
+  assert.equal("cfg" in ctx, false, "the config object holds every key, so it must never be injected");
   assert.equal("credentials" in ctx, false);
+});
+
+await check("settings default to an empty object, never undefined", async () => {
+  // An engine that declares no settings must not have to guard for undefined.
+  const ctx = searchContext({ query: "q", maxResults: 5, timeRange: undefined, keys: {}, fetch: () => {} });
+  assert.deepEqual(ctx.settings, {});
 });
 
 await check("only declared credentials are ever resolved", async () => {
